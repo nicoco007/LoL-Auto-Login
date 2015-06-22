@@ -371,7 +371,8 @@ namespace LoL_Auto_Login
                 sw.Start();
 
                 // try to find the password form
-                while (sw.Elapsed.Seconds < 15 && getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480)) != Color.FromArgb(255, 242, 242, 243))
+                Color c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
+                while (sw.Elapsed.Seconds < 15 && !(c.R > 242 && c.G > 242 && c.B > 242))
                 {
                     // get window rectangle, in case it is resized or moved
                     GetWindowRect(hwnd, out rect);
@@ -382,10 +383,14 @@ namespace LoL_Auto_Login
 
                     // wait 500 ms
                     Thread.Sleep(500);
+
+                    // get color once again
+                    c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
                 }
 
                 // check if password box was found
-                if (getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480)) == Color.FromArgb(255, 242, 242, 243))
+                c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
+                if (c.R > 242 && c.G > 242 && c.B > 242)
                 {
                     // log information
                     Log.Info("Found password box after " + sw.ElapsedMilliseconds + " ms. Reading & decrypting password from file...");
