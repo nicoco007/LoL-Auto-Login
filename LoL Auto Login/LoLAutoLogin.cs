@@ -13,6 +13,7 @@ using System.Globalization;
 using System.Threading;
 using System.IO;
 using System.Security.Cryptography;
+using LoLAutoLogin;
 
 namespace LoL_Auto_Login
 {
@@ -42,6 +43,12 @@ namespace LoL_Auto_Login
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        static extern IntPtr SetFocus(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr GetFocus();
+
         [DllImport("gdi32.dll")]
         static extern int GetPixel(IntPtr hdc, int nXPos, int nYPos);
 
@@ -51,6 +58,9 @@ namespace LoL_Auto_Login
         [DllImport("user32.dll")]
         static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+        
         [Flags]
         public enum MouseEventFlags : uint
         {
@@ -63,6 +73,20 @@ namespace LoL_Auto_Login
             RIGHTDOWN = 0x00000008,
             RIGHTUP = 0x00000010,
             WHEEL = 0x00000800,
+        }
+
+        static int WM_LBUTTONDOWN = 0x201; //Left mousebutton down
+        static int WM_LBUTTONUP = 0x202;  //Left mousebutton up
+        static int WM_LBUTTONDBLCLK = 0x203; //Left mousebutton doubleclick
+        static int WM_RBUTTONDOWN = 0x204; //Right mousebutton down
+        static int WM_RBUTTONUP = 0x205; //Right mousebutton up
+        static int WM_RBUTTONDBLCLK = 0x206;//Right mousebutton doubleclick
+        static int WM_KEYDOWN = 0x100; //Key down
+        static int WM_KEYUP = 0x101; //Key up
+
+        public int MakeLParam(int LoWord, int HiWord)
+        {
+            return ((HiWord << 16) | (LoWord & 0xffff));
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -223,6 +247,11 @@ namespace LoL_Auto_Login
                     killProcessesByName("LolClient");
                     killProcessesByName("LoLLauncher");
                     killProcessesByName("LoLPatcher");
+
+                    while (getSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
+                    {
+                        Thread.Sleep(500);
+                    }
                 }
                 else
                 {
@@ -280,41 +309,45 @@ namespace LoL_Auto_Login
                 Log.Info("Waiting 15 seconds for Launch button to enable...");
 
                 // check if the "Launch" button is there and can be clicked
-                // launch button colors:
+                // launch button colors (it changes for some reason):
                 //      english:    [A=255, R=199, G=135, B=12]
                 //      french:     [A=255, R=201, G=137, B=13]
-                while (patchersw.Elapsed.Seconds < 15 && getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) != Color.FromArgb(255, 199, 135, 12) && getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) != Color.FromArgb(255, 201, 137, 13))
+
+                bool clicked = false;
+
+                while(patchersw.Elapsed.Seconds < 15 && !clicked)
                 {
-                    // set window to foreground
-                    SetForegroundWindow(patcherHwnd);
-                    GetWindowRect(patcherHwnd, out patcherRect);
+                    Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
-                    // wait 500 ms
-                    Thread.Sleep(500);
+                    if (Pixels.LaunchButtonEn.Compare(patcherImage) || Pixels.LaunchButtonFr.Compare(patcherImage))
+                    {
+                        while (patchersw.Elapsed.Seconds < 15 && !clicked)
+                        {
+                            GetWindowRect(patcherHwnd, out patcherRect);
+                            SetForegroundWindow(patcherHwnd);
+
+                            if(getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 199, 135, 12) || getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 201, 137, 13))
+                            {
+                                Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
+
+                                mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                                Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
+                                mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                                mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+
+                                enterPassword();
+
+                                clicked = true;
+                            }
+                        }
+                    }
                 }
-                
-                // check if button was found & is clickable
-                if (patchersw.Elapsed.Seconds < 15 && (getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 199, 135, 12) || getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 201, 137, 13)))
-                {
-                    Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
-                    
-                    // move cursor above "Launch" button
-                    mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                    SetForegroundWindow(patcherHwnd);
-                    Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
 
-                    // click on launch button
-                    mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                    mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-
-                    // run enter password method
-                    enterPassword();
-                }
-                else
+                if(patchersw.Elapsed.Seconds >= 15)
                 {
                     // print error to log
                     Log.Error("Launch button failed to enable after 15 seconds. Aborting!");
-                 
+
                     // stop stopwatch
                     patchersw.Stop();
 
@@ -447,6 +480,8 @@ namespace LoL_Auto_Login
                         else
                             SendKeys.Send("~");
                     }
+
+                    
                 }
                 else
                 {
