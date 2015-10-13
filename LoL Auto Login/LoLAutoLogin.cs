@@ -212,6 +212,7 @@ namespace LoL_Auto_Login
                 // hide this window
                 this.Opacity = 0.0F;
                 this.Hide();
+                this.ShowInTaskbar = false;
 
                 // start launch process
                 Log.Info("Password file found, starting launcher...");
