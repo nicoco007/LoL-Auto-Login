@@ -75,20 +75,6 @@ namespace LoL_Auto_Login
             WHEEL = 0x00000800,
         }
 
-        static int WM_LBUTTONDOWN = 0x201; //Left mousebutton down
-        static int WM_LBUTTONUP = 0x202;  //Left mousebutton up
-        static int WM_LBUTTONDBLCLK = 0x203; //Left mousebutton doubleclick
-        static int WM_RBUTTONDOWN = 0x204; //Right mousebutton down
-        static int WM_RBUTTONUP = 0x205; //Right mousebutton up
-        static int WM_RBUTTONDBLCLK = 0x206;//Right mousebutton doubleclick
-        static int WM_KEYDOWN = 0x100; //Key down
-        static int WM_KEYUP = 0x101; //Key up
-
-        public int MakeLParam(int LoWord, int HiWord)
-        {
-            return ((HiWord << 16) | (LoWord & 0xffff));
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -229,38 +215,45 @@ namespace LoL_Auto_Login
 
                 // start launch process
                 Log.Info("Password file found, starting launcher...");
-                patcherLaunch();
+
+                // check if league of legends is already running
+                if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
+                {
+                    Log.Verbose("League of Legends is already running!");
+                    
+                    // prompt user to kill current league of legends process
+                    if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                    {
+                        // kill all league of legends processes
+                        killProcessesByName("LolClient");
+                        killProcessesByName("LoLLauncher");
+                        killProcessesByName("LoLPatcher");
+
+                        while (getSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                    else
+                    {
+                        // exit if user says no
+                        Application.Exit();
+                        return;
+                    }
+                }
+
+                Thread t = new Thread(patcherLaunch);
+                t.Start();
+
+                this.FormClosing += (s, args) =>
+                {
+                    t.Abort();
+                };
             }
         }
 
         private void patcherLaunch()
         {
-            // check if league of legends is already running
-            if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
-            {
-                Log.Verbose("League of Legends is already running!");
-
-                // prompt user to kill current league of legends process
-                if(MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
-                {
-                    // kill all league of legends processes
-                    killProcessesByName("LolClient");
-                    killProcessesByName("LoLLauncher");
-                    killProcessesByName("LoLPatcher");
-
-                    while (getSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
-                    {
-                        Thread.Sleep(500);
-                    }
-                }
-                else
-                {
-                    // exit if user says no
-                    Application.Exit();
-                    return;
-                }
-            }
-
             // try launching league of legends
             try
             {
@@ -271,7 +264,9 @@ namespace LoL_Auto_Login
                 // print error to log and show balloon tip to inform user of fatal error
                 Log.Fatal("Could not start League of Legends!");
                 Log.PrintStackTrace(ex.StackTrace);
-                notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
+                this.Invoke(new Action(() => {
+                    notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
+                }));
                 
                 // exit application
                 Application.Exit();
@@ -445,8 +440,11 @@ namespace LoL_Auto_Login
                         Log.PrintStackTrace(ex.StackTrace);
 
                         // show balloon tip to inform user of error
-                        notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
-                        
+                        this.Invoke(new Action(() =>
+                        {
+                            notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
+                        }));
+
                         // exit application
                         Application.Exit();
                         return;
@@ -473,12 +471,18 @@ namespace LoL_Auto_Login
                         // focus window & click on password box
                         mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
                         mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                        
+
                         // enter password character, press enter if complete
-                        if(i != passArray.Length)
-                            SendKeys.Send("{END}" + passArray[i].ToString());
+                        if (i != passArray.Length)
+                            this.Invoke(new Action(() =>
+                            {
+                                SendKeys.Send("{END}" + passArray[i].ToString());
+                            }));
                         else
-                            SendKeys.Send("~");
+                            this.Invoke(new Action(() =>
+                            {
+                                SendKeys.Send("~");
+                            }));
                     }
 
                     
