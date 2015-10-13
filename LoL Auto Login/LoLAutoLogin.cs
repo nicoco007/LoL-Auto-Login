@@ -403,26 +403,26 @@ namespace LoL_Auto_Login
                 sw.Reset();
                 sw.Start();
 
-                // try to find the password form
-                Color c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
-                while (sw.Elapsed.Seconds < 15 && !((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243)))
+                Bitmap clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
+
+                Color c = new Color();
+
+                while (sw.Elapsed.Seconds < 15)
                 {
-                    // get window rectangle, in case it is resized or moved
-                    GetWindowRect(hwnd, out rect);
-                    Log.Verbose("Client rectangle=" + rect.ToString());
-                    
-                    // set window to foreground
-                    SetForegroundWindow(hwnd);
+                    clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
+                    c = clientImage.GetPixel((int)(rect.Width * 0.192), (int)(rect.Height * 0.480));
 
-                    // wait 500 ms
+                    Debug.Print(c.ToString());
+
+                    if ((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243))
+                    {
+                        break;
+                    }
+
                     Thread.Sleep(500);
-
-                    // get color once again
-                    c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
                 }
 
                 // check if password box was found
-                c = getColorAtPixel(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
                 if ((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243))
                 {
                     // log information
