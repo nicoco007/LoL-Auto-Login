@@ -322,7 +322,7 @@ namespace LoL_Auto_Login
                             GetWindowRect(patcherHwnd, out patcherRect);
                             SetForegroundWindow(patcherHwnd);
 
-                            if(getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 199, 135, 12) || getColorAtPixel(patcherRect.Left + 575, patcherRect.Top + 15) == Color.FromArgb(255, 201, 137, 13))
+                            if(Pixels.LaunchButtonEn.Compare(patcherImage) || Pixels.LaunchButtonFr.Compare(patcherImage))
                             {
                                 Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
 
@@ -423,7 +423,9 @@ namespace LoL_Auto_Login
                 {
                     // log information
                     Log.Info("Found password box after " + sw.ElapsedMilliseconds + " ms. Reading & decrypting password from file...");
-                    
+
+                    SetForegroundWindow(hwnd);
+
                     // create password string
                     string password;
                     
@@ -519,16 +521,6 @@ namespace LoL_Auto_Login
 
             // close program
             Application.Exit();
-        }
-
-        private System.Drawing.Color getColorAtPixel(int posX, int posY)
-        {
-            Log.Verbose("Trying to find color at pixel {X:" + posX + ", Y:" + posY + "}");
-
-            int lColor = GetPixel(GetDC(IntPtr.Zero), posX, posY);
-            Color color = System.Drawing.ColorTranslator.FromOle(lColor);
-            Log.Verbose(color.ToString());
-            return color;
         }
 
         /// <summary>
