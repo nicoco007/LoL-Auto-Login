@@ -334,9 +334,18 @@ namespace LoL_Auto_Login
                                 enterPassword();
 
                                 clicked = true;
+
+                                patchersw.Stop();
                             }
                         }
                     }
+
+                    patcherImage.Dispose();
+
+                    GC.Collect();
+
+                    Thread.Sleep(500);
+
                 }
 
                 if(patchersw.Elapsed.Seconds >= 15)
@@ -392,7 +401,7 @@ namespace LoL_Auto_Login
                 GetWindowRect(hwnd, out rect);
 
                 // log information found
-                Log.Info("Found patcher after " + sw.ElapsedMilliseconds + " ms [Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "]");
+                Log.Info("Found patcher after " + sw.ElapsedMilliseconds + " ms [Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
                 Log.Info("Waiting 15 seconds for login form to appear...");
 
                 // reset stopwatch for form loading
@@ -402,18 +411,25 @@ namespace LoL_Auto_Login
                 Bitmap clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
                 Color c = new Color();
-
                 while (sw.Elapsed.Seconds < 15)
                 {
+                    Log.Verbose("[Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
+
+                    GetWindowRect(hwnd, out rect);
+
                     clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
                     c = clientImage.GetPixel((int)(rect.Width * 0.192), (int)(rect.Height * 0.480));
 
-                    Debug.Print(c.ToString());
+                    Log.Verbose(c.ToString());
 
                     if ((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243))
                     {
                         break;
                     }
+
+                    clientImage.Dispose();
+
+                    GC.Collect();
 
                     Thread.Sleep(500);
                 }
@@ -561,28 +577,23 @@ namespace LoL_Auto_Login
             }
             else
             {
-                while(true)
+                while(FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
                 {
                     hwnd = FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
                     GetWindowRect(hwnd, out rect);
-
-                    if (hwnd == IntPtr.Zero)
-                    {
-                        Log.Verbose("Failed to find window with specified arguments!");
-
-                        return IntPtr.Zero;
-                    }
 
                     Log.Verbose(String.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
 
                     if (rect.Size.Width >= width && rect.Size.Height >= height)
                     {
                         Log.Verbose("Correct window handle found!");
-                        
+
                         return hwnd;
                     }
                 }
             }
+
+            return IntPtr.Zero;
         }
 
         private void saveButton_Click(object sender, EventArgs e)
