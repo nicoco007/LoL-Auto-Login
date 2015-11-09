@@ -17,12 +17,20 @@ namespace LoL_Auto_Login
         // write a message using the INFO tag
         public static void Verbose(string message)
         {
-            if (Regex.IsMatch(String.Join(" ", Environment.GetCommandLineArgs()), @"-v\b") || Regex.IsMatch(String.Join(" ", Environment.GetCommandLineArgs()), @"--verbose\b"))
+            if (Environment.GetCommandLineArgs().Contains("-v") || Environment.GetCommandLineArgs().Contains("--verbose") || Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
             {
                 Write(String.Format("{0:G} [VERBOSE] {1}", DateTime.Now, message));
             }
         }
         
+        public static void Debug(string message)
+        {
+            if(Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
+            {
+                Write(String.Format("{0:G} [DEBUG] {1}", DateTime.Now, message));
+            }
+        }
+
         // write a message using the INFO tag
         public static void Info(string message)
         {
@@ -59,7 +67,7 @@ namespace LoL_Auto_Login
         // write whatever to the debug log and the log file
         public static void Write(string text)
         {
-            Debug.Print(text);
+            Console.WriteLine(text);
             try
             {
                 if(Directory.Exists(Directory.GetCurrentDirectory() + @"\Logs"))

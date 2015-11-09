@@ -44,10 +44,7 @@ namespace LoL_Auto_Login
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        static extern IntPtr SetFocus(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        static extern IntPtr GetFocus();
+        private static extern IntPtr GetForegroundWindow();
 
         [DllImport("gdi32.dll")]
         static extern int GetPixel(IntPtr hdc, int nXPos, int nYPos);
@@ -189,6 +186,7 @@ namespace LoL_Auto_Login
         private void Form1_Load(object sender, EventArgs e)
         {
             Log.Info("Started LoL Auto Login");
+
             // check if program is in same directory as league of legends
             if(!File.Exists("lol.launcher.exe"))
             {
@@ -215,16 +213,18 @@ namespace LoL_Auto_Login
                 this.ShowInTaskbar = false;
 
                 // start launch process
-                Log.Info("Password file found, starting launcher...");
+                Log.Info("Password file found!");
 
                 // check if league of legends is already running
                 if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
                 {
-                    Log.Verbose("League of Legends is already running!");
+                    Log.Warn("League of Legends is already running!");
                     
                     // prompt user to kill current league of legends process
                     if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
                     {
+                        Log.Info("Attempting to kill all League of Legends instances...");
+
                         // kill all league of legends processes
                         killProcessesByName("LolClient");
                         killProcessesByName("LoLLauncher");
@@ -243,6 +243,8 @@ namespace LoL_Auto_Login
                     }
                 }
 
+                Log.Debug("Attempting to start thread...");
+
                 Thread t = new Thread(patcherLaunch);
                 t.Start();
 
@@ -250,6 +252,10 @@ namespace LoL_Auto_Login
                 {
                     t.Abort();
                 };
+            }
+            else
+            {
+                Log.Info("Password file not found, prompting user to enter password...");
             }
         }
 
@@ -313,10 +319,13 @@ namespace LoL_Auto_Login
 
                 while(patchersw.Elapsed.Seconds < 15 && !clicked)
                 {
+                    // get patcher image
                     Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
+                    // check if the launch button is enabled (currently only works with English and French patchers)
                     if (Pixels.LaunchButtonEn.Compare(patcherImage) || Pixels.LaunchButtonFr.Compare(patcherImage))
                     {
+                        // TODO: nested loops are probably a bad idea
                         while (patchersw.Elapsed.Seconds < 15 && !clicked)
                         {
                             GetWindowRect(patcherHwnd, out patcherRect);
@@ -340,8 +349,10 @@ namespace LoL_Auto_Login
                         }
                     }
 
+                    // dispose of image
                     patcherImage.Dispose();
 
+                    // force garbage collection
                     GC.Collect();
 
                     Thread.Sleep(500);
@@ -475,8 +486,10 @@ namespace LoL_Auto_Login
                     // log
                     Log.Info("Entering password...");
 
+                    int i = 0;
+
                     // enter password one character at a time
-                    for(int i = 0; i <= passArray.Length; i++)
+                    while(i <= passArray.Length && sw.Elapsed.Seconds < 30)
                     {
                         // get window rectangle, in case it is resized or moved
                         GetWindowRect(hwnd, out rect);
@@ -491,17 +504,25 @@ namespace LoL_Auto_Login
                         mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
                         mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
 
-                        // enter password character, press enter if complete
-                        if (i != passArray.Length)
-                            this.Invoke(new Action(() =>
-                            {
-                                SendKeys.Send("{END}" + passArray[i].ToString());
-                            }));
-                        else
-                            this.Invoke(new Action(() =>
-                            {
-                                SendKeys.Send("~");
-                            }));
+                        Debug.Print(GetForegroundWindow().ToString());
+                        //Debug.Print(hwnd.ToString());
+
+                        if(GetForegroundWindow() == hwnd)
+                        {
+                            // enter password character, press enter if complete
+                            if (i != passArray.Length)
+                                this.Invoke(new Action(() =>
+                                {
+                                    SendKeys.Send("{END}" + passArray[i].ToString());
+                                }));
+                            else
+                                this.Invoke(new Action(() =>
+                                {
+                                    SendKeys.Send("~");
+                                }));
+
+                            i++;
+                        }
                     }
 
                     
