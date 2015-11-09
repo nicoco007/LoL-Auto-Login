@@ -19,7 +19,7 @@ namespace LoL_Auto_Login
 {
     public partial class LoLAutoLogin : Form
     {
-        // these are all wierd win32 methods that I can't really explain
+        // P/Invoke Methods
         #region pinvoke methods
         [DllImport("user32.dll", SetLastError = true)]
         static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
@@ -207,51 +207,7 @@ namespace LoL_Auto_Login
             // check if password file exists
             if(File.Exists("password"))
             {
-                // hide this window
-                this.Opacity = 0.0F;
-                this.Hide();
-                this.ShowInTaskbar = false;
-
-                // start launch process
-                Log.Info("Password file found!");
-
-                // check if league of legends is already running
-                if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
-                {
-                    Log.Warn("League of Legends is already running!");
-                    
-                    // prompt user to kill current league of legends process
-                    if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
-                    {
-                        Log.Info("Attempting to kill all League of Legends instances...");
-
-                        // kill all league of legends processes
-                        killProcessesByName("LolClient");
-                        killProcessesByName("LoLLauncher");
-                        killProcessesByName("LoLPatcher");
-
-                        while (getSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
-                        {
-                            Thread.Sleep(500);
-                        }
-                    }
-                    else
-                    {
-                        // exit if user says no
-                        Application.Exit();
-                        return;
-                    }
-                }
-
-                Log.Debug("Attempting to start thread...");
-
-                Thread t = new Thread(patcherLaunch);
-                t.Start();
-
-                this.FormClosing += (s, args) =>
-                {
-                    t.Abort();
-                };
+                BeginOperation();
             }
             else
             {
@@ -259,7 +215,56 @@ namespace LoL_Auto_Login
             }
         }
 
-        private void patcherLaunch()
+        private void BeginOperation()
+        {
+            // hide this window
+            this.Opacity = 0.0F;
+            this.Hide();
+            this.ShowInTaskbar = false;
+
+            // start launch process
+            Log.Info("Password file found!");
+
+            // check if league of legends is already running
+            if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
+            {
+                Log.Warn("League of Legends is already running!");
+
+                // prompt user to kill current league of legends process
+                if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+                {
+                    Log.Info("Attempting to kill all League of Legends instances...");
+
+                    // kill all league of legends processes
+                    KillProcessesByName("LolClient");
+                    KillProcessesByName("LoLLauncher");
+                    KillProcessesByName("LoLPatcher");
+
+                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
+                    {
+                        Thread.Sleep(500);
+                    }
+                }
+                else
+                {
+                    // exit if user says no
+                    Application.Exit();
+                    return;
+                }
+            }
+
+            Log.Debug("Attempting to start thread...");
+
+            Thread t = new Thread(PatcherLaunch);
+            t.Start();
+
+            this.FormClosing += (s, args) =>
+            {
+                t.Abort();
+            };
+        }
+
+        private void PatcherLaunch()
         {
             // try launching league of legends
             try
@@ -290,7 +295,7 @@ namespace LoL_Auto_Login
             IntPtr patcherHwnd = IntPtr.Zero;
 
             // search for the patcher window for 15 seconds
-            while (patchersw.Elapsed.Seconds < 30 && (patcherHwnd = getSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800)) == IntPtr.Zero)
+            while (patchersw.Elapsed.Seconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800)) == IntPtr.Zero)
             {
                 Thread.Sleep(500);
             }
@@ -340,7 +345,7 @@ namespace LoL_Auto_Login
                                 mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
                                 mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
 
-                                enterPassword();
+                                EnterPassword();
 
                                 clicked = true;
 
@@ -386,7 +391,7 @@ namespace LoL_Auto_Login
             }
         }
 
-        private void enterPassword()
+        private void EnterPassword()
         {
             // create new stopwatch for client searching timeout
             Stopwatch sw = new Stopwatch();
@@ -396,16 +401,16 @@ namespace LoL_Auto_Login
             Log.Info("Waiting 15 seconds for League of Legends client...");
 
             // try to find league of legends client for 30 seconds
-            while (sw.Elapsed.Seconds < 15 && getSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) == IntPtr.Zero)
+            while (sw.Elapsed.Seconds < 15 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) == IntPtr.Zero)
             {
                 Thread.Sleep(200);
             }
 
             // check if client was found
-            if (getSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) != IntPtr.Zero)
+            if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) != IntPtr.Zero)
             {
                 // get client window handle
-                IntPtr hwnd = getSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640);
+                IntPtr hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640);
                 
                 // get client window rectangle
                 RECT rect;
@@ -504,9 +509,6 @@ namespace LoL_Auto_Login
                         mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
                         mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
 
-                        Debug.Print(GetForegroundWindow().ToString());
-                        //Debug.Print(hwnd.ToString());
-
                         if(GetForegroundWindow() == hwnd)
                         {
                             // enter password character, press enter if complete
@@ -560,6 +562,43 @@ namespace LoL_Auto_Login
             Application.Exit();
         }
 
+        private void saveButton_Click(object sender, EventArgs e)
+        {
+            // check if a password was inputted
+            if (String.IsNullOrEmpty(passTextBox.Text))
+            {
+                MessageBox.Show(this, "You must enter a valid password!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // log
+            Log.Info("Encrypting & saving password to file...");
+
+            // try to write password to file
+            try
+            {
+                // encrypt and write password to file
+                using (StreamWriter sw = new StreamWriter("password"))
+                    sw.Write(Encrypt(passTextBox.Text));
+            }
+            catch (Exception ex)
+            {
+                // show error message
+                MessageBox.Show(this, "Something went wrong when trying to save your password:" + Environment.NewLine + Environment.NewLine + ex.StackTrace, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                // print error message to log
+                Log.Fatal("Could not save password to file!");
+                Log.PrintStackTrace(ex.StackTrace);
+            }
+
+            // hide this window
+            this.Opacity = 0.0F;
+            this.Hide();
+
+            // start launch process
+            BeginOperation();
+        }
+
         /// <summary>
         /// Gets a window with specified size using class name and window name.
         /// </summary>
@@ -568,7 +607,7 @@ namespace LoL_Auto_Login
         /// <param name="width">Window minimum width</param>
         /// <param name="height">Window minimum height</param>
         /// <returns>The specified window's handle</returns>
-        private IntPtr getSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
+        private IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
             Log.Verbose(String.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
@@ -617,48 +656,11 @@ namespace LoL_Auto_Login
             return IntPtr.Zero;
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
-        {
-            // check if a password was inputted
-            if(String.IsNullOrEmpty(passTextBox.Text))
-            {
-                MessageBox.Show(this, "You must enter a valid password!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            // log
-            Log.Info("Encrypting & saving password to file...");
-
-            // try to write password to file
-            try
-            {
-                // encrypt and write password to file
-                using (StreamWriter sw = new StreamWriter("password"))
-                    sw.Write(Encrypt(passTextBox.Text));
-            }
-            catch(Exception ex)
-            {
-                // show error message
-                MessageBox.Show(this, "Something went wrong when trying to save your password:" + Environment.NewLine + Environment.NewLine + ex.StackTrace, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                
-                // print error message to log
-                Log.Fatal("Could not save password to file!");
-                Log.PrintStackTrace(ex.StackTrace);
-            }
-
-            // hide this window
-            this.Opacity = 0.0F;
-            this.Hide();
-
-            // start launch process
-            patcherLaunch();
-        }
-
         /// <summary>
         /// Kills every process with the specified name.
         /// </summary>
         /// <param name="pName">Name of process(es) to kill</param>
-        public void killProcessesByName(string pName)
+        public void KillProcessesByName(string pName)
         {
             Log.Verbose("Killing all " + pName + " processes.");
             foreach(Process p in Process.GetProcessesByName(pName))
@@ -667,8 +669,12 @@ namespace LoL_Auto_Login
             }
         }
 
-        // taken from http://www.aspsnippets.com/Articles/Encrypt-and-Decrypt-Username-or-Password-stored-in-database-in-ASPNet-using-C-and-VBNet.aspx
-        // by Mudassar Ahmed Khan, Oct 18 2013 
+        // taken from http://www.aspsnippets.com/Articles/Encrypt-and-Decrypt-Username-or-Password-stored-in-database-in-ASPNet-using-C-and-VBNet.aspx by Mudassar Ahmed Khan, Oct 18 2013  
+        /// <summary>
+        /// Encrypt text using AES.
+        /// </summary>
+        /// <param name="clearText">Text to encrypt.</param>
+        /// <returns>Encrypted text.</returns>
         private string Encrypt(string clearText)
         {
             string EncryptionKey = "MAKV2SPBNI99212";
@@ -691,6 +697,11 @@ namespace LoL_Auto_Login
             return clearText;
         }
 
+        /// <summary>
+        /// Decrypt AES encoded text.
+        /// </summary>
+        /// <param name="cipherText">Encrypted text.</param>
+        /// <returns>Decrypted text.</returns>
         private string Decrypt(string cipherText)
         {
             string EncryptionKey = "MAKV2SPBNI99212";
