@@ -1,21 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using System.Globalization;
 using System.Threading;
 using System.IO;
 using System.Security.Cryptography;
-using LoLAutoLogin;
 
-namespace LoL_Auto_Login
+namespace LoLAutoLogin
 {
     public partial class LoLAutoLogin : Form
     {
@@ -294,8 +288,8 @@ namespace LoL_Auto_Login
 
             IntPtr patcherHwnd = IntPtr.Zero;
 
-            // search for the patcher window for 15 seconds
-            while (patchersw.Elapsed.Seconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800)) == IntPtr.Zero)
+            // search for the patcher window for 30 seconds
+            while (patchersw.Elapsed.TotalSeconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800)) == IntPtr.Zero)
             {
                 Thread.Sleep(500);
             }
@@ -313,45 +307,35 @@ namespace LoL_Auto_Login
                 patchersw.Reset();
                 patchersw.Start();
 
-                Log.Info("Waiting 15 seconds for Launch button to enable...");
-
-                // check if the "Launch" button is there and can be clicked
-                // launch button colors (it changes for some reason):
-                //      english:    [A=255, R=199, G=135, B=12]
-                //      french:     [A=255, R=201, G=137, B=13]
-
+                Log.Info("Waiting 30 seconds for Launch button to enable...");
+                
                 bool clicked = false;
 
-                while(patchersw.Elapsed.Seconds < 15 && !clicked)
-                {
+                // check if the "Launch" button is there and can be clicked
+                while (patchersw.Elapsed.TotalSeconds < 30 && !clicked)
+                {              
                     // get patcher image
                     Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
-                    // check if the launch button is enabled (currently only works with English and French patchers)
-                    if (Pixels.LaunchButtonEn.Compare(patcherImage) || Pixels.LaunchButtonFr.Compare(patcherImage))
+                    // check if the launch button is enabled
+                    if(Pixels.LaunchButton.Compare(patcherImage))
                     {
-                        // TODO: nested loops are probably a bad idea
-                        while (patchersw.Elapsed.Seconds < 15 && !clicked)
-                        {
-                            GetWindowRect(patcherHwnd, out patcherRect);
-                            SetForegroundWindow(patcherHwnd);
 
-                            if(Pixels.LaunchButtonEn.Compare(patcherImage) || Pixels.LaunchButtonFr.Compare(patcherImage))
-                            {
-                                Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
+                        GetWindowRect(patcherHwnd, out patcherRect);
+                        SetForegroundWindow(patcherHwnd);
 
-                                mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                                Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
-                                mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                                mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
 
-                                EnterPassword();
+                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
+                        mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        
+                        clicked = true;
 
-                                clicked = true;
+                        patchersw.Stop();
 
-                                patchersw.Stop();
-                            }
-                        }
+                        EnterPassword();
                     }
 
                     // dispose of image
@@ -426,21 +410,21 @@ namespace LoL_Auto_Login
 
                 Bitmap clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
-                Color c = new Color();
-                while (sw.Elapsed.Seconds < 15)
+                bool found = false;
+
+                while (sw.Elapsed.Seconds < 15 && !found)
                 {
                     Log.Verbose("[Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
 
                     GetWindowRect(hwnd, out rect);
 
                     clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
-                    c = clientImage.GetPixel((int)(rect.Width * 0.192), (int)(rect.Height * 0.480));
 
-                    Log.Verbose(c.ToString());
-
-                    if ((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243))
+                    if (Pixels.PasswordBox.Compare(clientImage))
                     {
-                        break;
+
+                        found = true;
+
                     }
 
                     clientImage.Dispose();
@@ -451,7 +435,7 @@ namespace LoL_Auto_Login
                 }
 
                 // check if password box was found
-                if ((c.R >= 242 && c.R <= 243) && (c.G >= 242 && c.G <= 243) && (c.B >= 242 && c.B <= 243))
+                if (found)
                 {
                     // log information
                     Log.Info("Found password box after " + sw.ElapsedMilliseconds + " ms. Reading & decrypting password from file...");

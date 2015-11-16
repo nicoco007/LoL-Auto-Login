@@ -1,4 +1,4 @@
-﻿namespace LoL_Auto_Login
+﻿namespace LoLAutoLogin
 {
     partial class LoLAutoLogin
     {
