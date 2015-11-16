@@ -17,18 +17,18 @@ namespace LoLAutoLogin
         // write a message using the INFO tag
         public static void Verbose(string message)
         {
-            //if (Environment.GetCommandLineArgs().Contains("-v") || Environment.GetCommandLineArgs().Contains("--verbose") || Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
-            //{
+            if (Environment.GetCommandLineArgs().Contains("-v") || Environment.GetCommandLineArgs().Contains("--verbose") || Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
+            {
                 Write(String.Format("{0:G} [VERBOSE] {1}", DateTime.Now, message));
-            //}
+            }
         }
         
         public static void Debug(string message)
         {
-            //if(Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
-            //{
+            if(Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug"))
+            {
                 Write(String.Format("{0:G} [DEBUG] {1}", DateTime.Now, message));
-            //}
+            }
         }
 
         // write a message using the INFO tag
