@@ -3,166 +3,19 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Security.Cryptography;
+using WindowsInput;
+using WindowsInput.Native;
+
+// TODO: fix sloppy code
 
 namespace LoLAutoLogin
 {
     public partial class LoLAutoLogin : Form
     {
-        // P/Invoke Methods
-        #region pinvoke methods
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static extern int GetWindowText(System.IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
-        [DllImport("kernel32.dll")]
-        static extern uint GetLastError();
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("gdi32.dll")]
-        static extern int GetPixel(IntPtr hdc, int nXPos, int nYPos);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr GetDC(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
-        
-        [Flags]
-        public enum MouseEventFlags : uint
-        {
-            LEFTDOWN = 0x00000002,
-            LEFTUP = 0x00000004,
-            MIDDLEDOWN = 0x00000020,
-            MIDDLEUP = 0x00000040,
-            MOVE = 0x00000001,
-            ABSOLUTE = 0x00008000,
-            RIGHTDOWN = 0x00000008,
-            RIGHTUP = 0x00000010,
-            WHEEL = 0x00000800,
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RECT
-        {
-            public int Left, Top, Right, Bottom;
-
-            public RECT(int left, int top, int right, int bottom)
-            {
-                Left = left;
-                Top = top;
-                Right = right;
-                Bottom = bottom;
-            }
-
-            public RECT(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
-
-            public int X
-            {
-                get { return Left; }
-                set { Right -= (Left - value); Left = value; }
-            }
-
-            public int Y
-            {
-                get { return Top; }
-                set { Bottom -= (Top - value); Top = value; }
-            }
-
-            public int Height
-            {
-                get { return Bottom - Top; }
-                set { Bottom = value + Top; }
-            }
-
-            public int Width
-            {
-                get { return Right - Left; }
-                set { Right = value + Left; }
-            }
-
-            public System.Drawing.Point Location
-            {
-                get { return new System.Drawing.Point(Left, Top); }
-                set { X = value.X; Y = value.Y; }
-            }
-
-            public System.Drawing.Size Size
-            {
-                get { return new System.Drawing.Size(Width, Height); }
-                set { Width = value.Width; Height = value.Height; }
-            }
-
-            public static implicit operator System.Drawing.Rectangle(RECT r)
-            {
-                return new System.Drawing.Rectangle(r.Left, r.Top, r.Width, r.Height);
-            }
-
-            public static implicit operator RECT(System.Drawing.Rectangle r)
-            {
-                return new RECT(r);
-            }
-
-            public static bool operator ==(RECT r1, RECT r2)
-            {
-                return r1.Equals(r2);
-            }
-
-            public static bool operator !=(RECT r1, RECT r2)
-            {
-                return !r1.Equals(r2);
-            }
-
-            public bool Equals(RECT r)
-            {
-                return r.Left == Left && r.Top == Top && r.Right == Right && r.Bottom == Bottom;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (obj is RECT)
-                    return Equals((RECT)obj);
-                else if (obj is System.Drawing.Rectangle)
-                    return Equals(new RECT((System.Drawing.Rectangle)obj));
-                return false;
-            }
-
-            public override int GetHashCode()
-            {
-                return ((System.Drawing.Rectangle)this).GetHashCode();
-            }
-
-            public override string ToString()
-            {
-                return string.Format(System.Globalization.CultureInfo.CurrentCulture, "{{Left={0},Top={1},Right={2},Bottom={3}}}", Left, Top, Right, Bottom);
-            }
-        }
-        #endregion
-
         public LoLAutoLogin()
         {
             InitializeComponent();
@@ -299,7 +152,7 @@ namespace LoLAutoLogin
             {
                 // get patcher rectangle (window pos and size)
                 RECT patcherRect;
-                GetWindowRect(patcherHwnd, out patcherRect);
+                NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
 
                 Log.Info("Found patcher after " + patchersw.ElapsedMilliseconds + " ms [Handle=" + patcherHwnd.ToString() + ", Rectangle=" + patcherRect.ToString() + "]");
 
@@ -320,16 +173,16 @@ namespace LoLAutoLogin
                     // check if the launch button is enabled
                     if(Pixels.LaunchButton.Compare(patcherImage))
                     {
-
-                        GetWindowRect(patcherHwnd, out patcherRect);
-                        SetForegroundWindow(patcherHwnd);
+                        
+                        NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
+                        NativeMethods.SetForegroundWindow(patcherHwnd);
 
                         Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
 
-                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        InputSimulator sim = new InputSimulator();
+                        sim.Mouse.LeftButtonUp();
                         Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
-                        mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        sim.Mouse.LeftButtonClick();
                         
                         clicked = true;
 
@@ -385,7 +238,7 @@ namespace LoLAutoLogin
             Log.Info("Waiting 15 seconds for League of Legends client...");
 
             // try to find league of legends client for 30 seconds
-            while (sw.Elapsed.Seconds < 15 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) == IntPtr.Zero)
+            while (sw.Elapsed.Seconds < 30 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) == IntPtr.Zero)
             {
                 Thread.Sleep(200);
             }
@@ -398,7 +251,7 @@ namespace LoLAutoLogin
                 
                 // get client window rectangle
                 RECT rect;
-                GetWindowRect(hwnd, out rect);
+                NativeMethods.GetWindowRect(hwnd, out rect);
 
                 // log information found
                 Log.Info("Found patcher after " + sw.ElapsedMilliseconds + " ms [Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
@@ -412,11 +265,11 @@ namespace LoLAutoLogin
 
                 bool found = false;
 
-                while (sw.Elapsed.Seconds < 15 && !found)
+                while (sw.Elapsed.Seconds < 30 && !found)
                 {
                     Log.Verbose("[Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
 
-                    GetWindowRect(hwnd, out rect);
+                    NativeMethods.GetWindowRect(hwnd, out rect);
 
                     clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
@@ -440,7 +293,7 @@ namespace LoLAutoLogin
                     // log information
                     Log.Info("Found password box after " + sw.ElapsedMilliseconds + " ms. Reading & decrypting password from file...");
 
-                    SetForegroundWindow(hwnd);
+                    NativeMethods.SetForegroundWindow(hwnd);
 
                     // create password string
                     string password;
@@ -476,35 +329,41 @@ namespace LoLAutoLogin
                     Log.Info("Entering password...");
 
                     int i = 0;
+                    
+                    InputSimulator sim = new InputSimulator();
 
                     // enter password one character at a time
-                    while(i <= passArray.Length && sw.Elapsed.Seconds < 30)
+                    while (i <= passArray.Length && sw.Elapsed.Seconds < 30)
                     {
                         // get window rectangle, in case it is resized or moved
-                        GetWindowRect(hwnd, out rect);
+                        NativeMethods.GetWindowRect(hwnd, out rect);
                         Log.Verbose("Client rectangle=" + rect.ToString());
 
                         // move cursor above password box
-                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                        SetForegroundWindow(hwnd);
+                        sim.Mouse.LeftButtonUp();
+                        NativeMethods.SetForegroundWindow(hwnd);
                         Cursor.Position = new Point(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
 
                         // focus window & click on password box
-                        mouse_event((uint)MouseEventFlags.LEFTDOWN, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
-                        mouse_event((uint)MouseEventFlags.LEFTUP, (uint)Cursor.Position.X, (uint)Cursor.Position.Y, 0, 0);
+                        sim.Mouse.LeftButtonClick();
 
-                        if(GetForegroundWindow() == hwnd)
+                        if (NativeMethods.GetForegroundWindow() == hwnd)
                         {
                             // enter password character, press enter if complete
                             if (i != passArray.Length)
                                 this.Invoke(new Action(() =>
                                 {
-                                    SendKeys.Send("{END}" + passArray[i].ToString());
+                                    
+                                    sim.Keyboard.KeyPress(VirtualKeyCode.END);
+                                    sim.Keyboard.TextEntry(passArray[i].ToString());
+
                                 }));
                             else
                                 this.Invoke(new Action(() =>
                                 {
-                                    SendKeys.Send("~");
+
+                                    sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
                                 }));
 
                             i++;
@@ -594,12 +453,12 @@ namespace LoLAutoLogin
         private IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
-            Log.Verbose(String.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
+            Log.Verbose(string.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
             
             // try to get window handle and rectangle using specified arguments
-            IntPtr hwnd = FindWindow(lpClassName, lpWindowName);
+            IntPtr hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
             RECT rect = new RECT();
-            GetWindowRect(hwnd, out rect);
+            NativeMethods.GetWindowRect(hwnd, out rect);
 
             // check if handle is nothing
             if (hwnd == IntPtr.Zero)
@@ -611,7 +470,7 @@ namespace LoLAutoLogin
             }
 
             // log what we found
-            Log.Verbose(String.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
+            Log.Verbose(string.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
 
             if (rect.Size.Width >= width && rect.Size.Height >= height)
             {
@@ -621,12 +480,12 @@ namespace LoLAutoLogin
             }
             else
             {
-                while(FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
+                while(NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
                 {
-                    hwnd = FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
-                    GetWindowRect(hwnd, out rect);
+                    hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
+                    NativeMethods.GetWindowRect(hwnd, out rect);
 
-                    Log.Verbose(String.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
+                    Log.Verbose(string.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
 
                     if (rect.Size.Width >= width && rect.Size.Height >= height)
                     {
@@ -653,7 +512,9 @@ namespace LoLAutoLogin
             }
         }
 
-        // taken from http://www.aspsnippets.com/Articles/Encrypt-and-Decrypt-Username-or-Password-stored-in-database-in-ASPNet-using-C-and-VBNet.aspx by Mudassar Ahmed Khan, Oct 18 2013  
+        // taken from http://www.aspsnippets.com/Articles/Encrypt-and-Decrypt-Username-or-Password-stored-in-database-in-ASPNet-using-C-and-VBNet.aspx
+        // by Mudassar Ahmed Khan, Oct 18 2013
+
         /// <summary>
         /// Encrypt text using AES.
         /// </summary>
@@ -673,7 +534,6 @@ namespace LoLAutoLogin
                     using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
                     {
                         cs.Write(clearBytes, 0, clearBytes.Length);
-                        cs.Close();
                     }
                     clearText = Convert.ToBase64String(ms.ToArray());
                 }
@@ -700,7 +560,6 @@ namespace LoLAutoLogin
                     using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cs.Write(cipherBytes, 0, cipherBytes.Length);
-                        cs.Close();
                     }
                     cipherText = Encoding.Unicode.GetString(ms.ToArray());
                 }
