@@ -87,7 +87,7 @@ namespace LoLAutoLogin
                     KillProcessesByName("LoLLauncher");
                     KillProcessesByName("LoLPatcher");
 
-                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800) != IntPtr.Zero)
+                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero)
                     {
                         Thread.Sleep(500);
                     }
@@ -142,7 +142,7 @@ namespace LoLAutoLogin
             IntPtr patcherHwnd = IntPtr.Zero;
 
             // search for the patcher window for 30 seconds
-            while (patchersw.Elapsed.TotalSeconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 1280, 800)) == IntPtr.Zero)
+            while (patchersw.Elapsed.TotalSeconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero)
             {
                 Thread.Sleep(500);
             }
@@ -181,7 +181,7 @@ namespace LoLAutoLogin
 
                         InputSimulator sim = new InputSimulator();
                         sim.Mouse.LeftButtonUp();
-                        Cursor.Position = new Point(patcherRect.Left + 640, patcherRect.Top + 20);
+                        Cursor.Position = new Point(patcherRect.Left + (int)(patcherRect.Width * 0.5), patcherRect.Top + (int)(patcherRect.Height * 0.025));
                         sim.Mouse.LeftButtonClick();
                         
                         clicked = true;
@@ -204,7 +204,7 @@ namespace LoLAutoLogin
                 if(patchersw.Elapsed.Seconds >= 15)
                 {
                     // print error to log
-                    Log.Error("Launch button failed to enable after 15 seconds. Aborting!");
+                    Log.Error("Launch button failed to enable after 30 seconds. Aborting!");
 
                     // stop stopwatch
                     patchersw.Stop();
@@ -217,7 +217,7 @@ namespace LoLAutoLogin
             else
             {
                 // print error to log
-                Log.Error("Patcher not found after 15 seconds. Aborting!");
+                Log.Error("Patcher not found after 30 seconds. Aborting!");
 
                 // stop stopwatch
                 patchersw.Stop();
@@ -238,16 +238,16 @@ namespace LoLAutoLogin
             Log.Info("Waiting 15 seconds for League of Legends client...");
 
             // try to find league of legends client for 30 seconds
-            while (sw.Elapsed.Seconds < 30 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) == IntPtr.Zero)
+            while (sw.Elapsed.Seconds < 30 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero)
             {
                 Thread.Sleep(200);
             }
 
             // check if client was found
-            if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640) != IntPtr.Zero)
+            if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) != IntPtr.Zero)
             {
                 // get client window handle
-                IntPtr hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 1024, 640);
+                IntPtr hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
                 
                 // get client window rectangle
                 RECT rect;
@@ -343,7 +343,7 @@ namespace LoLAutoLogin
                         sim.Mouse.LeftButtonUp();
                         NativeMethods.SetForegroundWindow(hwnd);
                         Cursor.Position = new Point(rect.Left + (int)(rect.Width * 0.192), rect.Top + (int)(rect.Height * 0.480));
-
+                        
                         // focus window & click on password box
                         sim.Mouse.LeftButtonClick();
 
