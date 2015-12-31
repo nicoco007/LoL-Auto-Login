@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
-using System.Security.Cryptography;
 using WindowsInput;
 using WindowsInput.Native;
 
@@ -14,8 +11,10 @@ using WindowsInput.Native;
 
 namespace LoLAutoLogin
 {
+
     public partial class LoLAutoLogin : Form
     {
+
         public LoLAutoLogin()
         {
             InitializeComponent();
@@ -52,34 +51,30 @@ namespace LoLAutoLogin
             }
             
             // check if password file exists
-            if(File.Exists("password"))
-            {
-                BeginOperation();
-            }
-            else
-            {
-                Log.Info("Password file not found, prompting user to enter password...");
-            }
+            if(File.Exists("password")) CheckLeagueRunning();
+            else Log.Info("Password file not found, prompting user to enter password...");
+
         }
 
-        private void BeginOperation()
+        private void CheckLeagueRunning()
         {
+            
             // hide this window
-            this.Opacity = 0.0F;
             this.Hide();
-            this.ShowInTaskbar = false;
 
             // start launch process
             Log.Info("Password file found!");
 
             // check if league of legends is already running
-            if (Process.GetProcessesByName("LolClient").Count() > 0 || Process.GetProcessesByName("LoLLauncher").Count() > 0 || Process.GetProcessesByName("LoLPatcher").Count() > 0)
+            if (Process.GetProcessesByName("LolClient").Length > 0 || Process.GetProcessesByName("LoLLauncher").Length > 0 || Process.GetProcessesByName("LoLPatcher").Length > 0)
             {
+
                 Log.Warn("League of Legends is already running!");
 
                 // prompt user to kill current league of legends process
                 if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
                 {
+
                     Log.Info("Attempting to kill all League of Legends instances...");
 
                     // kill all league of legends processes
@@ -87,28 +82,26 @@ namespace LoLAutoLogin
                     KillProcessesByName("LoLLauncher");
                     KillProcessesByName("LoLPatcher");
 
-                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero)
-                    {
-                        Thread.Sleep(500);
-                    }
+                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero) Thread.Sleep(500);
+
                 }
                 else
                 {
+                    
                     // exit if user says no
                     Application.Exit();
                     return;
+
                 }
+
             }
 
             Log.Debug("Attempting to start thread...");
 
             Thread t = new Thread(PatcherLaunch);
+            t.IsBackground = true;
             t.Start();
 
-            this.FormClosing += (s, args) =>
-            {
-                t.Abort();
-            };
         }
 
         private void PatcherLaunch()
@@ -124,7 +117,7 @@ namespace LoLAutoLogin
                 Log.Fatal("Could not start League of Legends!");
                 Log.PrintStackTrace(ex.StackTrace);
                 this.Invoke(new Action(() => {
-                    notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
+                    notifyIcon.ShowBalloonTip(2500, "LoL Auto Login was unable to start League of Legends. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
                 }));
                 
                 // exit application
@@ -273,12 +266,7 @@ namespace LoLAutoLogin
 
                     clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
-                    if (Pixels.PasswordBox.Compare(clientImage))
-                    {
-
-                        found = true;
-
-                    }
+                    if (Pixels.PasswordBox.Compare(clientImage)) found = true;
 
                     clientImage.Dispose();
 
@@ -301,9 +289,17 @@ namespace LoLAutoLogin
                     // try to read password from file
                     try
                     {
-                        // read and decrypt password
-                        using (StreamReader sr = new StreamReader("password"))
-                            password = Decrypt(sr.ReadToEnd());
+
+                        using (FileStream file = new FileStream("password", FileMode.Open, FileAccess.Read))
+                        {
+
+                            byte[] buffer = new byte[file.Length];
+                            file.Read(buffer, 0, (int)file.Length);
+
+                            password = Encryption.Decrypt(buffer);
+
+                        }
+
                     }
                     catch(Exception ex)
                     {
@@ -420,9 +416,16 @@ namespace LoLAutoLogin
             // try to write password to file
             try
             {
-                // encrypt and write password to file
-                using (StreamWriter sw = new StreamWriter("password"))
-                    sw.Write(Encrypt(passTextBox.Text));
+
+                using (FileStream file = new FileStream("password", FileMode.OpenOrCreate, FileAccess.Write))
+                {
+
+                    byte[] data = Encryption.Encrypt(passTextBox.Text);
+
+                    file.Write(data, 0, data.Length);
+
+                }
+
             }
             catch (Exception ex)
             {
@@ -439,7 +442,7 @@ namespace LoLAutoLogin
             this.Hide();
 
             // start launch process
-            BeginOperation();
+            CheckLeagueRunning();
         }
 
         /// <summary>
@@ -505,66 +508,22 @@ namespace LoLAutoLogin
         /// <param name="pName">Name of process(es) to kill</param>
         public void KillProcessesByName(string pName)
         {
+
             Log.Verbose("Killing all " + pName + " processes.");
-            foreach(Process p in Process.GetProcessesByName(pName))
-            {
-                p.Kill();
-            }
+
+            foreach (Process p in Process.GetProcessesByName(pName)) p.Kill();
+
         }
 
-        // taken from http://www.aspsnippets.com/Articles/Encrypt-and-Decrypt-Username-or-Password-stored-in-database-in-ASPNet-using-C-and-VBNet.aspx
-        // by Mudassar Ahmed Khan, Oct 18 2013
-
-        /// <summary>
-        /// Encrypt text using AES.
-        /// </summary>
-        /// <param name="clearText">Text to encrypt.</param>
-        /// <returns>Encrypted text.</returns>
-        private string Encrypt(string clearText)
+        public new void Hide()
         {
-            string EncryptionKey = "MAKV2SPBNI99212";
-            byte[] clearBytes = Encoding.Unicode.GetBytes(clearText);
-            using (Aes encryptor = Aes.Create())
-            {
-                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
-                encryptor.Key = pdb.GetBytes(32);
-                encryptor.IV = pdb.GetBytes(16);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(clearBytes, 0, clearBytes.Length);
-                    }
-                    clearText = Convert.ToBase64String(ms.ToArray());
-                }
-            }
-            return clearText;
+
+            this.Opacity = 0.0f;
+            this.ShowInTaskbar = false;
+            base.Hide();
+
         }
 
-        /// <summary>
-        /// Decrypt AES encoded text.
-        /// </summary>
-        /// <param name="cipherText">Encrypted text.</param>
-        /// <returns>Decrypted text.</returns>
-        private string Decrypt(string cipherText)
-        {
-            string EncryptionKey = "MAKV2SPBNI99212";
-            byte[] cipherBytes = Convert.FromBase64String(cipherText);
-            using (Aes encryptor = Aes.Create())
-            {
-                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
-                encryptor.Key = pdb.GetBytes(32);
-                encryptor.IV = pdb.GetBytes(16);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(cipherBytes, 0, cipherBytes.Length);
-                    }
-                    cipherText = Encoding.Unicode.GetString(ms.ToArray());
-                }
-            }
-            return cipherText;
-        }
     }
+
 }
