@@ -51,7 +51,7 @@ namespace LoLAutoLogin
 
         }
 
-        public bool Compare(Bitmap bmp)
+        public bool Match(Bitmap bmp)
         {
 
             Color pixelColor;

@@ -10,44 +10,44 @@ namespace LoLAutoLogin
         public static string logFile = string.Format(@"{0:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log", DateTime.Now);
 
         // write a message using the INFO tag
-        public static void Verbose(string message)
+        public static void Verbose(string message, params object[] arg)
         {
-            if (Environment.GetCommandLineArgs().Contains("-v"))
+            if (Environment.GetCommandLineArgs().Contains("--verbose"))
             {
-                Write(string.Format("{0:G} [VERBOSE] {1}", DateTime.Now, message));
+                Write(string.Format("{0:G} [VERBOSE] {1}", DateTime.Now, message), arg);
             }
         }
         
-        public static void Debug(string message)
+        public static void Debug(string message, params object[] arg)
         {
-            if(Environment.GetCommandLineArgs().Contains("-d") || Environment.GetCommandLineArgs().Contains("--debug") || Environment.GetCommandLineArgs().Contains("-v") || Environment.GetCommandLineArgs().Contains("--verbose"))
+            if(Environment.GetCommandLineArgs().Contains("--debug") || Environment.GetCommandLineArgs().Contains("--verbose"))
             {
-                Write(string.Format("{0:G} [DEBUG] {1}", DateTime.Now, message));
+                Write(string.Format("{0:G} [DEBUG] {1}", DateTime.Now, message), arg);
             }
         }
 
         // write a message using the INFO tag
-        public static void Info(string message)
+        public static void Info(string message, params object[] arg)
         {
-            Write(string.Format("{0:G} [INFO] {1}", DateTime.Now, message));
+            Write(string.Format("{0:G} [INFO] {1}", DateTime.Now, message), arg);
         }
 
         // write a message using the WARN tag
-        public static void Warn(string message)
+        public static void Warn(string message, params object[] arg)
         {
-            Write(string.Format("{0:G} [WARN] {1}", DateTime.Now, message));
+            Write(string.Format("{0:G} [WARN] {1}", DateTime.Now, message), arg);
         }
 
         // write a message using the ERROR tag
-        public static void Error(string message)
+        public static void Error(string message, params object[] arg)
         {
-            Write(string.Format("{0:G} [ERROR] {1}", DateTime.Now, message));
+            Write(string.Format("{0:G} [ERROR] {1}", DateTime.Now, message), arg);
         }
 
         // write a message using the FATAL tag
-        public static void Fatal(string message)
+        public static void Fatal(string message, params object[] arg)
         {
-            Write(string.Format("{0:G} [FATAL] {1}", DateTime.Now, message));
+            Write(string.Format("{0:G} [FATAL] {1}", DateTime.Now, message), arg);
         }
 
         // print a stacktrace string using the FATAL tag
@@ -60,9 +60,9 @@ namespace LoLAutoLogin
         }
 
         // write whatever to the debug log and the log file
-        public static void Write(string text)
+        public static void Write(string text, params object[] arg)
         {
-            Console.WriteLine(text);
+            if (arg.Length > 0) Console.WriteLine(text, arg); else Console.WriteLine(text);
 
             try
             {
@@ -70,12 +70,12 @@ namespace LoLAutoLogin
                 {
                     Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs");
                     using (StreamWriter sw = new StreamWriter(Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs\" + logFile, true))
-                        sw.WriteLine(text);
+                        if (arg.Length > 0) sw.WriteLine(text, arg); else sw.WriteLine(text);
                 }
                 else
                 {
                     using (StreamWriter sw = new StreamWriter(Directory.GetCurrentDirectory() + @"\lolautologin.log", true))
-                        sw.WriteLine(text);
+                        if (arg.Length > 0) sw.WriteLine(text, arg); else sw.WriteLine(text);
                 }
             }
             catch(Exception ex)

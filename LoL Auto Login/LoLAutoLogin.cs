@@ -8,6 +8,7 @@ using WindowsInput;
 using WindowsInput.Native;
 
 // TODO: fix sloppy code
+// TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly
 
 namespace LoLAutoLogin
 {
@@ -15,28 +16,38 @@ namespace LoLAutoLogin
     public partial class LoLAutoLogin : Form
     {
 
+        const int patcherTimeout = 30;
+        const int launchTimeout = 30;
+        const int clientTimeout = 30;
+        const int passwordTimeout = 30;
+
         public LoLAutoLogin()
         {
+
             InitializeComponent();
 
             // create notification icon context menu (so user can exit if program hangs)
-            ContextMenu cm = new ContextMenu();
-            MenuItem mi = new MenuItem("&Exit", (sender, e) => Application.Exit());
-            cm.MenuItems.Add(mi);
-            notifyIcon.ContextMenu = cm;
+            ContextMenu menu = new ContextMenu();
+            MenuItem item = new MenuItem("&Exit", (sender, e) => Application.Exit());
+            menu.MenuItems.Add(item);
+            notifyIcon.ContextMenu = menu;
 
             // set accept button (will be activated when 'enter' key is pressed)
             this.AcceptButton = saveButton;
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
             Log.Info("Started LoL Auto Login");
 
             // check if program is in same directory as league of legends
             if(!File.Exists("lol.launcher.exe"))
             {
+
                 Log.Fatal("\"lol.launcher.exe\" not found!");
+                
                 // show error message
                 MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
@@ -48,6 +59,7 @@ namespace LoLAutoLogin
 
                 // return so no other commands are executed
                 return;
+
             }
             
             // check if password file exists
@@ -106,13 +118,17 @@ namespace LoLAutoLogin
 
         private void PatcherLaunch()
         {
+            
             // try launching league of legends
             try
             {
+
                 Process.Start("lol.launcher.exe");
+
             }
             catch (Exception ex)
             {
+                
                 // print error to log and show balloon tip to inform user of fatal error
                 Log.Fatal("Could not start League of Legends!");
                 Log.PrintStackTrace(ex.StackTrace);
@@ -123,10 +139,11 @@ namespace LoLAutoLogin
                 // exit application
                 Application.Exit();
                 return;
+
             }
 
             // log
-            Log.Info("Waiting 30 seconds for League of Legends Patcher...");
+            Log.Info("Waiting {0} seconds for League of Legends Patcher...", patcherTimeout);
 
             // create stopwatch for loading timeout
             Stopwatch patchersw = new Stopwatch();
@@ -135,43 +152,44 @@ namespace LoLAutoLogin
             IntPtr patcherHwnd = IntPtr.Zero;
 
             // search for the patcher window for 30 seconds
-            while (patchersw.Elapsed.TotalSeconds < 30 && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero)
-            {
-                Thread.Sleep(500);
-            }
+            while (patchersw.Elapsed.TotalSeconds < patcherTimeout && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero) Thread.Sleep(500);
 
             // check if patcher window was found
             if (patcherHwnd != IntPtr.Zero)
             {
+                
                 // get patcher rectangle (window pos and size)
                 RECT patcherRect;
                 NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
 
-                Log.Info("Found patcher after " + patchersw.ElapsedMilliseconds + " ms [Handle=" + patcherHwnd.ToString() + ", Rectangle=" + patcherRect.ToString() + "]");
+                Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={2}}}", patchersw.Elapsed.TotalMilliseconds, patcherHwnd, patcherRect);
 
                 // reset stopwatch so it restarts for launch button search
                 patchersw.Reset();
                 patchersw.Start();
 
-                Log.Info("Waiting 30 seconds for Launch button to enable...");
+                Log.Info("Waiting {0} seconds for Launch button to enable...", launchTimeout);
                 
                 bool clicked = false;
 
                 // check if the "Launch" button is there and can be clicked
                 while (patchersw.Elapsed.TotalSeconds < 30 && !clicked)
                 {              
+                    
                     // get patcher image
                     Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
                     // check if the launch button is enabled
-                    if(Pixels.LaunchButton.Compare(patcherImage))
+                    if(Pixels.LaunchButton.Match(patcherImage))
                     {
                         
+                        // get patcher rectangle and make patcher go to top
                         NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
                         NativeMethods.SetForegroundWindow(patcherHwnd);
 
-                        Log.Info("Found Launch button after " + patchersw.ElapsedMilliseconds + " ms. Initiating click.");
+                        Log.Info("Found Launch button after {0} ms. Initiating click.", patchersw.Elapsed.TotalMilliseconds);
 
+                        // use new input simulator instance to click on "Launch" button.
                         InputSimulator sim = new InputSimulator();
                         sim.Mouse.LeftButtonUp();
                         Cursor.Position = new Point(patcherRect.Left + (int)(patcherRect.Width * 0.5), patcherRect.Top + (int)(patcherRect.Height * 0.025));
@@ -182,6 +200,7 @@ namespace LoLAutoLogin
                         patchersw.Stop();
 
                         EnterPassword();
+
                     }
 
                     // dispose of image
@@ -196,8 +215,9 @@ namespace LoLAutoLogin
 
                 if(patchersw.Elapsed.Seconds >= 15)
                 {
+                    
                     // print error to log
-                    Log.Error("Launch button failed to enable after 30 seconds. Aborting!");
+                    Log.Error("Launch button failed to enable after {0} seconds. Aborting!", launchTimeout);
 
                     // stop stopwatch
                     patchersw.Stop();
@@ -205,12 +225,15 @@ namespace LoLAutoLogin
                     // exit application
                     Application.Exit();
                     return;
+
                 }
+
             }
             else
             {
+                
                 // print error to log
-                Log.Error("Patcher not found after 30 seconds. Aborting!");
+                Log.Error("Patcher not found after {0} seconds. Aborting!", patcherTimeout);
 
                 // stop stopwatch
                 patchersw.Stop();
@@ -218,23 +241,23 @@ namespace LoLAutoLogin
                 // exit application
                 Application.Exit();
                 return;
+
             }
+
         }
 
         private void EnterPassword()
         {
+            
             // create new stopwatch for client searching timeout
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
             // log
-            Log.Info("Waiting 15 seconds for League of Legends client...");
+            Log.Info("Waiting {0} seconds for League of Legends client...", clientTimeout);
 
             // try to find league of legends client for 30 seconds
-            while (sw.Elapsed.Seconds < 30 && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero)
-            {
-                Thread.Sleep(200);
-            }
+            while (sw.Elapsed.Seconds < clientTimeout && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero) Thread.Sleep(200);
 
             // check if client was found
             if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) != IntPtr.Zero)
@@ -247,7 +270,7 @@ namespace LoLAutoLogin
                 NativeMethods.GetWindowRect(hwnd, out rect);
 
                 // log information found
-                Log.Info("Found patcher after " + sw.ElapsedMilliseconds + " ms [Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
+                Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={{Coordinates={2}, Size={3}}}}}", sw.Elapsed.TotalMilliseconds, hwnd, rect, rect.Size);
                 Log.Info("Waiting 15 seconds for login form to appear...");
 
                 // reset stopwatch for form loading
@@ -258,28 +281,30 @@ namespace LoLAutoLogin
 
                 bool found = false;
 
-                while (sw.Elapsed.Seconds < 30 && !found)
+                while (sw.Elapsed.Seconds < passwordTimeout && !found)
                 {
-                    Log.Verbose("[Handle=" + hwnd.ToString() + ", Rectangle=" + rect.ToString() + "," + rect.Size.ToString() + "]");
+
+                    Log.Verbose("{{Handle={0}, Rectangle={{Coordinates={1}, Size={2}}}}}", hwnd, rect, rect.Size);
 
                     NativeMethods.GetWindowRect(hwnd, out rect);
 
                     clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
-                    if (Pixels.PasswordBox.Compare(clientImage)) found = true;
+                    found = Pixels.PasswordBox.Match(clientImage);
 
                     clientImage.Dispose();
 
                     GC.Collect();
 
                     Thread.Sleep(500);
+
                 }
 
                 // check if password box was found
                 if (found)
                 {
                     // log information
-                    Log.Info("Found password box after " + sw.ElapsedMilliseconds + " ms. Reading & decrypting password from file...");
+                    Log.Info("Found password box after {0} ms. Reading & decrypting password from file...", sw.Elapsed.TotalMilliseconds);
 
                     NativeMethods.SetForegroundWindow(hwnd);
 
@@ -347,20 +372,12 @@ namespace LoLAutoLogin
                         {
                             // enter password character, press enter if complete
                             if (i != passArray.Length)
-                                this.Invoke(new Action(() =>
-                                {
-                                    
-                                    sim.Keyboard.KeyPress(VirtualKeyCode.END);
-                                    sim.Keyboard.TextEntry(passArray[i].ToString());
-
-                                }));
+                            {
+                                sim.Keyboard.KeyPress(VirtualKeyCode.END);
+                                sim.Keyboard.TextEntry(passArray[i].ToString());
+                            }
                             else
-                                this.Invoke(new Action(() =>
-                                {
-
-                                    sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
-                                }));
+                                sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 
                             i++;
                         }
@@ -404,7 +421,7 @@ namespace LoLAutoLogin
         private void saveButton_Click(object sender, EventArgs e)
         {
             // check if a password was inputted
-            if (String.IsNullOrEmpty(passTextBox.Text))
+            if (string.IsNullOrEmpty(passTextBox.Text))
             {
                 MessageBox.Show(this, "You must enter a valid password!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
