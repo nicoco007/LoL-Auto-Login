@@ -94,6 +94,7 @@
     <Compile Include="MouseEventFlags.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Pixel.cs" />
+    <Compile Include="PixelCoord.cs" />
     <Compile Include="Pixels.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

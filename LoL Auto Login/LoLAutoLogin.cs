@@ -6,6 +6,8 @@ using System.Threading;
 using System.IO;
 using WindowsInput;
 using WindowsInput.Native;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 // TODO: fix sloppy code
 // TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly
@@ -40,7 +42,7 @@ namespace LoLAutoLogin
         private void Form1_Load(object sender, EventArgs e)
         {
 
-            Log.Info("Started LoL Auto Login");
+            Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
             // check if program is in same directory as league of legends
             if(!File.Exists("lol.launcher.exe"))
@@ -62,10 +64,31 @@ namespace LoLAutoLogin
 
             }
             
-            // check if password file exists
-            if(File.Exists("password")) CheckLeagueRunning();
-            else Log.Info("Password file not found, prompting user to enter password...");
+            if (File.Exists("password"))
+            {
+                
+                using (StreamReader reader = new StreamReader("password"))
+                {
 
+                    if (Regex.IsMatch(reader.ReadToEnd(), @"^[a-zA-Z0-9\+\/]*={0,3}$"))
+                    {
+                        
+                        Log.Info("Password is old format, prompting user to enter password again...");
+                        MessageBox.Show("Password encryption has been changed to DPAPI, a more secure encryption than the previously used AES. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed to DPAPI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    }
+                    else
+                    {
+
+                        CheckLeagueRunning();
+
+                    }
+
+                }
+
+            }
+            else Log.Info("Password file not found, prompting user to enter password...");
+            
         }
 
         private void CheckLeagueRunning()
@@ -99,7 +122,7 @@ namespace LoLAutoLogin
                 }
                 else
                 {
-                    
+
                     // exit if user says no
                     Application.Exit();
                     return;

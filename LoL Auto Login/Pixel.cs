@@ -7,47 +7,27 @@ namespace LoLAutoLogin
     class Pixel
     {
 
-        PointF Position { get; }
-        Color Color { get; }
+        PixelCoord X { get; }
+        PixelCoord Y { get; }
         Color FromColor { get; }
         Color ToColor { get; }
-        bool IsRange { get; }
-        bool IsRelativePoint { get; }
 
-        public Pixel(Point position, Color color)
+        public Pixel(PixelCoord x, PixelCoord y, Color color)
         {
 
-            this.Color = color;
-            this.Position = position;
-            this.IsRange = false;
+            this.FromColor = color;
+            this.X = x;
+            this.Y = y;
 
         }
 
-        public Pixel(Point position, Color fromColor, Color toColor)
+        public Pixel(PixelCoord x, PixelCoord y, Color fromColor, Color toColor)
         {
-
-            this.Position = position;
+            
+            this.X = x;
+            this.Y = y;
             this.FromColor = fromColor;
             this.ToColor = toColor;
-            this.IsRange = true;
-
-        }
-
-        public Pixel(PointF position, Color fromColor, Color toColor, bool isRelativePoint)
-        {
-
-            if(isRelativePoint && (position.X > 1 || position.X < 0 || position.Y > 1 || position.Y < 0))
-            {
-
-                throw new ArgumentException("Position must be between 0.0f and 1.0f if position is relative.");
-
-            }
-
-            this.Position = position;
-            this.FromColor = fromColor;
-            this.ToColor = toColor;
-            this.IsRange = true;
-            this.IsRelativePoint = isRelativePoint;
 
         }
 
@@ -56,17 +36,17 @@ namespace LoLAutoLogin
 
             Color pixelColor;
 
-            if (IsRelativePoint)
-                pixelColor = bmp.GetPixel((int)(this.Position.X * bmp.Width), (int)(this.Position.Y * bmp.Height));
-            else
-                pixelColor = bmp.GetPixel((int)this.Position.X, (int)this.Position.Y);
+            int pixelX = this.X.Relative ? (int)(this.X.Coordinate * bmp.Width) : (int)this.X.Coordinate;
+            int pixelY = this.Y.Relative ? (int)(this.Y.Coordinate * bmp.Height) : (int)this.Y.Coordinate;
+
+            pixelColor = bmp.GetPixel(pixelX, pixelY);
 
             Log.Verbose(pixelColor.ToString());
 
-            if (IsRange)
+            if (this.FromColor != this.ToColor)
                 return IsInRange(pixelColor.R, FromColor.R, ToColor.R) && IsInRange(pixelColor.G, FromColor.G, ToColor.G) && IsInRange(pixelColor.B, FromColor.B, ToColor.B);
             else
-                return pixelColor == this.Color;
+                return pixelColor == this.FromColor;
 
         }
 
