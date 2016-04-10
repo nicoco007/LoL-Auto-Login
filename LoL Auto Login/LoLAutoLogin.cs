@@ -251,10 +251,6 @@ namespace LoLAutoLogin
                     patchersw.Reset();
                     patchersw.Start();
 
-                    Console.WriteLine("waiting");
-
-                    Thread.Sleep(15000);
-
                     Log.Info("Waiting for Launch button to enable...");
 
                     bool clicked = false;
