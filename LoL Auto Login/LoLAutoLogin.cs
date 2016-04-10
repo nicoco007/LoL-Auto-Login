@@ -9,7 +9,7 @@ using WindowsInput.Native;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-// TODO: fix sloppy code
+// TODO: fix sloppy code (make more modular)
 // TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly
 
 namespace LoLAutoLogin
@@ -134,6 +134,13 @@ namespace LoLAutoLogin
             Log.Debug("Attempting to start thread...");
 
             Thread t = new Thread(PatcherLaunch);
+            this.FormClosing += (s, args) =>
+            {
+                if (t != null && t.IsAlive)
+                {
+                    t.Abort();
+                }
+            };
             t.IsBackground = true;
             t.Start();
 
