@@ -8,6 +8,7 @@ using WindowsInput;
 using WindowsInput.Native;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Text;
 
 // TODO: fix sloppy code (make more modular)
 // TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly
@@ -18,10 +19,10 @@ namespace LoLAutoLogin
     public partial class LoLAutoLogin : Form
     {
 
-        const int patcherTimeout = 30;
-        const int launchTimeout = 30;
-        const int clientTimeout = 30;
-        const int passwordTimeout = 30;
+        const int patcherTimeout = 30000;
+        const int launchTimeout = 30000;
+        const int clientTimeout = 30000;
+        const int passwordTimeout = 30000;
 
         public LoLAutoLogin()
         {
@@ -38,18 +39,33 @@ namespace LoLAutoLogin
             this.AcceptButton = saveButton;
 
         }
-
+        
         private void Form1_Load(object sender, EventArgs e)
         {
 
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
+            if(CheckLocation())
+            {
+
+                if(PasswordExists())
+                    RunPatcher();
+                else
+                    Log.Info("Password file not found, prompting user to enter password...");
+
+            }
+            
+        }
+
+        private bool CheckLocation()
+        {
+
             // check if program is in same directory as league of legends
-            if(!File.Exists("lol.launcher.exe"))
+            if (!File.Exists("lol.launcher.exe"))
             {
 
                 Log.Fatal("\"lol.launcher.exe\" not found!");
-                
+
                 // show error message
                 MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
@@ -60,19 +76,26 @@ namespace LoLAutoLogin
                 Application.Exit();
 
                 // return so no other commands are executed
-                return;
+                return false;
 
             }
-            
+
+            return true;
+
+        }
+
+        private bool PasswordExists()
+        {
+
             if (File.Exists("password"))
             {
-                
+
                 using (StreamReader reader = new StreamReader("password"))
                 {
 
                     if (Regex.IsMatch(reader.ReadToEnd(), @"^[a-zA-Z0-9\+\/]*={0,3}$"))
                     {
-                        
+
                         Log.Info("Password is old format, prompting user to enter password again...");
                         MessageBox.Show("Password encryption has been changed to DPAPI, a more secure encryption than the previously used AES. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed to DPAPI", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -80,28 +103,22 @@ namespace LoLAutoLogin
                     else
                     {
 
-                        CheckLeagueRunning();
+                        return true;
 
                     }
 
                 }
 
             }
-            else Log.Info("Password file not found, prompting user to enter password...");
-            
+
+            return false;
+
         }
 
-        private void CheckLeagueRunning()
+        private bool CheckLeagueRunning()
         {
-            
-            // hide this window
-            this.Hide();
 
-            // start launch process
-            Log.Info("Password file found!");
-
-            // check if league of legends is already running
-            if (Process.GetProcessesByName("LolClient").Length > 0 || Process.GetProcessesByName("LoLLauncher").Length > 0 || Process.GetProcessesByName("LoLPatcher").Length > 0)
+            if(Process.GetProcessesByName("LolClient").Length > 0 || Process.GetProcessesByName("LoLLauncher").Length > 0 || Process.GetProcessesByName("LoLPatcher").Length > 0)
             {
 
                 Log.Warn("League of Legends is already running!");
@@ -117,7 +134,10 @@ namespace LoLAutoLogin
                     KillProcessesByName("LoLLauncher");
                     KillProcessesByName("LoLPatcher");
 
-                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero) Thread.Sleep(500);
+                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero)
+                        Thread.Sleep(500);
+
+                    return false;
 
                 }
                 else
@@ -125,154 +145,193 @@ namespace LoLAutoLogin
 
                     // exit if user says no
                     Application.Exit();
-                    return;
+                    return true;
 
                 }
 
             }
 
-            Log.Debug("Attempting to start thread...");
-
-            Thread t = new Thread(PatcherLaunch);
-            this.FormClosing += (s, args) =>
-            {
-                if (t != null && t.IsAlive)
-                {
-                    t.Abort();
-                }
-            };
-            t.IsBackground = true;
-            t.Start();
+            return false;
 
         }
 
-        private void PatcherLaunch()
+        private void RunPatcher()
         {
             
+            // hide this window
+            this.Hide();
+
+            // start launch process
+            Log.Info("Password file found!");
+
+            // check if league of legends is already running
+            if (!CheckLeagueRunning())
+            {
+
+                Log.Debug("Attempting to start thread...");
+
+                Thread t = new Thread(PatcherLaunch);
+
+                this.FormClosing += (s, args) =>
+                {
+                    if (t != null && t.IsAlive)
+                    {
+                        t.Abort();
+                    }
+                };
+
+                t.IsBackground = true;
+                t.Start();
+
+            }
+
+        }
+
+        private bool StartClient()
+        {
+
             // try launching league of legends
             try
             {
 
                 Process.Start("lol.launcher.exe");
 
+                return true;
+
             }
             catch (Exception ex)
             {
-                
+
                 // print error to log and show balloon tip to inform user of fatal error
                 Log.Fatal("Could not start League of Legends!");
                 Log.PrintStackTrace(ex.StackTrace);
+
                 this.Invoke(new Action(() => {
                     notifyIcon.ShowBalloonTip(2500, "LoL Auto Login was unable to start League of Legends. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
                 }));
-                
+
                 // exit application
                 Application.Exit();
-                return;
+                return false;
 
             }
 
-            // log
-            Log.Info("Waiting {0} seconds for League of Legends Patcher...", patcherTimeout);
+        }
 
-            // create stopwatch for loading timeout
-            Stopwatch patchersw = new Stopwatch();
-            patchersw.Start();
+        private void PatcherLaunch()
+        {
 
-            IntPtr patcherHwnd = IntPtr.Zero;
-
-            // search for the patcher window for 30 seconds
-            while (patchersw.Elapsed.TotalSeconds < patcherTimeout && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero) Thread.Sleep(500);
-
-            // check if patcher window was found
-            if (patcherHwnd != IntPtr.Zero)
+            if(StartClient())
             {
-                
-                // get patcher rectangle (window pos and size)
-                RECT patcherRect;
-                NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
 
-                Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={2}}}", patchersw.Elapsed.TotalMilliseconds, patcherHwnd, patcherRect);
+                // log
+                Log.Info("Waiting {0} ms for League of Legends Patcher...", patcherTimeout);
 
-                // reset stopwatch so it restarts for launch button search
-                patchersw.Reset();
+                // create stopwatch for loading timeout
+                Stopwatch patchersw = new Stopwatch();
                 patchersw.Start();
 
-                Log.Info("Waiting {0} seconds for Launch button to enable...", launchTimeout);
-                
-                bool clicked = false;
+                IntPtr patcherHwnd = IntPtr.Zero;
 
-                // check if the "Launch" button is there and can be clicked
-                while (patchersw.Elapsed.TotalSeconds < 30 && !clicked)
-                {              
-                    
-                    // get patcher image
-                    Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
+                // search for the patcher window for 30 seconds
+                while (patchersw.ElapsedMilliseconds < patcherTimeout && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero)
+                    Thread.Sleep(500);
 
-                    // check if the launch button is enabled
-                    if(Pixels.LaunchButton.Match(patcherImage))
+                // check if patcher window was found
+                if (patcherHwnd != IntPtr.Zero)
+                {
+
+                    // get patcher rectangle (window pos and size)
+                    RECT patcherRect;
+                    NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
+
+                    Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={2}}}", patchersw.Elapsed.TotalMilliseconds, patcherHwnd, patcherRect);
+
+                    // reset stopwatch so it restarts for launch button search
+                    patchersw.Reset();
+                    patchersw.Start();
+
+                    Console.WriteLine("waiting");
+
+                    Thread.Sleep(15000);
+
+                    Log.Info("Waiting for Launch button to enable...");
+
+                    bool clicked = false;
+                    bool sleepMode = false;
+
+                    // check if the "Launch" button is there and can be clicked
+                    while (!clicked && patcherHwnd != IntPtr.Zero)
                     {
                         
-                        // get patcher rectangle and make patcher go to top
-                        NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
-                        NativeMethods.SetForegroundWindow(patcherHwnd);
+                        // get patcher image
+                        Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
-                        Log.Info("Found Launch button after {0} ms. Initiating click.", patchersw.Elapsed.TotalMilliseconds);
+                        // check if the launch button is enabled
+                        if (Pixels.LaunchButton.Match(patcherImage))
+                        {
 
-                        // use new input simulator instance to click on "Launch" button.
-                        InputSimulator sim = new InputSimulator();
-                        sim.Mouse.LeftButtonUp();
-                        Cursor.Position = new Point(patcherRect.Left + (int)(patcherRect.Width * 0.5), patcherRect.Top + (int)(patcherRect.Height * 0.025));
-                        sim.Mouse.LeftButtonClick();
-                        
-                        clicked = true;
+                            // get patcher rectangle and make patcher go to top
+                            NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
+                            NativeMethods.SetForegroundWindow(patcherHwnd);
 
-                        patchersw.Stop();
+                            Log.Info("Found Launch button after {0} ms. Initiating click.", patchersw.Elapsed.TotalMilliseconds);
 
-                        EnterPassword();
+                            // use new input simulator instance to click on "Launch" button.
+                            InputSimulator sim = new InputSimulator();
+                            sim.Mouse.LeftButtonUp();
+                            Cursor.Position = new Point(patcherRect.Left + (int)(patcherRect.Width * 0.5), patcherRect.Top + (int)(patcherRect.Height * 0.025));
+                            sim.Mouse.LeftButtonClick();
+
+                            clicked = true;
+
+                            patchersw.Stop();
+
+                            EnterPassword();
+
+                        }
+
+                        // dispose of image
+                        patcherImage.Dispose();
+
+                        // force garbage collection
+                        GC.Collect();
+
+                        if(!sleepMode && patchersw.ElapsedMilliseconds >launchTimeout)
+                        {
+
+                            Log.Info("Launch button not enabling; going into sleep mode.");
+
+                            sleepMode = true;
+
+                        }
+
+                        if(sleepMode)
+                            Thread.Sleep(2000);
+                        else
+                            Thread.Sleep(500);
+
+                        patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600);
 
                     }
 
-                    // dispose of image
-                    patcherImage.Dispose();
-
-                    // force garbage collection
-                    GC.Collect();
-
-                    Thread.Sleep(500);
-
                 }
-
-                if(patchersw.Elapsed.Seconds >= 15)
+                else
                 {
-                    
+
                     // print error to log
-                    Log.Error("Launch button failed to enable after {0} seconds. Aborting!", launchTimeout);
+                    Log.Error("Patcher not found after {0} ms. Aborting!", patcherTimeout);
 
                     // stop stopwatch
                     patchersw.Stop();
 
-                    // exit application
-                    Application.Exit();
-                    return;
-
                 }
 
             }
-            else
-            {
-                
-                // print error to log
-                Log.Error("Patcher not found after {0} seconds. Aborting!", patcherTimeout);
-
-                // stop stopwatch
-                patchersw.Stop();
-
-                // exit application
-                Application.Exit();
-                return;
-
-            }
+            
+            // exit application
+            Application.Exit();
+            return;
 
         }
 
@@ -284,10 +343,10 @@ namespace LoLAutoLogin
             sw.Start();
 
             // log
-            Log.Info("Waiting {0} seconds for League of Legends client...", clientTimeout);
+            Log.Info("Waiting {0} ms for League of Legends client...", clientTimeout);
 
             // try to find league of legends client for 30 seconds
-            while (sw.Elapsed.Seconds < clientTimeout && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero) Thread.Sleep(200);
+            while (sw.ElapsedMilliseconds < clientTimeout && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero) Thread.Sleep(200);
 
             // check if client was found
             if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) != IntPtr.Zero)
@@ -311,7 +370,7 @@ namespace LoLAutoLogin
 
                 bool found = false;
 
-                while (sw.Elapsed.Seconds < passwordTimeout && !found)
+                while (sw.ElapsedMilliseconds < passwordTimeout && !found && hwnd != IntPtr.Zero)
                 {
 
                     Log.Verbose("{{Handle={0}, Rectangle={{Coordinates={1}, Size={2}}}}}", hwnd, rect, rect.Size);
@@ -327,6 +386,8 @@ namespace LoLAutoLogin
                     GC.Collect();
 
                     Thread.Sleep(500);
+
+                    hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
 
                 }
 
@@ -384,8 +445,9 @@ namespace LoLAutoLogin
                     InputSimulator sim = new InputSimulator();
 
                     // enter password one character at a time
-                    while (i <= passArray.Length && sw.Elapsed.Seconds < 30)
+                    while (i <= passArray.Length && sw.Elapsed.Seconds < 30 && hwnd != IntPtr.Zero)
                     {
+                        
                         // get window rectangle, in case it is resized or moved
                         NativeMethods.GetWindowRect(hwnd, out rect);
                         Log.Verbose("Client rectangle=" + rect.ToString());
@@ -411,8 +473,10 @@ namespace LoLAutoLogin
 
                             i++;
                         }
-                    }
 
+                        hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
+
+                    }
                     
                 }
                 else
@@ -489,7 +553,7 @@ namespace LoLAutoLogin
             this.Hide();
 
             // start launch process
-            CheckLeagueRunning();
+            RunPatcher();
         }
 
         /// <summary>
