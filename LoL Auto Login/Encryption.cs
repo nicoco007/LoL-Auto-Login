@@ -23,7 +23,7 @@ namespace LoLAutoLogin
 
             // return byte array containing encrypted input, and protect for current user only
             // (so no one on the computer can decrypt it except the current user).
-            return ProtectedData.Protect(Encoding.ASCII.GetBytes(input), entropy, DataProtectionScope.CurrentUser);
+            return ProtectedData.Protect(Encoding.UTF8.GetBytes(input), entropy, DataProtectionScope.CurrentUser);
 
         }
 
@@ -36,7 +36,7 @@ namespace LoLAutoLogin
         {
 
             // Decrypt input
-            return Encoding.ASCII.GetString(ProtectedData.Unprotect(input, entropy, DataProtectionScope.CurrentUser));
+            return Encoding.UTF8.GetString(ProtectedData.Unprotect(input, entropy, DataProtectionScope.CurrentUser));
 
         }
 
