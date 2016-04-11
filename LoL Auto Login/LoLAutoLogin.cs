@@ -631,6 +631,13 @@ namespace LoLAutoLogin
 
         }
 
+        private void LoLAutoLogin_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            
+            notifyIcon.Dispose();
+
+        }
+
     }
 
 }

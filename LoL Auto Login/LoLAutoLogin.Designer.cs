@@ -112,6 +112,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "LoLAutoLogin";
             this.Text = "LoL Auto Login";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LoLAutoLogin_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
