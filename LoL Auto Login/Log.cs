@@ -97,7 +97,7 @@ namespace LoLAutoLogin
 
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                using (StreamWriter sw = new StreamWriter(path))
+                using (StreamWriter sw = new StreamWriter(path, true))
                     if (arg.Length > 0) sw.WriteLine(text, arg); else sw.WriteLine(text);
 
             }
