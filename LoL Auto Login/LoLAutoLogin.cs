@@ -1,13 +1,10 @@
 ﻿using Microsoft;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,7 +50,20 @@ namespace LoLAutoLogin
 
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
-            if(CheckLocation())
+            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
+            {
+                Log.Info("Shift key is pressed!");
+
+                if (CheckLocation())
+                {
+                    Log.Info("Starting client without running LoL Auto Login.");
+                    StartClient();
+                    Application.Exit();
+                    return;
+                }
+            }
+
+            if (CheckLocation())
             {
 
                 if (PasswordExists())
@@ -76,10 +86,10 @@ namespace LoLAutoLogin
         {
 
             // check if program is in same directory as league of legends
-            if (!File.Exists("lol.launcher.exe"))
+            if (!File.Exists(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe"))
             {
 
-                Log.Fatal("\"lol.launcher.exe\" not found!");
+                Log.Fatal("Launcher executable not found!");
 
                 // show error message
                 MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -209,7 +219,7 @@ namespace LoLAutoLogin
             try
             {
 
-                Process.Start("lol.launcher.exe");
+                Process.Start(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe");
 
                 return true;
 
@@ -683,16 +693,16 @@ namespace LoLAutoLogin
                 IntPtr clientHandle;
 
                 // check if client is already running & window is present
-                if (Process.GetProcessesByName("LeagueClient").Length > 0 && (clientHandle = GetSingleWindowFromSize("RCLIENT", null, 1200, 700)) != IntPtr.Zero)
+                if (Process.GetProcessesByName("LeagueClient").Length > 0 && (clientHandle = GetAlphaClientWindowHandle()) != IntPtr.Zero)
                 {
                     // log
-                    Log.Info("Client is already open!");
+                    Log.Info("[ALPHA] Client is already open!");
 
                     // check if password box is visible (not logged in)
                     if (PasswordBoxIsVisible(clientHandle))
                     {
                         // log
-                        Log.Info("Client is open on login page, entering password.");
+                        Log.Info("[ALPHA] Client is open on login page, entering password.");
 
                         // client is on login page, enter password
                         EnterAlphaPassword(clientHandle, progress);
@@ -700,7 +710,7 @@ namespace LoLAutoLogin
                     else
                     {
                         // log
-                        Log.Info("Client is open and logged in, focusing window.");
+                        Log.Info("[ALPHA] Client is open and logged in, focusing window.");
 
                         // client is logged in, show window
                         NativeMethods.SetForegroundWindow(clientHandle);
@@ -711,7 +721,7 @@ namespace LoLAutoLogin
                 {
 
                     // log
-                    Log.Info("Client is not running, launching client.");
+                    Log.Info("[ALPHA] Client is not running, launching client.");
 
                     // check if client exe exists
                     if (File.Exists("LeagueClient.exe"))
@@ -732,7 +742,7 @@ namespace LoLAutoLogin
                         {
 
                             // log
-                            Log.Info("Client found after {0} ms!", sw.ElapsedMilliseconds);
+                            Log.Info("[ALPHA] Client found after {0} ms!", sw.ElapsedMilliseconds);
 
                             // get password box
                             bool found = WaitForPasswordBox(progress);
@@ -742,7 +752,7 @@ namespace LoLAutoLogin
                             {
                                 
                                 // log
-                                Log.Info("Password box found after {0} ms!", sw.ElapsedMilliseconds);
+                                Log.Info("[ALPHA] Password box found after {0} ms!", sw.ElapsedMilliseconds);
 
                                 // enter password
                                 EnterAlphaPassword(clientHandle, progress);
@@ -752,7 +762,7 @@ namespace LoLAutoLogin
                             {
 
                                 // log
-                                Log.Info("Client exited!");
+                                Log.Info("[ALPHA] Client exited!");
 
                             }
                         }
@@ -760,7 +770,7 @@ namespace LoLAutoLogin
                         {
 
                             // log
-                            Log.Info("Client not found after {0} ms. Aborting operation.", clientTimeout);
+                            Log.Info("[ALPHA] Client not found after {0} ms. Aborting operation.", clientTimeout);
 
                         }
 
@@ -791,7 +801,7 @@ namespace LoLAutoLogin
 
             // search for window until clientTimeout is reached or window is found
             do
-                clientHandle = GetSingleWindowFromSize("RCLIENT", null, 1200, 700); // use null for window name since it might be translated
+                clientHandle = GetAlphaClientWindowHandle(); // use null for window name since it might be translated
             while (sw.ElapsedMilliseconds < clientTimeout && clientHandle == IntPtr.Zero);
 
             // return found handle
@@ -814,9 +824,9 @@ namespace LoLAutoLogin
             // loop while not found and while client handle is something
             do
             {
-               
+
                 // get client handle
-                clientHandle = GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
+                clientHandle = GetAlphaClientWindowHandle();
 
                 // additional check just in case
                 if (clientHandle != IntPtr.Zero)
@@ -834,7 +844,7 @@ namespace LoLAutoLogin
                     {
 
                         // print exception & stacktrace to log
-                        Log.Fatal("Could not get client window image: " + ex.Message);
+                        Log.Fatal("[ALPHA] Could not get client window image: " + ex.Message);
                         Log.PrintStackTrace(ex.StackTrace);
 
                         // show balloon tip to inform user of error
@@ -932,7 +942,7 @@ namespace LoLAutoLogin
             catch (Exception ex)
             {
                 // print exception & stacktrace to log
-                Log.Fatal("Password file could not be read: " + ex.Message);
+                Log.Fatal("[ALPHA] Password file could not be read: " + ex.Message);
                 Log.PrintStackTrace(ex.StackTrace);
 
                 // show balloon tip to inform user of error
@@ -951,7 +961,7 @@ namespace LoLAutoLogin
             char[] passArray = password.ToCharArray();
 
             // log
-            Log.Info("Entering password...");
+            Log.Info("[ALPHA] Entering password...");
 
             int i = 0;
             RECT rect;
@@ -963,7 +973,7 @@ namespace LoLAutoLogin
 
                 // get window rectangle, in case it is resized or moved
                 NativeMethods.GetWindowRect(clientHandle, out rect);
-                Log.Verbose("Client rectangle=" + rect.ToString());
+                Log.Verbose("[ALPHA] Client rectangle=" + rect.ToString());
 
                 // move cursor above password box
                 sim.Mouse.LeftButtonUp();
@@ -1002,9 +1012,21 @@ namespace LoLAutoLogin
                 }
 
                 // get the client handle again
-                clientHandle = GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
+                clientHandle = GetAlphaClientWindowHandle();
 
             }
+
+        }
+
+        /// <summary>
+        /// Retrieves the handle of the League Client Alpha Update window.
+        /// </summary>
+        /// <returns>Handle of the client.</returns>
+        private IntPtr GetAlphaClientWindowHandle()
+        {
+
+            // get client (use null for window name since it might be translated)
+            return GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
 
         }
 

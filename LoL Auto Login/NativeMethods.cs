@@ -39,6 +39,9 @@ namespace LoLAutoLogin
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern IntPtr GetDC(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        internal static extern short GetAsyncKeyState(System.Windows.Forms.Keys vKey);
+
     }
 
 }
