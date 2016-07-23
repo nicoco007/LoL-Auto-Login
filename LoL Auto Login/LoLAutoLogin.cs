@@ -976,26 +976,29 @@ namespace LoLAutoLogin
                 // check if client is foreground window
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
                 {
+                    
                     // enter password character, press enter if complete
                     if (i != passArray.Length)
                     {
+                        
                         // go to end of text box
                         sim.Keyboard.KeyPress(VirtualKeyCode.END);
 
                         // enter character
                         sim.Keyboard.TextEntry(passArray[i].ToString());
+
                     }
                     else
                     {
-                        // wait a bit (seems to fail less often)
-                        Thread.Sleep(50);
 
                         // press enter
                         sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
                     }
 
                     // increment counter
                     i++;
+
                 }
 
                 // get the client handle again
