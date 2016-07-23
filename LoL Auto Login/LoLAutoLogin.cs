@@ -50,17 +50,29 @@ namespace LoLAutoLogin
 
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
+            // check if a Shift key is pressed
             if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
             {
+
+                // log
                 Log.Info("Shift key is pressed!");
 
+                // check if file exists
                 if (CheckLocation())
                 {
+
+                    // log
                     Log.Info("Starting client without running LoL Auto Login.");
+
+                    // run client
                     StartClient();
+
+                    // exit
                     Application.Exit();
                     return;
+
                 }
+
             }
 
             if (CheckLocation())
@@ -678,11 +690,11 @@ namespace LoLAutoLogin
             this.Hide();
 
             // create progress interface
-            IProgress<object[]> progress = new Progress<object[]>((s) =>
+            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new Progress<ShowBalloonTipEventArgs>((e) =>
             {
 
                 // show tooltip, use object array because i'm lazy
-                notifyIcon.ShowBalloonTip(2500, (string)s[0], (string)s[1], (ToolTipIcon)s[2]);
+                notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
 
             });
 
@@ -705,7 +717,7 @@ namespace LoLAutoLogin
                         Log.Info("[ALPHA] Client is open on login page, entering password.");
 
                         // client is on login page, enter password
-                        EnterAlphaPassword(clientHandle, progress);
+                        EnterAlphaPassword(clientHandle, showBalloonTip);
                     }
                     else
                     {
@@ -724,12 +736,9 @@ namespace LoLAutoLogin
                     Log.Info("[ALPHA] Client is not running, launching client.");
 
                     // check if client exe exists
-                    if (File.Exists("LeagueClient.exe"))
+                    if (CheckLocation() && StartClient())
                     {
-
-                        // launch client
-                        Process.Start("LeagueClient.exe");
-
+                        
                         // create & start stopwatch
                         Stopwatch sw = new Stopwatch();
                         sw.Start();
@@ -745,7 +754,7 @@ namespace LoLAutoLogin
                             Log.Info("[ALPHA] Client found after {0} ms!", sw.ElapsedMilliseconds);
 
                             // get password box
-                            bool found = WaitForPasswordBox(progress);
+                            bool found = WaitForPasswordBox(showBalloonTip);
 
                             // check if the password box was found
                             if (clientHandle != IntPtr.Zero && found)
@@ -755,7 +764,7 @@ namespace LoLAutoLogin
                                 Log.Info("[ALPHA] Password box found after {0} ms!", sw.ElapsedMilliseconds);
 
                                 // enter password
-                                EnterAlphaPassword(clientHandle, progress);
+                                EnterAlphaPassword(clientHandle, showBalloonTip);
 
                             }
                             else
@@ -773,6 +782,13 @@ namespace LoLAutoLogin
                             Log.Info("[ALPHA] Client not found after {0} ms. Aborting operation.", clientTimeout);
 
                         }
+
+                    }
+                    else
+                    {
+
+                        // log
+                        Log.Info("Failed to launch client.");
 
                     }
 
@@ -814,7 +830,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="progress">Progress interface used to pass messages</param>
         /// <returns>Whether the password box was found or not.</returns>
-        private bool WaitForPasswordBox(IProgress<object[]> progress)
+        private bool WaitForPasswordBox(IProgress<ShowBalloonTipEventArgs> progress)
         {
 
             // create found & handle varables
@@ -848,11 +864,11 @@ namespace LoLAutoLogin
                         Log.PrintStackTrace(ex.StackTrace);
 
                         // show balloon tip to inform user of error
-                        progress.Report(new object[] {
+                        progress.Report(new ShowBalloonTipEventArgs(
                             "LoL Auto Login has encountered a fatal error",
                             "Please check your logs for more information.",
                             ToolTipIcon.Error
-                        });
+                        ));
 
                         // exit application
                         Application.Exit();
@@ -913,7 +929,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        public void EnterAlphaPassword(IntPtr clientHandle, IProgress<object[]> progress)
+        public void EnterAlphaPassword(IntPtr clientHandle, IProgress<ShowBalloonTipEventArgs> progress)
         {
             // set window to foreground
             NativeMethods.SetForegroundWindow(clientHandle);
@@ -946,11 +962,11 @@ namespace LoLAutoLogin
                 Log.PrintStackTrace(ex.StackTrace);
 
                 // show balloon tip to inform user of error
-                progress.Report(new object[] {
+                progress.Report(new ShowBalloonTipEventArgs(
                                 "LoL Auto Login has encountered a fatal error",
                                 "Please check your logs for more information.",
                                 ToolTipIcon.Error
-                            });
+                            ));
 
                 // exit application
                 Application.Exit();
@@ -1015,6 +1031,9 @@ namespace LoLAutoLogin
                 clientHandle = GetAlphaClientWindowHandle();
 
             }
+
+            // log
+            Log.Info("[ALPHA] Successfully entered password!");
 
         }
 
