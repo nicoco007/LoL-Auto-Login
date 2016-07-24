@@ -12,26 +12,43 @@ using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 
-// TODO: fix sloppy code (make more modular)
-// TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly (this might be fixed by the new client, will see)
-
+/// LoL Auto Login - Automatic Login for League of Legends
+/// Copyright © 2015-2016 nicoco007
+///
+/// This program is free software: you can redistribute it and/or modify
+/// it under the terms of the GNU Affero General Public License as published
+/// by the Free Software Foundation, either version 3 of the License, or
+/// (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+/// GNU Affero General Public License for more details.
+///
+/// You should have received a copy of the GNU Affero General Public License
+/// along with this program. If not, see http://www.gnu.org/licenses/.
 namespace LoLAutoLogin
 {
 
     public partial class LoLAutoLogin : Form
     {
 
+        // time constants
         const int patcherTimeout = 30000;
         const int launchTimeout = 30000;
         const int clientTimeout = 30000;
         const int passwordTimeout = 30000;
+
+        // whether we are using the alpha client or not
         private bool isAlpha = false;
 
         public LoLAutoLogin()
         {
 
+            // init
             InitializeComponent();
 
+            // check for alpha command line arg
             isAlpha = Environment.GetCommandLineArgs().Contains("--alpha");
 
             // create notification icon context menu (so user can exit if program hangs)
@@ -50,12 +67,12 @@ namespace LoLAutoLogin
 
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
-            // check if a Shift key is pressed
+            // check if a Shift key is being pressed
             if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
             {
 
                 // log
-                Log.Info("Shift key is pressed!");
+                Log.Info("Shift key is being pressed!");
 
                 // check if file exists
                 if (CheckLocation())
