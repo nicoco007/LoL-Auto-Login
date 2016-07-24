@@ -1,33 +1,55 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
+﻿using Microsoft;
+using System;
 using System.Diagnostics;
-using System.Threading;
+using System.Drawing;
 using System.IO;
-using WindowsInput;
-using WindowsInput.Native;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using WindowsInput;
+using WindowsInput.Native;
 
-// TODO: fix sloppy code (make more modular)
-// TODO: fix the derpy bug that sometimes causes the launcher/client not to focus correctly
-
+/// LoL Auto Login - Automatic Login for League of Legends
+/// Copyright © 2015-2016 nicoco007
+///
+/// This program is free software: you can redistribute it and/or modify
+/// it under the terms of the GNU Affero General Public License as published
+/// by the Free Software Foundation, either version 3 of the License, or
+/// (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+/// GNU Affero General Public License for more details.
+///
+/// You should have received a copy of the GNU Affero General Public License
+/// along with this program. If not, see http://www.gnu.org/licenses/.
 namespace LoLAutoLogin
 {
 
     public partial class LoLAutoLogin : Form
     {
 
+        // time constants
         const int patcherTimeout = 30000;
         const int launchTimeout = 30000;
         const int clientTimeout = 30000;
         const int passwordTimeout = 30000;
 
+        // whether we are using the alpha client or not
+        private bool isAlpha = false;
+
         public LoLAutoLogin()
         {
 
+            // init
             InitializeComponent();
+
+            // check for alpha command line arg
+            isAlpha = Environment.GetCommandLineArgs().Contains("--alpha");
 
             // create notification icon context menu (so user can exit if program hangs)
             ContextMenu menu = new ContextMenu();
@@ -40,31 +62,63 @@ namespace LoLAutoLogin
 
         }
         
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
 
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
 
-            if(CheckLocation())
+            // check if a Shift key is being pressed
+            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
             {
 
-                if(PasswordExists())
-                    RunPatcher();
-                else
-                    Log.Info("Password file not found, prompting user to enter password...");
+                // log
+                Log.Info("Shift key is being pressed!");
+
+                // check if file exists
+                if (CheckLocation())
+                {
+
+                    // log
+                    Log.Info("Starting client without running LoL Auto Login.");
+
+                    // run client
+                    StartClient();
+
+                    // exit
+                    Application.Exit();
+                    return;
+
+                }
 
             }
-            
+
+            if (CheckLocation())
+            {
+
+                if (PasswordExists())
+                {
+                    if (isAlpha)
+                        await RunAlphaClient();
+                    else
+                        RunPatcher();
+                }
+                else
+                {
+                    Log.Info("Password file not found, prompting user to enter password...");
+                }
+
+            }
+
         }
 
         private bool CheckLocation()
         {
 
             // check if program is in same directory as league of legends
-            if (!File.Exists("lol.launcher.exe"))
+            if (!File.Exists(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe"))
             {
 
-                Log.Fatal("\"lol.launcher.exe\" not found!");
+                Log.Fatal("Launcher executable not found!");
 
                 // show error message
                 MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -97,7 +151,7 @@ namespace LoLAutoLogin
                     {
 
                         Log.Info("Password is old format, prompting user to enter password again...");
-                        MessageBox.Show("Password encryption has been changed to DPAPI, a more secure encryption than the previously used AES. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed to DPAPI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Password encryption has been changed. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     }
                     else
@@ -194,7 +248,7 @@ namespace LoLAutoLogin
             try
             {
 
-                Process.Start("lol.launcher.exe");
+                Process.Start(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe");
 
                 return true;
 
@@ -508,7 +562,7 @@ namespace LoLAutoLogin
             Application.Exit();
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        private async void saveButton_Click(object sender, EventArgs e)
         {
             // check if a password was inputted
             if (string.IsNullOrEmpty(passTextBox.Text))
@@ -549,7 +603,10 @@ namespace LoLAutoLogin
             this.Hide();
 
             // start launch process
-            RunPatcher();
+            if (isAlpha)
+                await RunAlphaClient();
+            else
+                RunPatcher();
         }
 
         /// <summary>
@@ -563,7 +620,7 @@ namespace LoLAutoLogin
         private IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
-            Log.Verbose(string.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
+            Log.Debug(string.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
             
             // try to get window handle and rectangle using specified arguments
             IntPtr hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
@@ -574,7 +631,7 @@ namespace LoLAutoLogin
             if (hwnd == IntPtr.Zero)
             {
                 // log that we didn't find a window
-                Log.Verbose("Failed to find window with specified arguments!");
+                Log.Debug("Failed to find window with specified arguments!");
 
                 return IntPtr.Zero;
             }
@@ -584,7 +641,7 @@ namespace LoLAutoLogin
 
             if (rect.Size.Width >= width && rect.Size.Height >= height)
             {
-                Log.Verbose("Correct window handle found!");
+                Log.Debug("Correct window handle found!");
                 
                 return hwnd;
             }
@@ -599,7 +656,7 @@ namespace LoLAutoLogin
 
                     if (rect.Size.Width >= width && rect.Size.Height >= height)
                     {
-                        Log.Verbose("Correct window handle found!");
+                        Log.Debug("Correct window handle found!");
 
                         return hwnd;
                     }
@@ -628,6 +685,384 @@ namespace LoLAutoLogin
             this.Opacity = 0.0f;
             this.ShowInTaskbar = false;
             base.Hide();
+
+        }
+
+        private void LoLAutoLogin_FormClosing(object sender, FormClosingEventArgs e)
+        {
+
+            notifyIcon.Visible = false;
+            notifyIcon.Dispose();
+
+        }
+
+        /// <summary>
+        /// Runs all the logic necessary to enter the password automatically into the new League Client Alpha Update
+        /// </summary>
+        /// <returns></returns>
+        private async Task RunAlphaClient()
+        {
+
+            // hide window
+            this.Hide();
+
+            // create progress interface
+            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new Progress<ShowBalloonTipEventArgs>((e) =>
+            {
+
+                // show tooltip, use object array because i'm lazy
+                notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
+
+            });
+
+            await Task.Factory.StartNew(() =>
+            {
+
+                // create handle variable
+                IntPtr clientHandle;
+
+                // check if client is already running & window is present
+                if (Process.GetProcessesByName("LeagueClient").Length > 0 && (clientHandle = GetAlphaClientWindowHandle()) != IntPtr.Zero)
+                {
+                    // log
+                    Log.Info("[ALPHA] Client is already open!");
+
+                    // check if password box is visible (not logged in)
+                    if (PasswordBoxIsVisible(clientHandle))
+                    {
+                        // log
+                        Log.Info("[ALPHA] Client is open on login page, entering password.");
+
+                        // client is on login page, enter password
+                        EnterAlphaPassword(clientHandle, showBalloonTip);
+                    }
+                    else
+                    {
+                        // log
+                        Log.Info("[ALPHA] Client is open and logged in, focusing window.");
+
+                        // client is logged in, show window
+                        NativeMethods.SetForegroundWindow(clientHandle);
+                    }
+
+                }
+                else
+                {
+
+                    // log
+                    Log.Info("[ALPHA] Client is not running, launching client.");
+
+                    // check if client exe exists
+                    if (CheckLocation() && StartClient())
+                    {
+                        
+                        // create & start stopwatch
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+
+                        // get client handle
+                        clientHandle = AwaitClientHandle();
+                        
+                        // check if we got a valid handle
+                        if (clientHandle != IntPtr.Zero)
+                        {
+
+                            // log
+                            Log.Info("[ALPHA] Client found after {0} ms!", sw.ElapsedMilliseconds);
+
+                            // get password box
+                            bool found = WaitForPasswordBox(showBalloonTip);
+
+                            // check if the password box was found
+                            if (clientHandle != IntPtr.Zero && found)
+                            {
+                                
+                                // log
+                                Log.Info("[ALPHA] Password box found after {0} ms!", sw.ElapsedMilliseconds);
+
+                                // enter password
+                                EnterAlphaPassword(clientHandle, showBalloonTip);
+
+                            }
+                            else
+                            {
+
+                                // log
+                                Log.Info("[ALPHA] Client exited!");
+
+                            }
+                        }
+                        else
+                        {
+
+                            // log
+                            Log.Info("[ALPHA] Client not found after {0} ms. Aborting operation.", clientTimeout);
+
+                        }
+
+                    }
+                    else
+                    {
+
+                        // log
+                        Log.Info("Failed to launch client.");
+
+                    }
+
+                }
+
+            });
+
+            // done, exit application
+            Application.Exit();
+
+        }
+
+        /// <summary>
+        /// Hangs until the client window is found or the preset timeout is reached.
+        /// </summary>
+        /// <returns>Client window handle if found, zero if not.</returns>
+        private IntPtr AwaitClientHandle()
+        {
+
+            // create & start stopwatch
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            // create client handle variable
+            IntPtr clientHandle = IntPtr.Zero;
+
+            // search for window until clientTimeout is reached or window is found
+            do
+                clientHandle = GetAlphaClientWindowHandle(); // use null for window name since it might be translated
+            while (sw.ElapsedMilliseconds < clientTimeout && clientHandle == IntPtr.Zero);
+
+            // return found handle
+            return clientHandle;
+
+        }
+
+        /// <summary>
+        /// Hangs until the password box for the client is found or the client exits.
+        /// </summary>
+        /// <param name="progress">Progress interface used to pass messages</param>
+        /// <returns>Whether the password box was found or not.</returns>
+        private bool WaitForPasswordBox(IProgress<ShowBalloonTipEventArgs> progress)
+        {
+
+            // create found & handle varables
+            bool found = false;
+            IntPtr clientHandle;
+
+            // loop while not found and while client handle is something
+            do
+            {
+
+                // get client handle
+                clientHandle = GetAlphaClientWindowHandle();
+
+                // additional check just in case
+                if (clientHandle != IntPtr.Zero)
+                {
+                    
+                    // this could fail so wrap in try/catch
+                    try
+                    {
+
+                        // check if password box is visible
+                        found = PasswordBoxIsVisible(clientHandle);
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        // print exception & stacktrace to log
+                        Log.Fatal("[ALPHA] Could not get client window image: " + ex.Message);
+                        Log.PrintStackTrace(ex.StackTrace);
+
+                        // show balloon tip to inform user of error
+                        progress.Report(new ShowBalloonTipEventArgs(
+                            "LoL Auto Login has encountered a fatal error",
+                            "Please check your logs for more information.",
+                            ToolTipIcon.Error
+                        ));
+
+                        // exit application
+                        Application.Exit();
+                        return false;
+
+                    }
+
+                    // sleep
+                    Thread.Sleep(500);
+
+                }
+
+            }
+            while (clientHandle != IntPtr.Zero && !found);
+
+            // return whether client was found or not
+            return found;
+
+        }
+
+        /// <summary>
+        /// Checks to see if the password box is visible in the client's window.
+        /// </summary>
+        /// <param name="clientHandle">Handle of the client window</param>
+        /// <returns>Whether the password box is visible or not.</returns>
+        public bool PasswordBoxIsVisible(IntPtr clientHandle)
+        {
+
+            // check that the handle is valid
+            if (clientHandle != IntPtr.Zero)
+            {
+
+                // get client window image
+                Bitmap clientBitmap = new Bitmap(ScreenCapture.CaptureWindow(clientHandle));
+
+                // get pixels
+                Pixel px1 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.347f, true), Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 5, 10, 10));
+                Pixel px2 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.208f, true), Color.FromArgb(255, 0, 5, 15), Color.FromArgb(255, 5, 15, 25));
+
+                // check if the password box is displayed
+                bool found = px1.Match(clientBitmap) && px2.Match(clientBitmap);
+
+                // dispose of image & collect garbage
+                clientBitmap.Dispose();
+                GC.Collect();
+
+                return found;
+
+            }
+
+            // return false by default
+            return false;
+
+        }
+
+        /// <summary>
+        /// Enters the password into the client's password box.
+        /// </summary>
+        /// <param name="clientHandle">Handle of the client window</param>
+        /// <param name="progress">Progress interface used to pass messages</param>
+        public void EnterAlphaPassword(IntPtr clientHandle, IProgress<ShowBalloonTipEventArgs> progress)
+        {
+            // set window to foreground
+            NativeMethods.SetForegroundWindow(clientHandle);
+
+            // create password string
+            string password;
+
+            // try to read password from file
+            try
+            {
+
+                // create file stream
+                using (FileStream file = new FileStream("password", FileMode.Open, FileAccess.Read))
+                {
+
+                    // read bytes
+                    byte[] buffer = new byte[file.Length];
+                    file.Read(buffer, 0, (int)file.Length);
+
+                    // decrypt password
+                    password = Encryption.Decrypt(buffer);
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // print exception & stacktrace to log
+                Log.Fatal("[ALPHA] Password file could not be read: " + ex.Message);
+                Log.PrintStackTrace(ex.StackTrace);
+
+                // show balloon tip to inform user of error
+                progress.Report(new ShowBalloonTipEventArgs(
+                                "LoL Auto Login has encountered a fatal error",
+                                "Please check your logs for more information.",
+                                ToolTipIcon.Error
+                            ));
+
+                // exit application
+                Application.Exit();
+                return;
+            }
+
+            // create character array from password
+            char[] passArray = password.ToCharArray();
+
+            // log
+            Log.Info("[ALPHA] Entering password...");
+
+            int i = 0;
+            RECT rect;
+            InputSimulator sim = new InputSimulator();
+
+            // enter password one character at a time
+            while (i <= passArray.Length && clientHandle != IntPtr.Zero)
+            {
+
+                // get window rectangle, in case it is resized or moved
+                NativeMethods.GetWindowRect(clientHandle, out rect);
+                Log.Verbose("[ALPHA] Client rectangle=" + rect.ToString());
+
+                // move cursor above password box
+                sim.Mouse.LeftButtonUp();
+                NativeMethods.SetForegroundWindow(clientHandle);
+                Cursor.Position = new Point(rect.Left + (int)(rect.Width * 0.914f), rect.Top + (int)(rect.Height * 0.347f));
+
+                // focus window & click on password box
+                sim.Mouse.LeftButtonClick();
+
+                // check if client is foreground window
+                if (NativeMethods.GetForegroundWindow() == clientHandle)
+                {
+                    
+                    // enter password character, press enter if complete
+                    if (i != passArray.Length)
+                    {
+                        
+                        // go to end of text box
+                        sim.Keyboard.KeyPress(VirtualKeyCode.END);
+
+                        // enter character
+                        sim.Keyboard.TextEntry(passArray[i].ToString());
+
+                    }
+                    else
+                    {
+
+                        // press enter
+                        sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+
+                    }
+
+                    // increment counter
+                    i++;
+
+                }
+
+                // get the client handle again
+                clientHandle = GetAlphaClientWindowHandle();
+
+            }
+
+            // log
+            Log.Info("[ALPHA] Successfully entered password!");
+
+        }
+
+        /// <summary>
+        /// Retrieves the handle of the League Client Alpha Update window.
+        /// </summary>
+        /// <returns>Handle of the client.</returns>
+        private IntPtr GetAlphaClientWindowHandle()
+        {
+
+            // get client (use null for window name since it might be translated)
+            return GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
 
         }
 
