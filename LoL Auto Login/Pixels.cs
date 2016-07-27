@@ -17,8 +17,7 @@
 /// along with this program. If not, see http://www.gnu.org/licenses/.
 namespace LoLAutoLogin
 {
-
-    class Pixels
+    internal class Pixels
     {
 
         public static Pixel LaunchButton = new Pixel(new PixelCoord(0.5f, true), new PixelCoord(15), Color.FromArgb(255, 170, 110, 10), Color.FromArgb(255, 210, 140, 30));
