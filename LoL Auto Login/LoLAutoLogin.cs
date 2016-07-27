@@ -34,13 +34,13 @@ namespace LoLAutoLogin
     {
 
         // time constants
-        const int patcherTimeout = 30000;
-        const int launchTimeout = 30000;
-        const int clientTimeout = 30000;
-        const int passwordTimeout = 30000;
+        private const int PatcherTimeout = 30000;
+        private const int LaunchTimeout = 30000;
+        private const int ClientTimeout = 30000;
+        private const int PasswordTimeout = 30000;
 
         // whether we are using the alpha client or not
-        private bool isAlpha = false;
+        private readonly bool _isAlpha;
 
         public LoLAutoLogin()
         {
@@ -49,16 +49,16 @@ namespace LoLAutoLogin
             InitializeComponent();
 
             // check for alpha command line arg
-            isAlpha = Environment.GetCommandLineArgs().Contains("--alpha");
+            _isAlpha = Environment.GetCommandLineArgs().Contains("--alpha");
 
             // create notification icon context menu (so user can exit if program hangs)
-            ContextMenu menu = new ContextMenu();
-            MenuItem item = new MenuItem("&Exit", (sender, e) => Application.Exit());
+            var menu = new ContextMenu();
+            var item = new MenuItem("&Exit", (sender, e) => Application.Exit());
             menu.MenuItems.Add(item);
             notifyIcon.ContextMenu = menu;
 
             // set accept button (will be activated when 'enter' key is pressed)
-            this.AcceptButton = saveButton;
+            AcceptButton = saveButton;
 
         }
         
@@ -92,211 +92,167 @@ namespace LoLAutoLogin
 
             }
 
-            if (CheckLocation())
+            if (!CheckLocation()) return;
+
+            if (PasswordExists())
             {
-
-                if (PasswordExists())
-                {
-                    if (isAlpha)
-                        await RunAlphaClient();
-                    else
-                        RunPatcher();
-                }
+                if (_isAlpha)
+                    await RunAlphaClient();
                 else
-                {
-                    Log.Info("Password file not found, prompting user to enter password...");
-                }
-
+                    RunPatcher();
             }
-
+            else
+            {
+                Log.Info("Password file not found, prompting user to enter password...");
+            }
         }
 
         private bool CheckLocation()
         {
 
             // check if program is in same directory as league of legends
-            if (!File.Exists(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe"))
-            {
+            if (File.Exists(_isAlpha ? "LeagueClient.exe" : "lol.launcher.exe")) return true;
 
-                Log.Fatal("Launcher executable not found!");
+            Log.Fatal("Launcher executable not found!");
 
-                // show error message
-                MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // show error message
+            MessageBox.Show(this, "Please place LoL Auto Login in your League of Legends directory (beside the \"lol.launcher.exe file\").", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                // hide form so it doesn't flash on screen
-                this.Opacity = 0.0F;
+            // hide form so it doesn't flash on screen
+            Opacity = 0.0F;
 
-                // exit application
-                Application.Exit();
+            // exit application
+            Application.Exit();
 
-                // return so no other commands are executed
-                return false;
-
-            }
-
-            return true;
-
+            // return so no other commands are executed
+            return false;
         }
 
-        private bool PasswordExists()
+        private static bool PasswordExists()
         {
+            if (!File.Exists("password")) return false;
 
-            if (File.Exists("password"))
+            using (var reader = new StreamReader("password"))
             {
-
-                using (StreamReader reader = new StreamReader("password"))
+                if (Regex.IsMatch(reader.ReadToEnd(), @"^[a-zA-Z0-9\+\/]*={0,3}$"))
                 {
-
-                    if (Regex.IsMatch(reader.ReadToEnd(), @"^[a-zA-Z0-9\+\/]*={0,3}$"))
-                    {
-
-                        Log.Info("Password is old format, prompting user to enter password again...");
-                        MessageBox.Show("Password encryption has been changed. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    }
-                    else
-                    {
-
-                        return true;
-
-                    }
-
+                    Log.Info("Password is old format, prompting user to enter password again...");
+                    MessageBox.Show(@"Password encryption has been changed. You will be prompted to enter your password once again.", @"LoL Auto Login - Encryption method changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
-
+                else
+                {
+                    return true;
+                }
             }
 
             return false;
-
         }
 
         private bool CheckLeagueRunning()
         {
+            if (Process.GetProcessesByName("LolClient").Length <= 0 &&
+                Process.GetProcessesByName("LoLLauncher").Length <= 0 &&
+                Process.GetProcessesByName("LoLPatcher").Length <= 0) return false;
 
-            if(Process.GetProcessesByName("LolClient").Length > 0 || Process.GetProcessesByName("LoLLauncher").Length > 0 || Process.GetProcessesByName("LoLPatcher").Length > 0)
+            Log.Warn("League of Legends is already running!");
+
+            // prompt user to kill current league of legends process
+            if (MessageBox.Show(this, @"Another instance of League of Legends is currently running. Would you like to close it?", @"League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
             {
 
-                Log.Warn("League of Legends is already running!");
+                Log.Info("Attempting to kill all League of Legends instances...");
 
-                // prompt user to kill current league of legends process
-                if (MessageBox.Show(this, "Another instance of League of Legends is currently running. Would you like to close it?", "League of Legends is already running!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1) == DialogResult.Yes)
-                {
+                // kill all league of legends processes
+                KillProcessesByName("LolClient");
+                KillProcessesByName("LoLLauncher");
+                KillProcessesByName("LoLPatcher");
 
-                    Log.Info("Attempting to kill all League of Legends instances...");
+                while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero)
+                    Thread.Sleep(500);
 
-                    // kill all league of legends processes
-                    KillProcessesByName("LolClient");
-                    KillProcessesByName("LoLLauncher");
-                    KillProcessesByName("LoLPatcher");
-
-                    while (GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600) != IntPtr.Zero)
-                        Thread.Sleep(500);
-
-                    return false;
-
-                }
-                else
-                {
-
-                    // exit if user says no
-                    Application.Exit();
-                    return true;
-
-                }
+                return false;
 
             }
 
-            return false;
-
+            // exit if user says no
+            Application.Exit();
+            return true;
         }
 
         private void RunPatcher()
         {
             
             // hide this window
-            this.Hide();
+            Hide();
 
             // start launch process
             Log.Info("Password file found!");
 
             // check if league of legends is already running
-            if (!CheckLeagueRunning())
+            if (CheckLeagueRunning()) return;
+
+            Log.Debug("Attempting to start thread...");
+
+            var t = new Thread(PatcherLaunch);
+
+            FormClosing += (s, args) =>
             {
-
-                Log.Debug("Attempting to start thread...");
-
-                Thread t = new Thread(PatcherLaunch);
-
-                this.FormClosing += (s, args) =>
+                if (t.IsAlive)
                 {
-                    if (t != null && t.IsAlive)
-                    {
-                        t.Abort();
-                    }
-                };
+                    t.Abort();
+                }
+            };
 
-                t.IsBackground = true;
-                t.Start();
-
-            }
-
+            t.IsBackground = true;
+            t.Start();
         }
 
         private bool StartClient()
         {
-
             // try launching league of legends
             try
             {
-
-                Process.Start(isAlpha ? "LeagueClient.exe" : "lol.launcher.exe");
-
+                Process.Start(_isAlpha ? "LeagueClient.exe" : "lol.launcher.exe");
                 return true;
-
             }
             catch (Exception ex)
             {
-
                 // print error to log and show balloon tip to inform user of fatal error
                 Log.Fatal("Could not start League of Legends!");
                 Log.PrintStackTrace(ex.StackTrace);
 
-                this.Invoke(new Action(() => {
+                Invoke(new Action(() => {
                     notifyIcon.ShowBalloonTip(2500, "LoL Auto Login was unable to start League of Legends. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
                 }));
 
                 // exit application
                 Application.Exit();
                 return false;
-
             }
-
         }
 
         private void PatcherLaunch()
         {
-
             if(StartClient())
             {
-
                 // log
-                Log.Info("Waiting {0} ms for League of Legends Patcher...", patcherTimeout);
+                Log.Info("Waiting {0} ms for League of Legends Patcher...", PatcherTimeout);
 
                 // create stopwatch for loading timeout
-                Stopwatch patchersw = new Stopwatch();
+                var patchersw = new Stopwatch();
                 patchersw.Start();
 
-                IntPtr patcherHwnd = IntPtr.Zero;
+                var patcherHwnd = IntPtr.Zero;
 
                 // search for the patcher window for 30 seconds
-                while (patchersw.ElapsedMilliseconds < patcherTimeout && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero)
+                while (patchersw.ElapsedMilliseconds < PatcherTimeout && (patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600)) == IntPtr.Zero)
                     Thread.Sleep(500);
 
                 // check if patcher window was found
                 if (patcherHwnd != IntPtr.Zero)
                 {
-
                     // get patcher rectangle (window pos and size)
-                    RECT patcherRect;
+                    Rect patcherRect;
                     NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
 
                     Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={2}}}", patchersw.Elapsed.TotalMilliseconds, patcherHwnd, patcherRect);
@@ -307,20 +263,18 @@ namespace LoLAutoLogin
 
                     Log.Info("Waiting for Launch button to enable...");
 
-                    bool clicked = false;
-                    bool sleepMode = false;
+                    var clicked = false;
+                    var sleepMode = false;
 
                     // check if the "Launch" button is there and can be clicked
                     while (!clicked && patcherHwnd != IntPtr.Zero)
                     {
-                        
                         // get patcher image
-                        Bitmap patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
+                        var patcherImage = new Bitmap(ScreenCapture.CaptureWindow(patcherHwnd));
 
                         // check if the launch button is enabled
                         if (Pixels.LaunchButton.Match(patcherImage))
                         {
-
                             // get patcher rectangle and make patcher go to top
                             NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
                             NativeMethods.SetForegroundWindow(patcherHwnd);
@@ -328,7 +282,7 @@ namespace LoLAutoLogin
                             Log.Info("Found Launch button after {0} ms. Initiating click.", patchersw.Elapsed.TotalMilliseconds);
 
                             // use new input simulator instance to click on "Launch" button.
-                            InputSimulator sim = new InputSimulator();
+                            var sim = new InputSimulator();
                             sim.Mouse.LeftButtonUp();
                             Cursor.Position = new Point(patcherRect.Left + (int)(patcherRect.Width * 0.5), patcherRect.Top + (int)(patcherRect.Height * 0.025));
                             sim.Mouse.LeftButtonClick();
@@ -336,9 +290,7 @@ namespace LoLAutoLogin
                             clicked = true;
 
                             patchersw.Stop();
-
                             EnterPassword();
-
                         }
 
                         // dispose of image
@@ -347,65 +299,51 @@ namespace LoLAutoLogin
                         // force garbage collection
                         GC.Collect();
 
-                        if(!sleepMode && patchersw.ElapsedMilliseconds >launchTimeout)
+                        if(!sleepMode && patchersw.ElapsedMilliseconds >LaunchTimeout)
                         {
-
                             Log.Info("Launch button not enabling; going into sleep mode.");
-
                             sleepMode = true;
-
                         }
 
-                        if(sleepMode)
-                            Thread.Sleep(2000);
-                        else
-                            Thread.Sleep(500);
+                        Thread.Sleep(sleepMode ? 2000 : 500);
 
                         patcherHwnd = GetSingleWindowFromSize("LOLPATCHER", "LoL Patcher", 800, 600);
-
                     }
-
                 }
                 else
                 {
-
                     // print error to log
-                    Log.Error("Patcher not found after {0} ms. Aborting!", patcherTimeout);
+                    Log.Error("Patcher not found after {0} ms. Aborting!", PatcherTimeout);
 
                     // stop stopwatch
                     patchersw.Stop();
-
                 }
-
             }
             
             // exit application
             Application.Exit();
-            return;
-
         }
 
         private void EnterPassword()
         {
-            
             // create new stopwatch for client searching timeout
-            Stopwatch sw = new Stopwatch();
+            var sw = new Stopwatch();
             sw.Start();
 
             // log
-            Log.Info("Waiting {0} ms for League of Legends client...", clientTimeout);
+            Log.Info("Waiting {0} ms for League of Legends client...", ClientTimeout);
 
             // try to find league of legends client for 30 seconds
-            while (sw.ElapsedMilliseconds < clientTimeout && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero) Thread.Sleep(200);
+            while (sw.ElapsedMilliseconds < ClientTimeout && GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) == IntPtr.Zero) Thread.Sleep(200);
 
             // check if client was found
             if (GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600) != IntPtr.Zero)
             {
                 // get client window handle
-                IntPtr hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
+                var hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
                 
                 // get client window rectangle
-                RECT rect;
+                Rect rect;
                 NativeMethods.GetWindowRect(hwnd, out rect);
 
                 // log information found
@@ -416,29 +354,23 @@ namespace LoLAutoLogin
                 sw.Reset();
                 sw.Start();
 
-                Bitmap clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
+                var found = false;
 
-                bool found = false;
-
-                while (sw.ElapsedMilliseconds < passwordTimeout && !found && hwnd != IntPtr.Zero)
+                while (sw.ElapsedMilliseconds < PasswordTimeout && !found && hwnd != IntPtr.Zero)
                 {
-
                     Log.Verbose("{{Handle={0}, Rectangle={{Coordinates={1}, Size={2}}}}}", hwnd, rect, rect.Size);
 
                     NativeMethods.GetWindowRect(hwnd, out rect);
 
-                    clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
+                    var clientImage = new Bitmap(ScreenCapture.CaptureWindow(hwnd));
 
                     found = Pixels.PasswordBox.Match(clientImage);
 
                     clientImage.Dispose();
-
                     GC.Collect();
-
                     Thread.Sleep(500);
 
                     hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
-
                 }
 
                 // check if password box was found
@@ -455,15 +387,12 @@ namespace LoLAutoLogin
                     // try to read password from file
                     try
                     {
-
-                        using (FileStream file = new FileStream("password", FileMode.Open, FileAccess.Read))
+                        using (var file = new FileStream("password", FileMode.Open, FileAccess.Read))
                         {
-
-                            byte[] buffer = new byte[file.Length];
+                            var buffer = new byte[file.Length];
                             file.Read(buffer, 0, (int)file.Length);
 
                             password = Encryption.Decrypt(buffer);
-
                         }
 
                     }
@@ -474,7 +403,7 @@ namespace LoLAutoLogin
                         Log.PrintStackTrace(ex.StackTrace);
 
                         // show balloon tip to inform user of error
-                        this.Invoke(new Action(() =>
+                        Invoke(new Action(() =>
                         {
                             notifyIcon.ShowBalloonTip(2500, "LoL Auto Login encountered a fatal error and will now exit. Please check your logs for more information.", "LoL Auto Login has encountered a fatal error", ToolTipIcon.Error);
                         }));
@@ -483,21 +412,20 @@ namespace LoLAutoLogin
                         Application.Exit();
                         return;
                     }
-                    
+
                     // create character array from password
-                    char[] passArray = password.ToCharArray();
+                    var passArray = password.ToCharArray();
                     
                     // log
                     Log.Info("Entering password...");
 
-                    int i = 0;
+                    var i = 0;
                     
-                    InputSimulator sim = new InputSimulator();
+                    var sim = new InputSimulator();
 
                     // enter password one character at a time
                     while (i <= passArray.Length && sw.Elapsed.Seconds < 30 && hwnd != IntPtr.Zero)
                     {
-                        
                         // get window rectangle, in case it is resized or moved
                         NativeMethods.GetWindowRect(hwnd, out rect);
                         Log.Verbose("Client rectangle=" + rect.ToString());
@@ -525,7 +453,6 @@ namespace LoLAutoLogin
                         }
 
                         hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
-
                     }
                     
                 }
@@ -578,13 +505,10 @@ namespace LoLAutoLogin
             try
             {
 
-                using (FileStream file = new FileStream("password", FileMode.OpenOrCreate, FileAccess.Write))
+                using (var file = new FileStream("password", FileMode.OpenOrCreate, FileAccess.Write))
                 {
-
-                    byte[] data = Encryption.Encrypt(passTextBox.Text);
-
+                    var data = Encryption.Encrypt(passTextBox.Text);
                     file.Write(data, 0, data.Length);
-
                 }
 
             }
@@ -599,11 +523,11 @@ namespace LoLAutoLogin
             }
 
             // hide this window
-            this.Opacity = 0.0F;
-            this.Hide();
+            Opacity = 0.0F;
+            Hide();
 
             // start launch process
-            if (isAlpha)
+            if (_isAlpha)
                 await RunAlphaClient();
             else
                 RunPatcher();
@@ -617,14 +541,14 @@ namespace LoLAutoLogin
         /// <param name="width">Window minimum width</param>
         /// <param name="height">Window minimum height</param>
         /// <returns>The specified window's handle</returns>
-        private IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
+        private static IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
-            Log.Debug(string.Format("Trying to find window handle [ClassName={0},WindowName={1},Size={2}]", (lpWindowName != null ? lpWindowName : "null"), (lpClassName != null ? lpClassName : "null"), new Size(width, height).ToString()));
-            
+            Log.Debug($"Trying to find window handle [ClassName={(lpWindowName ?? "null")},WindowName={(lpClassName ?? "null")},Size={new Size(width, height)}]");
+
             // try to get window handle and rectangle using specified arguments
-            IntPtr hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
-            RECT rect = new RECT();
+            var hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
+            Rect rect;
             NativeMethods.GetWindowRect(hwnd, out rect);
 
             // check if handle is nothing
@@ -637,7 +561,7 @@ namespace LoLAutoLogin
             }
 
             // log what we found
-            Log.Verbose(string.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
+            Log.Verbose($"Found window [Handle={hwnd},Rectangle={rect}]");
 
             if (rect.Size.Width >= width && rect.Size.Height >= height)
             {
@@ -645,22 +569,19 @@ namespace LoLAutoLogin
                 
                 return hwnd;
             }
-            else
+
+            while(NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
             {
-                while(NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
-                {
-                    hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
-                    NativeMethods.GetWindowRect(hwnd, out rect);
+                hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
+                NativeMethods.GetWindowRect(hwnd, out rect);
 
-                    Log.Verbose(string.Format("Found window [Handle={0},Rectangle={1}]", hwnd.ToString(), rect.ToString()));
+                Log.Verbose($"Found window [Handle={hwnd},Rectangle={rect}]");
 
-                    if (rect.Size.Width >= width && rect.Size.Height >= height)
-                    {
-                        Log.Debug("Correct window handle found!");
+                if (rect.Size.Width < width || rect.Size.Height < height) continue;
 
-                        return hwnd;
-                    }
-                }
+                Log.Debug("Correct window handle found!");
+
+                return hwnd;
             }
 
             return IntPtr.Zero;
@@ -672,28 +593,21 @@ namespace LoLAutoLogin
         /// <param name="pName">Name of process(es) to kill</param>
         public void KillProcessesByName(string pName)
         {
-
             Log.Verbose("Killing all " + pName + " processes.");
-
-            foreach (Process p in Process.GetProcessesByName(pName)) p.Kill();
-
+            foreach (var p in Process.GetProcessesByName(pName)) p.Kill();
         }
 
         public new void Hide()
         {
-
-            this.Opacity = 0.0f;
-            this.ShowInTaskbar = false;
+            Opacity = 0.0f;
+            ShowInTaskbar = false;
             base.Hide();
-
         }
 
         private void LoLAutoLogin_FormClosing(object sender, FormClosingEventArgs e)
         {
-
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
-
         }
 
         /// <summary>
@@ -704,20 +618,17 @@ namespace LoLAutoLogin
         {
 
             // hide window
-            this.Hide();
+            Hide();
 
             // create progress interface
             IProgress<ShowBalloonTipEventArgs> showBalloonTip = new Progress<ShowBalloonTipEventArgs>((e) =>
             {
-
                 // show tooltip, use object array because i'm lazy
                 notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
-
             });
 
             await Task.Factory.StartNew(() =>
             {
-
                 // create handle variable
                 IntPtr clientHandle;
 
@@ -744,20 +655,17 @@ namespace LoLAutoLogin
                         // client is logged in, show window
                         NativeMethods.SetForegroundWindow(clientHandle);
                     }
-
                 }
                 else
                 {
-
                     // log
                     Log.Info("[ALPHA] Client is not running, launching client.");
 
                     // check if client exe exists
                     if (CheckLocation() && StartClient())
                     {
-                        
                         // create & start stopwatch
-                        Stopwatch sw = new Stopwatch();
+                        var sw = new Stopwatch();
                         sw.Start();
 
                         // get client handle
@@ -766,56 +674,43 @@ namespace LoLAutoLogin
                         // check if we got a valid handle
                         if (clientHandle != IntPtr.Zero)
                         {
-
                             // log
                             Log.Info("[ALPHA] Client found after {0} ms!", sw.ElapsedMilliseconds);
 
                             // get password box
-                            bool found = WaitForPasswordBox(showBalloonTip);
+                            var found = WaitForPasswordBox(showBalloonTip);
 
                             // check if the password box was found
                             if (clientHandle != IntPtr.Zero && found)
                             {
-                                
                                 // log
                                 Log.Info("[ALPHA] Password box found after {0} ms!", sw.ElapsedMilliseconds);
 
                                 // enter password
                                 EnterAlphaPassword(clientHandle, showBalloonTip);
-
                             }
                             else
                             {
-
                                 // log
                                 Log.Info("[ALPHA] Client exited!");
-
                             }
                         }
                         else
                         {
-
                             // log
-                            Log.Info("[ALPHA] Client not found after {0} ms. Aborting operation.", clientTimeout);
-
+                            Log.Info("[ALPHA] Client not found after {0} ms. Aborting operation.", ClientTimeout);
                         }
-
                     }
                     else
                     {
-
                         // log
                         Log.Info("Failed to launch client.");
-
                     }
-
                 }
-
             });
 
             // done, exit application
             Application.Exit();
-
         }
 
         /// <summary>
@@ -826,16 +721,16 @@ namespace LoLAutoLogin
         {
 
             // create & start stopwatch
-            Stopwatch sw = new Stopwatch();
+            var sw = new Stopwatch();
             sw.Start();
 
             // create client handle variable
-            IntPtr clientHandle = IntPtr.Zero;
+            IntPtr clientHandle;
 
             // search for window until clientTimeout is reached or window is found
             do
                 clientHandle = GetAlphaClientWindowHandle(); // use null for window name since it might be translated
-            while (sw.ElapsedMilliseconds < clientTimeout && clientHandle == IntPtr.Zero);
+            while (sw.ElapsedMilliseconds < ClientTimeout && clientHandle == IntPtr.Zero);
 
             // return found handle
             return clientHandle;
@@ -851,53 +746,46 @@ namespace LoLAutoLogin
         {
 
             // create found & handle varables
-            bool found = false;
+            var found = false;
             IntPtr clientHandle;
 
             // loop while not found and while client handle is something
             do
             {
-
                 // get client handle
                 clientHandle = GetAlphaClientWindowHandle();
 
                 // additional check just in case
-                if (clientHandle != IntPtr.Zero)
+                if (clientHandle == IntPtr.Zero) continue;
+
+                // this could fail so wrap in try/catch
+                try
                 {
-                    
-                    // this could fail so wrap in try/catch
-                    try
-                    {
+                    // check if password box is visible
+                    found = PasswordBoxIsVisible(clientHandle);
+                }
+                catch (Exception ex)
+                {
 
-                        // check if password box is visible
-                        found = PasswordBoxIsVisible(clientHandle);
+                    // print exception & stacktrace to log
+                    Log.Fatal("[ALPHA] Could not get client window image: " + ex.Message);
+                    Log.PrintStackTrace(ex.StackTrace);
 
-                    }
-                    catch (Exception ex)
-                    {
-
-                        // print exception & stacktrace to log
-                        Log.Fatal("[ALPHA] Could not get client window image: " + ex.Message);
-                        Log.PrintStackTrace(ex.StackTrace);
-
-                        // show balloon tip to inform user of error
-                        progress.Report(new ShowBalloonTipEventArgs(
-                            "LoL Auto Login has encountered a fatal error",
-                            "Please check your logs for more information.",
-                            ToolTipIcon.Error
+                    // show balloon tip to inform user of error
+                    progress.Report(new ShowBalloonTipEventArgs(
+                        "LoL Auto Login has encountered a fatal error",
+                        "Please check your logs for more information.",
+                        ToolTipIcon.Error
                         ));
 
-                        // exit application
-                        Application.Exit();
-                        return false;
-
-                    }
-
-                    // sleep
-                    Thread.Sleep(500);
+                    // exit application
+                    Application.Exit();
+                    return false;
 
                 }
 
+                // sleep
+                Thread.Sleep(500);
             }
             while (clientHandle != IntPtr.Zero && !found);
 
@@ -915,30 +803,25 @@ namespace LoLAutoLogin
         {
 
             // check that the handle is valid
-            if (clientHandle != IntPtr.Zero)
-            {
+            if (clientHandle == IntPtr.Zero) return false;
 
-                // get client window image
-                Bitmap clientBitmap = new Bitmap(ScreenCapture.CaptureWindow(clientHandle));
+            // get client window image
+            var clientBitmap = new Bitmap(ScreenCapture.CaptureWindow(clientHandle));
 
-                // get pixels
-                Pixel px1 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.347f, true), Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 5, 10, 10));
-                Pixel px2 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.208f, true), Color.FromArgb(255, 0, 5, 15), Color.FromArgb(255, 5, 15, 25));
+            // get pixels
+            var px1 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.347f, true), Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 5, 10, 10));
+            var px2 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.208f, true), Color.FromArgb(255, 0, 5, 15), Color.FromArgb(255, 5, 15, 25));
 
-                // check if the password box is displayed
-                bool found = px1.Match(clientBitmap) && px2.Match(clientBitmap);
+            // check if the password box is displayed
+            var found = px1.Match(clientBitmap) && px2.Match(clientBitmap);
 
-                // dispose of image & collect garbage
-                clientBitmap.Dispose();
-                GC.Collect();
+            // dispose of image & collect garbage
+            clientBitmap.Dispose();
+            GC.Collect();
 
-                return found;
-
-            }
+            return found;
 
             // return false by default
-            return false;
-
         }
 
         /// <summary>
@@ -959,16 +842,14 @@ namespace LoLAutoLogin
             {
 
                 // create file stream
-                using (FileStream file = new FileStream("password", FileMode.Open, FileAccess.Read))
+                using (var file = new FileStream("password", FileMode.Open, FileAccess.Read))
                 {
-
                     // read bytes
-                    byte[] buffer = new byte[file.Length];
+                    var buffer = new byte[file.Length];
                     file.Read(buffer, 0, (int)file.Length);
 
                     // decrypt password
                     password = Encryption.Decrypt(buffer);
-
                 }
 
             }
@@ -991,20 +872,19 @@ namespace LoLAutoLogin
             }
 
             // create character array from password
-            char[] passArray = password.ToCharArray();
+            var passArray = password.ToCharArray();
 
             // log
             Log.Info("[ALPHA] Entering password...");
 
-            int i = 0;
-            RECT rect;
-            InputSimulator sim = new InputSimulator();
+            var i = 0;
+            var sim = new InputSimulator();
 
             // enter password one character at a time
             while (i <= passArray.Length && clientHandle != IntPtr.Zero)
             {
-
                 // get window rectangle, in case it is resized or moved
+                Rect rect;
                 NativeMethods.GetWindowRect(clientHandle, out rect);
                 Log.Verbose("[ALPHA] Client rectangle=" + rect.ToString());
 
@@ -1019,24 +899,19 @@ namespace LoLAutoLogin
                 // check if client is foreground window
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
                 {
-                    
                     // enter password character, press enter if complete
                     if (i != passArray.Length)
                     {
-                        
                         // go to end of text box
                         sim.Keyboard.KeyPress(VirtualKeyCode.END);
 
                         // enter character
                         sim.Keyboard.TextEntry(passArray[i].ToString());
-
                     }
                     else
                     {
-
                         // press enter
                         sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-
                     }
 
                     // increment counter
@@ -1058,14 +933,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client Alpha Update window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private IntPtr GetAlphaClientWindowHandle()
-        {
-
-            // get client (use null for window name since it might be translated)
-            return GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
-
-        }
-
+        private IntPtr GetAlphaClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
     }
 
 }

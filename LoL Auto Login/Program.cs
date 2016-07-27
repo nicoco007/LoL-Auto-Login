@@ -3,13 +3,13 @@ using System.Windows.Forms;
 
 namespace LoLAutoLogin
 {
-    static class Program
+    internal static class Program
     {
         /// <summary>
         /// Point d'entrée principal de l'application.
         /// </summary>
         [STAThread]
-        static void Main()
+        private static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

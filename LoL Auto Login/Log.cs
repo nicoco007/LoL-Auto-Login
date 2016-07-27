@@ -23,8 +23,8 @@ namespace LoLAutoLogin
     public static class Log
     {
 
-        private static DateTime startTime = DateTime.Now;
-        public static string logFile = string.Format(@"{0:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log", DateTime.Now);
+        private static readonly DateTime StartTime = DateTime.Now;
+        public static string LogFile = $@"{DateTime.Now:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log";
 
         // write a message using the INFO tag
         public static void Verbose(string message, params object[] arg)
@@ -87,11 +87,9 @@ namespace LoLAutoLogin
         public static void PrintStackTrace(string st)
         {
 
-            foreach (string str in st.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
+            foreach (var str in st.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
             {
-
-                Log.Fatal(str);
-
+                Fatal(str);
             }
 
         }
@@ -100,27 +98,24 @@ namespace LoLAutoLogin
         public static void Write(string text, params object[] arg)
         {
 
-            text = (DateTime.Now - startTime).ToString("G") + " " + text;
+            text = (DateTime.Now - StartTime).ToString("G") + " " + text;
 
             if (arg.Length > 0) Console.WriteLine(text, arg); else Console.WriteLine(text);
 
             try
             {
+                var path = Directory.Exists(Directory.GetCurrentDirectory() + @"\Logs") ? Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs\" + LogFile : Directory.GetCurrentDirectory() + @"\lolautologin.log";
+                var dir = Path.GetDirectoryName(path);
 
-                string path = Directory.Exists(Directory.GetCurrentDirectory() + @"\Logs") ? Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs\" + logFile : Directory.GetCurrentDirectory() + @"\lolautologin.log";
-                string dir = Path.GetDirectoryName(path);
+                if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                using (StreamWriter sw = new StreamWriter(path, true))
+                using (var sw = new StreamWriter(path, true))
                     if (arg.Length > 0) sw.WriteLine(text, arg); else sw.WriteLine(text);
 
             }
             catch(Exception ex)
             {
-
                 MessageBox.Show(ex.StackTrace);
-
             }
 
         }
