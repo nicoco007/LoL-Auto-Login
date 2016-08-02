@@ -39,7 +39,7 @@ namespace LoLAutoLogin
         internal static extern uint GetLastError();
 
         [DllImport("user32.dll", SetLastError = true)]
-        internal static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+        internal static extern bool GetWindowRect(IntPtr hwnd, out Rect lpRect);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]

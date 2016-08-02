@@ -27,19 +27,20 @@ namespace LoLAutoLogin
         public static Image CaptureWindow(IntPtr handle)
         {
             // get te hDC of the target window
-            IntPtr hdcSrc = User32.GetWindowDC(handle);
+            var hdcSrc = User32.GetWindowDC(handle);
             // get the size
-            User32.RECT windowRect = new User32.RECT();
+            var windowRect = new User32.RECT();
             User32.GetWindowRect(handle, ref windowRect);
-            int width = windowRect.right - windowRect.left;
-            int height = windowRect.bottom - windowRect.top;
+
+            var width = windowRect.right - windowRect.left;
+            var height = windowRect.bottom - windowRect.top;
             // create a device context we can copy to
-            IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
+            var hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
             // create a bitmap we can copy it to,
             // using GetDeviceCaps to get the width/height
-            IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
+            var hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
             // select the bitmap object
-            IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
+            var hOld = GDI32.SelectObject(hdcDest, hBitmap);
             // bitblt over
             GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, GDI32.SRCCOPY);
             // restore selection
@@ -64,7 +65,7 @@ namespace LoLAutoLogin
         /// <param name="format"></param>
         public static void CaptureWindowToFile(IntPtr handle, string filename, ImageFormat format)
         {
-            Image img = CaptureWindow(handle);
+            var img = CaptureWindow(handle);
             img.Save(filename, format);
         }
 
@@ -75,7 +76,7 @@ namespace LoLAutoLogin
         /// <param name="format"></param>
         public static void CaptureScreenToFile(string filename, ImageFormat format)
         {
-            Image img = CaptureScreen();
+            var img = CaptureScreen();
             img.Save(filename, format);
         }
 
@@ -112,10 +113,10 @@ namespace LoLAutoLogin
             [StructLayout(LayoutKind.Sequential)]
             public struct RECT
             {
-                public int left;
-                public int top;
-                public int right;
-                public int bottom;
+                public readonly int left;
+                public readonly int top;
+                public readonly int right;
+                public readonly int bottom;
             }
 
             [DllImport("user32.dll")]
@@ -128,5 +129,6 @@ namespace LoLAutoLogin
             public static extern IntPtr GetWindowRect(IntPtr hWnd, ref RECT rect);
 
         }
+        
     }
 }
