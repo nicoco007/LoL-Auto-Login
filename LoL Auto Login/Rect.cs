@@ -18,11 +18,11 @@
 namespace LoLAutoLogin
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Rect
+    public struct RECT
     {
         public int Left, Top, Right, Bottom;
 
-        public Rect(int left, int top, int right, int bottom)
+        public RECT(int left, int top, int right, int bottom)
         {
             Left = left;
             Top = top;
@@ -30,7 +30,7 @@ namespace LoLAutoLogin
             Bottom = bottom;
         }
 
-        public Rect(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
+        public RECT(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
 
         public int X
         {
@@ -68,31 +68,31 @@ namespace LoLAutoLogin
             set { Width = value.Width; Height = value.Height; }
         }
 
-        public static implicit operator System.Drawing.Rectangle(Rect r) => new System.Drawing.Rectangle(r.Left, r.Top, r.Width, r.Height);
+        public static implicit operator System.Drawing.Rectangle(RECT r) => new System.Drawing.Rectangle(r.Left, r.Top, r.Width, r.Height);
 
-        public static implicit operator Rect(System.Drawing.Rectangle r) => new Rect(r);
+        public static implicit operator RECT(System.Drawing.Rectangle r) => new RECT(r);
 
-        public static bool operator ==(Rect r1, Rect r2) => r1.Equals(r2);
+        public static bool operator ==(RECT r1, RECT r2) => r1.Equals(r2);
 
-        public static bool operator !=(Rect r1, Rect r2) => !r1.Equals(r2);
+        public static bool operator !=(RECT r1, RECT r2) => !r1.Equals(r2);
 
-        public bool Equals(Rect r) => r.Left == Left && r.Top == Top && r.Right == Right && r.Bottom == Bottom;
+        public bool Equals(RECT r) => r.Left == Left && r.Top == Top && r.Right == Right && r.Bottom == Bottom;
 
         public override bool Equals(object obj)
         {
-            if (!(obj is Rect))
+            if (!(obj is RECT))
             {
                 if (obj is System.Drawing.Rectangle)
-                    return Equals(new Rect((System.Drawing.Rectangle) obj));
+                    return Equals(new RECT((System.Drawing.Rectangle) obj));
             }
             else
-                return Equals((Rect) obj);
+                return Equals((RECT) obj);
 
             return false;
         }
 
         public override int GetHashCode() => ((System.Drawing.Rectangle)this).GetHashCode();
 
-        public override string ToString() => string.Format(System.Globalization.CultureInfo.CurrentCulture, "{{Left={0},Top={1},Right={2},Bottom={3}}}", Left, Top, Right, Bottom);
+        public override string ToString() => string.Format(System.Globalization.CultureInfo.CurrentCulture, "{{Left={0},Top={1},Width={2},Height={3}}}", Left, Top, Width, Height);
     }
 }

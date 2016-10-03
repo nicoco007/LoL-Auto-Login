@@ -252,7 +252,7 @@ namespace LoLAutoLogin
                 if (patcherHwnd != IntPtr.Zero)
                 {
                     // get patcher rectangle (window pos and size)
-                    Rect patcherRect;
+                    RECT patcherRect;
                     NativeMethods.GetWindowRect(patcherHwnd, out patcherRect);
 
                     Log.Info("Found patcher after {0} ms {{Handle={1}, Rectangle={2}}}", patchersw.Elapsed.TotalMilliseconds, patcherHwnd, patcherRect);
@@ -343,7 +343,7 @@ namespace LoLAutoLogin
                 var hwnd = GetSingleWindowFromSize("ApolloRuntimeContentWindow", null, 800, 600);
                 
                 // get client window rectangle
-                Rect rect;
+                RECT rect;
                 NativeMethods.GetWindowRect(hwnd, out rect);
 
                 // log information found
@@ -541,14 +541,14 @@ namespace LoLAutoLogin
         /// <param name="width">Window minimum width</param>
         /// <param name="height">Window minimum height</param>
         /// <returns>The specified window's handle</returns>
-        private static IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
+        public static IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
-            Log.Debug($"Trying to find window handle [ClassName={(lpWindowName ?? "null")},WindowName={(lpClassName ?? "null")},Size={new Size(width, height)}]");
+            Log.Debug($"Trying to find window handle [ClassName={(lpClassName ?? "null")},WindowName={(lpWindowName ?? "null")},Size={new Size(width, height)}]");
 
             // try to get window handle and rectangle using specified arguments
             var hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
-            Rect rect;
+            RECT rect;
             NativeMethods.GetWindowRect(hwnd, out rect);
 
             // check if handle is nothing
@@ -884,7 +884,7 @@ namespace LoLAutoLogin
             while (i <= passArray.Length && clientHandle != IntPtr.Zero)
             {
                 // get window rectangle, in case it is resized or moved
-                Rect rect;
+                RECT rect;
                 NativeMethods.GetWindowRect(clientHandle, out rect);
                 Log.Verbose("[ALPHA] Client rectangle=" + rect.ToString());
 
@@ -933,7 +933,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client Alpha Update window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private IntPtr GetAlphaClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
+        public static IntPtr GetAlphaClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
     }
 
 }

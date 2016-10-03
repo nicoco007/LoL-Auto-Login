@@ -1,0 +1,12 @@
+version: '{branch}.{build}'
+
+configuration: Release
+
+before_build:
+  - nuget restore
+
+build:
+  verbosity: minimal
+
+artifacts:
+  - path: 'LoL Auto Login\bin\Release\LoLAutoLogin.exe'
