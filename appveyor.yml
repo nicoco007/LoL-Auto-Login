@@ -10,3 +10,4 @@ build:
 
 artifacts:
   - path: 'LoL Auto Login\bin\Release\LoLAutoLogin.exe'
+  - path: 'Diagnostic Tool\bin\Release\lolaldiag.exe'
