@@ -1,4 +1,6 @@
-# LoL-Auto-Login
+# LoL Auto Login
+[![Build status](https://ci.appveyor.com/api/projects/status/ie2065acev0ag2v7?svg=true)](https://ci.appveyor.com/project/nicoco007/lol-auto-login)
+
 Automatic login for League of Legends.
 
 # Known issues
