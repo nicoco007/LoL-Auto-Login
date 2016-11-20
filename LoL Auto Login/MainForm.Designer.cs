@@ -98,7 +98,7 @@
             this.infoLabel.Text = resources.GetString("infoLabel.Text");
             this.infoLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // LoLAutoLogin
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -110,10 +110,10 @@
             this.Controls.Add(this.passTextBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "LoLAutoLogin";
+            this.Name = "MainForm";
             this.Text = "LoL Auto Login";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LoLAutoLogin_FormClosing);
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

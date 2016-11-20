@@ -130,7 +130,6 @@
     <Compile Include="Pixels.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RECT.cs" />
     <Compile Include="ShowBalloonTipEventArgs.cs" />
     <Compile Include="ScreenCapture.cs" />
     <EmbeddedResource Include="MainForm.resx">
@@ -184,7 +183,6 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
     <Content Include="icon.ico" />
-    <Content Include="LICENSE.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
