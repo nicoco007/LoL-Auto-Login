@@ -577,7 +577,7 @@ namespace LoLAutoLogin
         /// <param name="pName">Name of process(es) to kill</param>
         public void KillProcessesByName(string pName)
         {
-            Log.Verbose("Killing all " + pName + " processes.");
+            Log.Verbose($"Killing all {pName} processes.");
             foreach (var p in Process.GetProcessesByName(pName)) p.Kill();
         }
 
