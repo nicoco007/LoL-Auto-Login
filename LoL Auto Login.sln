@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoL Auto Login", "LoL Auto Login\LoL Auto Login.csproj", "{6BD6C516-6532-43E5-B7F5-C256F21AF674}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diagnostic Tool", "Diagnostic Tool\Diagnostic Tool.csproj", "{95594572-8C9B-4D92-85BC-74BD6ADDD085}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{6BD6C516-6532-43E5-B7F5-C256F21AF674}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BD6C516-6532-43E5-B7F5-C256F21AF674}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BD6C516-6532-43E5-B7F5-C256F21AF674}.Release|Any CPU.Build.0 = Release|Any CPU
-		{95594572-8C9B-4D92-85BC-74BD6ADDD085}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{95594572-8C9B-4D92-85BC-74BD6ADDD085}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{95594572-8C9B-4D92-85BC-74BD6ADDD085}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{95594572-8C9B-4D92-85BC-74BD6ADDD085}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
