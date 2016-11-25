@@ -1,76 +1,62 @@
 ﻿using System.Drawing;
 
-/// LoL Auto Login - Automatic Login for League of Legends
 /// Copyright © 2015-2016 nicoco007
 ///
-/// This program is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU Affero General Public License as published
-/// by the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
 ///
-/// This program is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
-/// GNU Affero General Public License for more details.
+///     http://www.apache.org/licenses/LICENSE-2.0
 ///
-/// You should have received a copy of the GNU Affero General Public License
-/// along with this program. If not, see http://www.gnu.org/licenses/.
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
 namespace LoLAutoLogin
 {
-
-    class Pixel
+    internal class Pixel
     {
-
-        PixelCoord X { get; }
-        PixelCoord Y { get; }
-        Color FromColor { get; }
-        Color ToColor { get; }
+        private PixelCoord X { get; }
+        private PixelCoord Y { get; }
+        private Color FromColor { get; }
+        private Color ToColor { get; }
 
         public Pixel(PixelCoord x, PixelCoord y, Color color)
         {
 
-            this.FromColor = color;
-            this.X = x;
-            this.Y = y;
+            FromColor = color;
+            X = x;
+            Y = y;
 
         }
 
         public Pixel(PixelCoord x, PixelCoord y, Color fromColor, Color toColor)
         {
             
-            this.X = x;
-            this.Y = y;
-            this.FromColor = fromColor;
-            this.ToColor = toColor;
+            X = x;
+            Y = y;
+            FromColor = fromColor;
+            ToColor = toColor;
 
         }
 
         public bool Match(Bitmap bmp)
         {
+            var pixelX = X.Relative ? (int)(X.Coordinate * bmp.Width) : (int)X.Coordinate;
+            var pixelY = Y.Relative ? (int)(Y.Coordinate * bmp.Height) : (int)Y.Coordinate;
 
-            Color pixelColor;
-
-            int pixelX = this.X.Relative ? (int)(this.X.Coordinate * bmp.Width) : (int)this.X.Coordinate;
-            int pixelY = this.Y.Relative ? (int)(this.Y.Coordinate * bmp.Height) : (int)this.Y.Coordinate;
-
-            pixelColor = bmp.GetPixel(pixelX, pixelY);
+            var pixelColor = bmp.GetPixel(pixelX, pixelY);
 
             Log.Verbose(pixelColor.ToString());
 
-            if (this.FromColor != this.ToColor)
+            if (FromColor != ToColor)
                 return IsInRange(pixelColor.R, FromColor.R, ToColor.R) && IsInRange(pixelColor.G, FromColor.G, ToColor.G) && IsInRange(pixelColor.B, FromColor.B, ToColor.B);
-            else
-                return pixelColor == this.FromColor;
 
+            return pixelColor == this.FromColor;
         }
 
-        private bool IsInRange(int value, int min, int max)
-        {
-
-            return (value >= min && value <= max);
-
-        }
-
+        private static bool IsInRange(int value, int min, int max) => value >= min && value <= max;
     }
 
 }

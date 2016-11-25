@@ -3,28 +3,26 @@ using System.Linq;
 using System.IO;
 using System.Windows.Forms;
 
-/// LoL Auto Login - Automatic Login for League of Legends
 /// Copyright © 2015-2016 nicoco007
 ///
-/// This program is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU Affero General Public License as published
-/// by the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
 ///
-/// This program is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
-/// GNU Affero General Public License for more details.
+///     http://www.apache.org/licenses/LICENSE-2.0
 ///
-/// You should have received a copy of the GNU Affero General Public License
-/// along with this program. If not, see http://www.gnu.org/licenses/.
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
 namespace LoLAutoLogin
 {
     public static class Log
     {
 
-        private static DateTime startTime = DateTime.Now;
-        public static string logFile = string.Format(@"{0:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log", DateTime.Now);
+        private static readonly DateTime StartTime = DateTime.Now;
+        public static string LogFile = $@"{DateTime.Now:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log";
 
         // write a message using the INFO tag
         public static void Verbose(string message, params object[] arg)
@@ -87,11 +85,9 @@ namespace LoLAutoLogin
         public static void PrintStackTrace(string st)
         {
 
-            foreach (string str in st.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
+            foreach (var str in st.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
             {
-
-                Log.Fatal(str);
-
+                Fatal(str);
             }
 
         }
@@ -100,27 +96,24 @@ namespace LoLAutoLogin
         public static void Write(string text, params object[] arg)
         {
 
-            text = (DateTime.Now - startTime).ToString("G") + " " + text;
+            text = (DateTime.Now - StartTime).ToString("G") + " " + text;
 
             if (arg.Length > 0) Console.WriteLine(text, arg); else Console.WriteLine(text);
 
             try
             {
+                var path = Directory.Exists(Directory.GetCurrentDirectory() + @"\Logs") ? Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs\" + LogFile : Directory.GetCurrentDirectory() + @"\lolautologin.log";
+                var dir = Path.GetDirectoryName(path);
 
-                string path = Directory.Exists(Directory.GetCurrentDirectory() + @"\Logs") ? Directory.GetCurrentDirectory() + @"\Logs\LoL Auto Login Logs\" + logFile : Directory.GetCurrentDirectory() + @"\lolautologin.log";
-                string dir = Path.GetDirectoryName(path);
+                if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                using (StreamWriter sw = new StreamWriter(path, true))
+                using (var sw = new StreamWriter(path, true))
                     if (arg.Length > 0) sw.WriteLine(text, arg); else sw.WriteLine(text);
 
             }
             catch(Exception ex)
             {
-
                 MessageBox.Show(ex.StackTrace);
-
             }
 
         }
