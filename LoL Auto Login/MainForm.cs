@@ -576,7 +576,10 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
+
+        //public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
+        //LoL Auto Login was not working if "League Client" window was at 1024x576, Changing the width and height fixed it for me.
+        public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
     }
 
 }
