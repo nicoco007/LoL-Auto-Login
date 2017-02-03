@@ -525,8 +525,6 @@ namespace LoLAutoLogin
             // create input simulator instance
             var sim = new InputSimulator();
 
-            Log.Info(password);
-
             // enter password one character at a time, with one additional iteration for pressing the enter key
             for (int i = 0; (i <= passArray.Length) && (clientHandle != IntPtr.Zero); i++)
             {
@@ -576,9 +574,6 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-
-        //public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1200, 700);
-        //LoL Auto Login was not working if "League Client" window was at 1024x576, Changing the width and height fixed it for me.
         public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
     }
 
