@@ -485,21 +485,29 @@ namespace LoLAutoLogin
         /// <returns></returns>
         public List<short> GetHash(Bitmap source)
         {
+            // create list
             List<short> list = new List<short>();
 
+            // set resolution of resized image
             int resolution = 64;
 
+            // resize bitmap
             Bitmap resized = new Bitmap(source, new Size(resolution, resolution));
 
+            // iterate through every pixel
             for (int i = 0; i < resized.Width; i++)
             {
                 for (int j = 0; j < resized.Height; j++)
                 {
+                    // get brightness
                     float b = resized.GetPixel(i, j).GetBrightness();
+
+                    // convert brightness 0-1 to 0-255 value
                     list.Add((short) (b * 255));
                 }
             }
 
+            // return brightness list
             return list;
         }
 
@@ -512,15 +520,21 @@ namespace LoLAutoLogin
         /// <returns>Whether the images are similar or not</returns>
         public bool CompareImage(Bitmap a, Bitmap b, double tolerance = 0.10)
         {
-            int colorTolerance = (int) (tolerance * 100);
-            double matchTolerance = 1 - tolerance;
+            // get tolerances
+            int colorTolerance = (int) (tolerance * 100);   // tolerance when comparing brightnesses
+            double matchTolerance = 1 - tolerance;          // tolerance when comparing amount of similar pixels to total amount of pixels
+
+            // get hashes
             List<short> hashA = GetHash(a);
             List<short> hashB = GetHash(b);
 
+            // get amount of similar pixels
             int similar = hashA.Zip(hashB, (i, j) => Math.Abs(i - j) < colorTolerance).Count(sim => sim);
 
+            // log
             Log.Debug("Comparison: " + similar + "/" + hashA.Count);
 
+            // return true if the amount of similar pixels is over tolerance, false if not
             return similar > hashA.Count * matchTolerance;
         }
 
@@ -533,9 +547,11 @@ namespace LoLAutoLogin
         /// <returns>Whether the value is between the specified minimum and maximum or not</returns>
         public bool InRange(double val, double min, double max)
         {
+            // check if min/max values make sense
             if (min > max)
                 throw new ArgumentException("Minimum must be smaller than maximum.");
 
+            // return if val is between min and max
             return val >= min && val <= max;
         }
         
@@ -547,11 +563,14 @@ namespace LoLAutoLogin
         /// <returns>Cropped image</returns>
         private Bitmap CropImage(Bitmap bitmap, Rectangle rect)
         {
+            // create bitmap
             Bitmap cropped = new Bitmap(rect.Width, rect.Height);
 
+            // draw image on cropped bitmap
             using (Graphics g = Graphics.FromImage(cropped))
                 g.DrawImage(bitmap, -rect.X, -rect.Y);
 
+            // return cropped bitmap
             return cropped;
         }
 
