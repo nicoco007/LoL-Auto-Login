@@ -1,8 +1,11 @@
 ﻿using Microsoft;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -51,7 +54,7 @@ namespace LoLAutoLogin
             Opacity = 0.0f;
             ShowInTaskbar = false;
         }
-        
+
         private async void MainForm_Load(object sender, EventArgs e)
         {
             // start logging
@@ -151,7 +154,7 @@ namespace LoLAutoLogin
                 return false;
             }
         }
-        
+
         private async void saveButton_Click(object sender, EventArgs e)
         {
             // check if a password was inputted
@@ -182,9 +185,9 @@ namespace LoLAutoLogin
                 Log.Fatal("Could not save password to file!");
                 Log.PrintStackTrace(ex.StackTrace);
             }
-            
+
             Hide();
-            
+
             // run the client!
             await RunClient();
         }
@@ -222,11 +225,11 @@ namespace LoLAutoLogin
             if (rect.Size.Width >= width && rect.Size.Height >= height)
             {
                 Log.Debug("Correct window handle found!");
-                
+
                 return hwnd;
             }
 
-            while(NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
+            while (NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
             {
                 hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
                 NativeMethods.GetWindowRect(hwnd, out rect);
@@ -320,7 +323,7 @@ namespace LoLAutoLogin
 
                         // get client handle
                         clientHandle = AwaitClientHandle();
-                        
+
                         // check if we got a valid handle
                         if (clientHandle != IntPtr.Zero)
                         {
@@ -454,19 +457,102 @@ namespace LoLAutoLogin
 
             // get client window image
             var clientBitmap = new Bitmap(ScreenCapture.CaptureWindow(clientHandle));
+            
+            // get reference image
+            Bitmap reference = Properties.Resources.reference_login;
 
-            // get pixels
-            var px1 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.347f, true), Color.FromArgb(255, 0, 0, 0), Color.FromArgb(255, 10, 10, 10));
-            var px2 = new Pixel(new PixelCoord(0.914f, true), new PixelCoord(0.208f, true), Color.FromArgb(255, 0, 0, 10), Color.FromArgb(255, 10, 20, 30));
+            // get login sidebar thing
+            Bitmap cropped = CropImage(clientBitmap, new Rectangle((int)(clientBitmap.Width * 0.825), 0, (int)(clientBitmap.Width * 0.175), clientBitmap.Height));
 
-            // check if the password box is displayed
-            var found = px1.Match(clientBitmap) && px2.Match(clientBitmap);
+            // compare the images
+            var found = CompareImage(reference, cropped);
 
-            // dispose of image & collect garbage
-            clientBitmap.Dispose();
+            // dispose of bitmaps
+            reference.Dispose();
+            cropped.Dispose();
+
+            // force garbage collection
             GC.Collect();
 
+            // return
             return found;
+        }
+
+        /// <summary>
+        /// Generates a "hash" composed of brightness values of a resized version of the image
+        /// </summary>
+        /// <param name="source">Source bitmap</param>
+        /// <returns></returns>
+        public List<short> GetHash(Bitmap source)
+        {
+            List<short> list = new List<short>();
+
+            int resolution = 64;
+
+            Bitmap resized = new Bitmap(source, new Size(resolution, resolution));
+
+            for (int i = 0; i < resized.Width; i++)
+            {
+                for (int j = 0; j < resized.Height; j++)
+                {
+                    float b = resized.GetPixel(i, j).GetBrightness();
+                    list.Add((short) (b * 255));
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Compares two images using their hashes & supplied tolerance
+        /// </summary>
+        /// <param name="a">First image</param>
+        /// <param name="b">Second image</param>
+        /// <param name="tolerance">% tolerance of comparison</param>
+        /// <returns>Whether the images are similar or not</returns>
+        public bool CompareImage(Bitmap a, Bitmap b, double tolerance = 0.10)
+        {
+            int colorTolerance = (int) (tolerance * 100);
+            double matchTolerance = 1 - tolerance;
+            List<short> hashA = GetHash(a);
+            List<short> hashB = GetHash(b);
+
+            int similar = hashA.Zip(hashB, (i, j) => Math.Abs(i - j) < colorTolerance).Count(sim => sim);
+
+            Log.Debug("Comparison: " + similar + "/" + hashA.Count);
+
+            return similar > hashA.Count * matchTolerance;
+        }
+
+        /// <summary>
+        /// Checks if the value is between the specified minimum and maximum
+        /// </summary>
+        /// <param name="val">Value to check</param>
+        /// <param name="min">Minimum</param>
+        /// <param name="max">Maximum</param>
+        /// <returns>Whether the value is between the specified minimum and maximum or not</returns>
+        public bool InRange(double val, double min, double max)
+        {
+            if (min > max)
+                throw new ArgumentException("Minimum must be smaller than maximum.");
+
+            return val >= min && val <= max;
+        }
+        
+        /// <summary>
+        /// Crop an image.
+        /// </summary>
+        /// <param name="bitmap">Bitmap to crop</param>
+        /// <param name="rect">Crop rectangle</param>
+        /// <returns>Cropped image</returns>
+        private Bitmap CropImage(Bitmap bitmap, Rectangle rect)
+        {
+            Bitmap cropped = new Bitmap(rect.Width, rect.Height);
+
+            using (Graphics g = Graphics.FromImage(cropped))
+                g.DrawImage(bitmap, -rect.X, -rect.Y);
+
+            return cropped;
         }
 
         /// <summary>
