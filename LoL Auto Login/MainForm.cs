@@ -14,7 +14,7 @@ using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 
-/// Copyright © 2015-2016 nicoco007
+/// Copyright © 2015-2017 nicoco007
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -489,10 +489,14 @@ namespace LoLAutoLogin
             List<short> list = new List<short>();
 
             // set resolution of resized image
-            int resolution = 64;
+            int resolution = 32;
 
             // resize bitmap
             Bitmap resized = new Bitmap(source, new Size(resolution, resolution));
+            
+            long time = (long)DateTime.Now.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            source.Save(string.Format("{0}.png", time), ImageFormat.Png);
+            resized.Save(string.Format("{0}-resized.png", time), ImageFormat.Png);
 
             // iterate through every pixel
             for (int i = 0; i < resized.Width; i++)
@@ -516,20 +520,17 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="a">First image</param>
         /// <param name="b">Second image</param>
-        /// <param name="tolerance">% tolerance of comparison</param>
+        /// <param name="brightnessTolerance">Tolerance, from 0 to 255, when comparing the brightness of pixels</param>
+        /// <param name="matchTolerance">Percent tolerance of similar pixel count versus total pixel count</param>
         /// <returns>Whether the images are similar or not</returns>
-        public bool CompareImage(Bitmap a, Bitmap b, double tolerance = 0.10)
+        public bool CompareImage(Bitmap a, Bitmap b, double brightnessTolerance = 10, double matchTolerance = 0.90)
         {
-            // get tolerances
-            int colorTolerance = (int) (tolerance * 100);   // tolerance when comparing brightnesses
-            double matchTolerance = 1 - tolerance;          // tolerance when comparing amount of similar pixels to total amount of pixels
-
             // get hashes
             List<short> hashA = GetHash(a);
             List<short> hashB = GetHash(b);
 
             // get amount of similar pixels
-            int similar = hashA.Zip(hashB, (i, j) => Math.Abs(i - j) < colorTolerance).Count(sim => sim);
+            int similar = hashA.Zip(hashB, (i, j) => Math.Abs(i - j) < brightnessTolerance).Count(sim => sim);
 
             // log
             Log.Debug("Comparison: " + similar + "/" + hashA.Count);

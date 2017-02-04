@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-/// Copyright © 2015-2016 nicoco007
+/// Copyright © 2015-2017 nicoco007
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
