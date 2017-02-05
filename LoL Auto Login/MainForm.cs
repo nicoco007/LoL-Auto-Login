@@ -493,10 +493,6 @@ namespace LoLAutoLogin
 
             // resize bitmap
             Bitmap resized = new Bitmap(source, new Size(resolution, resolution));
-            
-            long time = (long)DateTime.Now.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            source.Save(string.Format("{0}.png", time), ImageFormat.Png);
-            resized.Save(string.Format("{0}-resized.png", time), ImageFormat.Png);
 
             // iterate through every pixel
             for (int i = 0; i < resized.Width; i++)
