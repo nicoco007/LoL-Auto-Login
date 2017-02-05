@@ -585,7 +585,7 @@ namespace LoLAutoLogin
         /// <param name="brightnessTolerance">Tolerance, from 0 to 255, when comparing the brightness of pixels</param>
         /// <param name="matchTolerance">Percent tolerance of similar pixel count versus total pixel count</param>
         /// <returns>Whether the images are similar or not</returns>
-        public bool CompareImage(Bitmap a, Bitmap b, double brightnessTolerance = 10, double matchTolerance = 0.90)
+        public bool CompareImage(Bitmap a, Bitmap b, double brightnessTolerance = 10, double matchTolerance = 0.85)
         {
             // get hashes
             List<short> hashA = GetHash(a);
