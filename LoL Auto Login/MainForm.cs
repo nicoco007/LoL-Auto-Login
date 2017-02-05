@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,12 @@ namespace LoLAutoLogin
 
         // how long to wait until we decide the client isnt starting
         private const int ClientTimeout = 30000;
+
+        // debug info
+        private List<ClientWindowMatch> windowsFound = new List<ClientWindowMatch>();
+        private int comparisonResolution = 32;
+        private int minPixelsMatched = int.MaxValue;
+        private int maxPixelsMatched = int.MinValue;
 
         public MainForm()
         {
@@ -116,7 +123,7 @@ namespace LoLAutoLogin
             return false;
         }
 
-        private static bool PasswordExists()
+        private bool PasswordExists()
         {
             if (!File.Exists("password")) return false;
 
@@ -200,7 +207,7 @@ namespace LoLAutoLogin
         /// <param name="width">Window minimum width</param>
         /// <param name="height">Window minimum height</param>
         /// <returns>The specified window's handle</returns>
-        public static IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
+        public IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
             Log.Debug($"Trying to find window handle [ClassName={(lpClassName ?? "null")},WindowName={(lpWindowName ?? "null")},Size={new Size(width, height)}]");
@@ -226,6 +233,8 @@ namespace LoLAutoLogin
             {
                 Log.Debug("Correct window handle found!");
 
+                AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
+
                 return hwnd;
             }
 
@@ -240,10 +249,61 @@ namespace LoLAutoLogin
 
                 Log.Debug("Correct window handle found!");
 
+                AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
+
                 return hwnd;
             }
 
             return IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// Add a window handle to the found windows list, and log it if it is new.
+        /// </summary>
+        /// <param name="handle">Window handle</param>
+        /// <param name="rect">Window rectangle</param>
+        /// <param name="className">Window class name (optional)</param>
+        /// <param name="name">Window name/text (optional)</param>
+        public void AddFoundWindow(IntPtr handle, Rectangle rect, string className = null, string name = null)
+        {
+            // check if class name is defined
+            if (string.IsNullOrEmpty(className))
+            {
+                // create stringbuilder
+                StringBuilder sb = new StringBuilder(255);
+
+                // get class name
+                NativeMethods.GetClassName(handle, sb, sb.MaxCapacity);
+
+                // set class name to stringbuilder text
+                className = sb.ToString();
+            }
+
+            // check if window name/text is set
+            if (string.IsNullOrEmpty(name))
+            {
+                // create stringbuilder
+                StringBuilder sb = new StringBuilder(255);
+
+                // get window name/text
+                NativeMethods.GetWindowText(handle, sb, sb.MaxCapacity);
+
+                // set window name/text
+                name = sb.ToString();
+            }
+
+            // create instance of ClientWindowMatch with specified info
+            ClientWindowMatch window = new ClientWindowMatch(handle, name, className, rect);
+            
+            // check if window is not already in list
+            if (!windowsFound.Contains(window))
+            {
+                // log
+                Log.Info("Found new/resized window: " + window);
+
+                // add window to list
+                windowsFound.Add(window);
+            }
         }
 
         /// <summary>
@@ -261,6 +321,15 @@ namespace LoLAutoLogin
             // hide & dispose of taskbar icon
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Log.Info("Pixel matching statistics:");
+            Log.Info($"    Minimum: {minPixelsMatched / Math.Pow(comparisonResolution, 2):0.00000} ({minPixelsMatched}/{Math.Pow(comparisonResolution, 2)})");
+            Log.Info($"    Maximum: {maxPixelsMatched / Math.Pow(comparisonResolution, 2):0.00000} ({maxPixelsMatched}/{Math.Pow(comparisonResolution, 2)})");
+
+            Log.Info("Shutting down");
         }
 
         /// <summary>
@@ -303,7 +372,7 @@ namespace LoLAutoLogin
                     else
                     {
                         // log
-                        Log.Info("Client is open and logged in, focusing window.");
+                        Log.Info("Client doesn't seem to be on login page. Focusing client.");
 
                         // client is logged in, show window
                         NativeMethods.SetForegroundWindow(clientHandle);
@@ -328,7 +397,7 @@ namespace LoLAutoLogin
                         if (clientHandle != IntPtr.Zero)
                         {
                             // log
-                            Log.Info("Client found after {0} ms!", sw.ElapsedMilliseconds);
+                            Log.Info($"Client found after {sw.ElapsedMilliseconds} ms!");
 
                             // get password box
                             var found = WaitForPasswordBox(showBalloonTip);
@@ -337,7 +406,7 @@ namespace LoLAutoLogin
                             if (clientHandle != IntPtr.Zero && found)
                             {
                                 // log
-                                Log.Info("Password box found after {0} ms!", sw.ElapsedMilliseconds);
+                                Log.Info($"Password box found after {sw.ElapsedMilliseconds} ms!");
 
                                 // enter password
                                 EnterPassword(clientHandle, showBalloonTip);
@@ -345,13 +414,13 @@ namespace LoLAutoLogin
                             else
                             {
                                 // log
-                                Log.Info("Client exited!");
+                                Log.Info("Client window lost!");
                             }
                         }
                         else
                         {
                             // log
-                            Log.Info("Client not found after {0} ms. Aborting operation.", ClientTimeout);
+                            Log.Info($"Client not found after {ClientTimeout} ms. Aborting operation.");
                         }
                     }
                     else
@@ -488,11 +557,8 @@ namespace LoLAutoLogin
             // create list
             List<short> list = new List<short>();
 
-            // set resolution of resized image
-            int resolution = 32;
-
             // resize bitmap
-            Bitmap resized = new Bitmap(source, new Size(resolution, resolution));
+            Bitmap resized = new Bitmap(source, new Size(comparisonResolution, comparisonResolution));
 
             // iterate through every pixel
             for (int i = 0; i < resized.Width; i++)
@@ -530,6 +596,12 @@ namespace LoLAutoLogin
 
             // log
             Log.Debug("Comparison: " + similar + "/" + hashA.Count);
+
+            if (similar > maxPixelsMatched)
+                maxPixelsMatched = similar;
+
+            if (similar < minPixelsMatched)
+                minPixelsMatched = similar;
 
             // return true if the amount of similar pixels is over tolerance, false if not
             return similar > hashA.Count * matchTolerance;
@@ -633,6 +705,7 @@ namespace LoLAutoLogin
                 // get window rectangle, in case it is resized or moved
                 RECT rect;
                 NativeMethods.GetWindowRect(clientHandle, out rect);
+                AddFoundWindow(clientHandle, rect);
                 Log.Verbose("Client rectangle=" + rect.ToString());
 
                 // move cursor above password box
@@ -676,7 +749,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        public static IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
+        public IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
     }
 
 }
