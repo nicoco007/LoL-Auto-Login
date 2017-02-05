@@ -321,6 +321,32 @@ namespace LoLAutoLogin
             // hide & dispose of taskbar icon
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
+
+            string logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs");
+
+            if (Directory.Exists(logsDirectory))
+            {
+                FileInfo[] logFiles = new DirectoryInfo(logsDirectory).GetFiles().OrderByDescending(f => f.LastWriteTime).ToArray();
+
+                if (logFiles.Length > 50)
+                {
+                    Log.Info($"Deleting {logFiles.Length - 50} old log files...");
+
+                    foreach (FileInfo logFile in logFiles.Skip(50))
+                    {
+                        try
+                        {
+                            logFile.Delete();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error($"Failed to delete log file \"{logFile.Name}\": {ex.GetType()} - {ex.Message}");
+                        }
+                    }
+
+                    Log.Info("Done.");
+                }
+            }
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
