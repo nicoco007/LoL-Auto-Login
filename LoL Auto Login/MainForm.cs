@@ -15,7 +15,6 @@ using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -46,11 +45,11 @@ namespace LoLAutoLogin
         private int MinPixelsMatched = int.MaxValue;
         private int MaxPixelsMatched = int.MinValue;
 
-        private int ComparisonResolution = 32;
-        private int BrightnessTolerance = 10;
-        private double MatchTolerance = 0.85;
-
-
+        // these values can be changed through the YAML config file
+        private int ComparisonResolution;
+        private int BrightnessTolerance;
+        private double MatchTolerance;
+        
         public MainForm()
         {
             // init
@@ -72,13 +71,17 @@ namespace LoLAutoLogin
 
         private void LoadSettings()
         {
+            // get config directory & settings file
             var dir = Path.Combine(Directory.GetCurrentDirectory(), "Config");
             var settingsFile = Path.Combine(dir, "LoLAutoLoginSettings.yaml");
             
+            // make sure the config directory exists
             Directory.CreateDirectory(dir);
 
+            // log
             Log.Info($"Loading settings from \"{settingsFile}\"");
 
+            // define default settings
             var defaultSettings = new YamlMappingNode(
                 new YamlScalarNode("settings"),
                 new YamlMappingNode(
@@ -96,35 +99,73 @@ namespace LoLAutoLogin
                 )
             );
 
+            // create settings variable
             YamlMappingNode settings;
 
+            // check if settings exist
             if (File.Exists(settingsFile))
             {
                 try
                 {
+                    // load settings from yaml
                     var loadedSettings = ReadYaml<YamlMappingNode>(settingsFile);
-                    settings = MergeMappingNodes(defaultSettings, loadedSettings, false);
 
-                    Log.Info("Loaded settings.");
+                    // merge settings if not empty, use default if it is
+                    if (loadedSettings != null)
+                    {
+                        // merge settings
+                        settings = MergeMappingNodes(defaultSettings, loadedSettings, false);
+
+                        // log
+                        Log.Info("Loaded settings.");
+                    }
+                    else
+                    {
+                        // log
+                        Log.Info("Settings file is empty, using default settings.");
+
+                        // use default settings
+                        settings = defaultSettings;
+                    }
                 }
                 catch (Exception ex)
                 {
+                    // print error
                     Log.PrintException(ex);
                     Log.Warn("Failed to parse YAML, reverting to default settings.");
                     
+                    // use default settings
                     settings = defaultSettings;
                 }
             }
             else
             {
+                // log
+                Log.Info("Settings file does not exist, using default settings.");
+
+                // use default settings
                 settings = defaultSettings;
             }
             
-            ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["comparison-resolution"]).Value);
-            BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["brightness-tolerance"]).Value);
-            MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
-            ClientTimeout = int.Parse(((YamlScalarNode)settings["settings"]["client-load-timeout"]).Value) * 1000;
+            // wrap in try/catch in case there's a parsing error
+            try
+            {
+                // set vars to loaded values
+                ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["comparison-resolution"]).Value);
+                BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["brightness-tolerance"]).Value);
+                MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
+                ClientTimeout = int.Parse(((YamlScalarNode)settings["settings"]["client-load-timeout"]).Value) * 1000;
+            }
+            catch (Exception ex)
+            {
+                Log.PrintException(ex);
+                Log.Warn("Failed to parse YAML values, reverting to default settings.");
 
+                // use default settings
+                settings = defaultSettings;
+            }
+
+            // write yaml
             WriteYaml(settingsFile, settings);
         }
 
