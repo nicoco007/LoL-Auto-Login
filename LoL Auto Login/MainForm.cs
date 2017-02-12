@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -38,7 +39,7 @@ namespace LoLAutoLogin
     {
 
         // how long to wait until we decide the client isnt starting
-        private const int ClientTimeout = 30000;
+        private int ClientTimeout = 30000;
 
         // debug info
         private List<ClientWindowMatch> windowsFound = new List<ClientWindowMatch>();
@@ -81,13 +82,17 @@ namespace LoLAutoLogin
             var defaultSettings = new YamlMappingNode(
                 new YamlScalarNode("settings"),
                 new YamlMappingNode(
-                    new YamlScalarNode("client-detection"),
+                    new YamlScalarNode("login-detection"),
                     new YamlMappingNode(
+                        new YamlScalarNode("comparison-resolution"),
+                        new YamlScalarNode("32"),
                         new YamlScalarNode("brightness-tolerance"),
                         new YamlScalarNode("10"),
                         new YamlScalarNode("match-tolerance"),
                         new YamlScalarNode("0.85")
-                    )
+                    ),
+                    new YamlScalarNode("client-load-timeout"),
+                    new YamlScalarNode("30")
                 )
             );
 
@@ -98,7 +103,7 @@ namespace LoLAutoLogin
                 try
                 {
                     var loadedSettings = ReadYaml<YamlMappingNode>(settingsFile);
-                    settings = MergeMappingNodes(defaultSettings, loadedSettings);
+                    settings = MergeMappingNodes(defaultSettings, loadedSettings, false);
 
                     Log.Info("Loaded settings.");
                 }
@@ -106,20 +111,21 @@ namespace LoLAutoLogin
                 {
                     Log.PrintException(ex);
                     Log.Warn("Failed to parse YAML, reverting to default settings.");
-
-                    WriteYaml(settingsFile, defaultSettings);
+                    
                     settings = defaultSettings;
                 }
             }
             else
             {
-                WriteYaml(settingsFile, defaultSettings);
                 settings = defaultSettings;
             }
             
-            ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["comparison-resolution"]).Value);
-            BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["brightness-tolerance"]).Value);
-            MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
+            ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["comparison-resolution"]).Value);
+            BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["brightness-tolerance"]).Value);
+            MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
+            ClientTimeout = int.Parse(((YamlScalarNode)settings["settings"]["client-load-timeout"]).Value) * 1000;
+
+            WriteYaml(settingsFile, settings);
         }
 
         private T ReadYaml<T>(string file)
@@ -140,48 +146,47 @@ namespace LoLAutoLogin
         {
             using (var writer = new StreamWriter(file))
             {
-                var serializer = new Serializer();
+                var serializer = new SerializerBuilder().EnsureRoundtrip().Build();
                 writer.Write(serializer.Serialize(yaml));
             }
         }
         
-        private YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b)
+        private YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b, bool mergeNonSharedValues = true)
         {
+            // create merged values node
             YamlMappingNode merged = new YamlMappingNode();
 
+            // iterate through a's items
             foreach (var item in a.Children)
             {
-                if (!b.Children.ContainsKey(item.Key))
+                // check if b contains this item
+                if (b.Children.ContainsKey(item.Key))
                 {
-                    merged.Children.Add(item);
-
-                    if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
-                        Log.Verbose("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
-                }
-            }
-
-            foreach (var item in b.Children)
-            {
-                if (a.Children.ContainsKey(item.Key))
-                {
-                    if (a[item.Key] is YamlMappingNode && item.Value is YamlMappingNode)
-                    {
-                        merged.Children.Add(item.Key, MergeMappingNodes((YamlMappingNode)a[item.Key], (YamlMappingNode)item.Value));
-                    }
+                    // if both values are mapping nodes, add merged mapped nodes; if not, add b's value
+                    if (item.Value is YamlMappingNode && b[item.Key] is YamlMappingNode)
+                        merged.Children.Add(item.Key, MergeMappingNodes((YamlMappingNode)item.Value, (YamlMappingNode)b[item.Key], mergeNonSharedValues));
                     else
-                    {
-                        merged.Children.Add(item);
-                    }
+                        merged.Children.Add(item.Key, b[item.Key]);
                 }
                 else
                 {
+                    // add item to merged
                     merged.Children.Add(item);
                 }
-
-                if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
-                    Log.Verbose("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
             }
 
+            // if we want to merged non-shared values, add all of b's children that aren't already in merged
+            if (mergeNonSharedValues)
+                foreach (var item in b.Children)
+                    if (!merged.Children.ContainsKey(item.Key))
+                        merged.Children.Add(item);
+
+            // log loaded values to verbose
+            foreach (var item in merged)
+                if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
+                    Log.Verbose("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
+
+            // return merged values
             return merged;
         }
 
@@ -536,6 +541,7 @@ namespace LoLAutoLogin
                 {
                     // log
                     Log.Info("Client is not running, launching client.");
+                    Log.Info($"Waiting for {ClientTimeout} ms.");
 
                     // check if client exe exists & start client
                     if (CheckLocation() && StartClient())
@@ -876,7 +882,7 @@ namespace LoLAutoLogin
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
                 {
                     // enter password character, press enter if complete
-                    if (i != passArray.Length)
+                    if (i < passArray.Length)
                     {
                         // go to end of text box
                         sim.Keyboard.KeyPress(VirtualKeyCode.END);
