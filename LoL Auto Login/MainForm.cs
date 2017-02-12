@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
+using YamlDotNet.Core;
+using YamlDotNet.RepresentationModel;
+using YamlDotNet.Serialization;
 
 /// Copyright © 2015-2017 nicoco007
 ///
@@ -39,9 +42,13 @@ namespace LoLAutoLogin
 
         // debug info
         private List<ClientWindowMatch> windowsFound = new List<ClientWindowMatch>();
-        private int comparisonResolution = 32;
-        private int minPixelsMatched = int.MaxValue;
-        private int maxPixelsMatched = int.MinValue;
+        private int MinPixelsMatched = int.MaxValue;
+        private int MaxPixelsMatched = int.MinValue;
+
+        private int ComparisonResolution = 32;
+        private int BrightnessTolerance = 10;
+        private double MatchTolerance = 0.85;
+
 
         public MainForm()
         {
@@ -62,10 +69,129 @@ namespace LoLAutoLogin
             ShowInTaskbar = false;
         }
 
+        private void LoadSettings()
+        {
+            var dir = Path.Combine(Directory.GetCurrentDirectory(), "Config");
+            var settingsFile = Path.Combine(dir, "LoLAutoLoginSettings.yaml");
+            
+            Directory.CreateDirectory(dir);
+
+            Log.Info($"Loading settings from \"{settingsFile}\"");
+
+            var defaultSettings = new YamlMappingNode(
+                new YamlScalarNode("settings"),
+                new YamlMappingNode(
+                    new YamlScalarNode("client-detection"),
+                    new YamlMappingNode(
+                        new YamlScalarNode("brightness-tolerance"),
+                        new YamlScalarNode("10"),
+                        new YamlScalarNode("match-tolerance"),
+                        new YamlScalarNode("0.85")
+                    )
+                )
+            );
+
+            YamlMappingNode settings;
+
+            if (File.Exists(settingsFile))
+            {
+                try
+                {
+                    var loadedSettings = ReadYaml<YamlMappingNode>(settingsFile);
+                    settings = MergeMappingNodes(defaultSettings, loadedSettings);
+
+                    Log.Info("Loaded settings.");
+                }
+                catch (Exception ex)
+                {
+                    Log.PrintException(ex);
+                    Log.Warn("Failed to parse YAML, reverting to default settings.");
+
+                    WriteYaml(settingsFile, defaultSettings);
+                    settings = defaultSettings;
+                }
+            }
+            else
+            {
+                WriteYaml(settingsFile, defaultSettings);
+                settings = defaultSettings;
+            }
+            
+            ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["comparison-resolution"]).Value);
+            BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["brightness-tolerance"]).Value);
+            MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["client-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
+        }
+
+        private T ReadYaml<T>(string file)
+        {
+            T read = default(T);
+
+            using (var reader = new StreamReader(file))
+            {
+                var deserializer = new Deserializer();
+                var parser = new Parser(reader);
+                read = deserializer.Deserialize<T>(parser);
+            }
+
+            return read;
+        }
+
+        private void WriteYaml<T>(string file, T yaml)
+        {
+            using (var writer = new StreamWriter(file))
+            {
+                var serializer = new Serializer();
+                writer.Write(serializer.Serialize(yaml));
+            }
+        }
+        
+        private YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b)
+        {
+            YamlMappingNode merged = new YamlMappingNode();
+
+            foreach (var item in a.Children)
+            {
+                if (!b.Children.ContainsKey(item.Key))
+                {
+                    merged.Children.Add(item);
+
+                    if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
+                        Log.Verbose("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
+                }
+            }
+
+            foreach (var item in b.Children)
+            {
+                if (a.Children.ContainsKey(item.Key))
+                {
+                    if (a[item.Key] is YamlMappingNode && item.Value is YamlMappingNode)
+                    {
+                        merged.Children.Add(item.Key, MergeMappingNodes((YamlMappingNode)a[item.Key], (YamlMappingNode)item.Value));
+                    }
+                    else
+                    {
+                        merged.Children.Add(item);
+                    }
+                }
+                else
+                {
+                    merged.Children.Add(item);
+                }
+
+                if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
+                    Log.Verbose("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
+            }
+
+            return merged;
+        }
+
         private async void MainForm_Load(object sender, EventArgs e)
         {
             // start logging
             Log.Info("Started LoL Auto Login v{0}", Assembly.GetEntryAssembly().GetName().Version);
+
+            // load settings
+            LoadSettings();
 
             // check if a Shift key is being pressed
             if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
@@ -351,9 +477,11 @@ namespace LoLAutoLogin
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
+            // debug stats
             Log.Info("Pixel matching statistics:");
-            Log.Info($"    Minimum: {minPixelsMatched / Math.Pow(comparisonResolution, 2):0.00000} ({minPixelsMatched}/{Math.Pow(comparisonResolution, 2)})");
-            Log.Info($"    Maximum: {maxPixelsMatched / Math.Pow(comparisonResolution, 2):0.00000} ({maxPixelsMatched}/{Math.Pow(comparisonResolution, 2)})");
+            Log.Info($"  Minimum: {MinPixelsMatched / Math.Pow(ComparisonResolution, 2):0.00000} ({MinPixelsMatched}/{Math.Pow(ComparisonResolution, 2)})");
+            Log.Info($"  Maximum: {MaxPixelsMatched / Math.Pow(ComparisonResolution, 2):0.00000} ({MaxPixelsMatched}/{Math.Pow(ComparisonResolution, 2)})");
+            Log.Info($"  Required: {Math.Pow(ComparisonResolution, 2) * MatchTolerance / Math.Pow(ComparisonResolution, 2):0.00000} ({(int)(Math.Pow(ComparisonResolution, 2) * MatchTolerance)}/{Math.Pow(ComparisonResolution, 2)})");
 
             Log.Info("Shutting down");
         }
@@ -560,7 +688,7 @@ namespace LoLAutoLogin
             Bitmap cropped = CropImage(clientBitmap, new Rectangle((int)(clientBitmap.Width * 0.825), 0, (int)(clientBitmap.Width * 0.175), clientBitmap.Height));
 
             // compare the images
-            var found = CompareImage(reference, cropped);
+            var found = CompareImage(reference, cropped, 10, MatchTolerance);
 
             // dispose of bitmaps
             reference.Dispose();
@@ -584,7 +712,7 @@ namespace LoLAutoLogin
             List<short> list = new List<short>();
 
             // resize bitmap
-            Bitmap resized = new Bitmap(source, new Size(comparisonResolution, comparisonResolution));
+            Bitmap resized = new Bitmap(source, new Size(ComparisonResolution, ComparisonResolution));
 
             // iterate through every pixel
             for (int i = 0; i < resized.Width; i++)
@@ -623,11 +751,11 @@ namespace LoLAutoLogin
             // log
             Log.Debug("Comparison: " + similar + "/" + hashA.Count);
 
-            if (similar > maxPixelsMatched)
-                maxPixelsMatched = similar;
+            if (similar > MaxPixelsMatched)
+                MaxPixelsMatched = similar;
 
-            if (similar < minPixelsMatched)
-                minPixelsMatched = similar;
+            if (similar < MinPixelsMatched)
+                MinPixelsMatched = similar;
 
             // return true if the amount of similar pixels is over tolerance, false if not
             return similar > hashA.Count * matchTolerance;
