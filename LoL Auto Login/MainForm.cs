@@ -382,7 +382,7 @@ namespace LoLAutoLogin
         public IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
         {
             // log what we are looking for
-            Log.Debug($"Trying to find window handle [ClassName={(lpClassName ?? "null")},WindowName={(lpWindowName ?? "null")},Size={new Size(width, height)}]");
+            Log.Debug($"Trying to find window handle {{ClassName={(lpClassName ?? "null")},WindowName={(lpWindowName ?? "null")},Size={new Size(width, height)}}}");
 
             // try to get window handle and rectangle using specified arguments
             var hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
@@ -393,17 +393,17 @@ namespace LoLAutoLogin
             if (hwnd == IntPtr.Zero)
             {
                 // log that we didn't find a window
-                Log.Debug("Failed to find window with specified arguments!");
+                Log.Verbose("Failed to find window with specified arguments!");
 
                 return IntPtr.Zero;
             }
 
             // log what we found
-            Log.Verbose($"Found window [Handle={hwnd},Rectangle={rect}]");
+            Log.Verbose($"Found window {{Handle={hwnd},Rectangle={rect}}}");
 
             if (rect.Size.Width >= width && rect.Size.Height >= height)
             {
-                Log.Debug("Correct window handle found!");
+                Log.Verbose("Correct window handle found!");
 
                 AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
 
@@ -415,11 +415,11 @@ namespace LoLAutoLogin
                 hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
                 NativeMethods.GetWindowRect(hwnd, out rect);
 
-                Log.Verbose($"Found window [Handle={hwnd},Rectangle={rect}]");
+                Log.Verbose($"Found window {{Handle={hwnd},Rectangle={rect}}}");
 
                 if (rect.Size.Width < width || rect.Size.Height < height) continue;
 
-                Log.Debug("Correct window handle found!");
+                Log.Verbose("Correct window handle found!");
 
                 AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
 
