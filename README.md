@@ -1,5 +1,5 @@
 # LoL Auto Login
-[![Build Status](https://ci.gnyra.com/job/nicoco007/job/LoL-Auto-Login/job/master/badge/icon)](https://ci.gnyra.com/job/nicoco007/job/LoL-Auto-Login/job/master/)
+[![Build Status](https://ci.gnyra.com/job/nicoco007/job/LoL-Auto-Login/job/master/badge/icon)](https://ci.gnyra.com/blue/organizations/jenkins/nicoco007%2FLoL-Auto-Login)
 
 Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
 
