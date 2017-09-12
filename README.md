@@ -1,5 +1,5 @@
 # LoL Auto Login
-[![Build status](https://ci.appveyor.com/api/projects/status/ie2065acev0ag2v7?svg=true)](https://ci.appveyor.com/project/nicoco007/lol-auto-login)
+[![Build Status](https://ci.gnyra.com/job/nicoco007/job/LoL-Auto-Login/job/master/badge/icon)](https://ci.gnyra.com/job/nicoco007/job/LoL-Auto-Login/job/master/)
 
 Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
 
