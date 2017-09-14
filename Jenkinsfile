@@ -10,6 +10,8 @@ pipeline {
       steps {
         bat 'nuget restore'
         bat 'msbuild /p:Configuration=Release'
+        archiveArtifacts 'LoL Auto Login/bin/Debug/**'
+        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
   }
