@@ -10,4 +10,4 @@ Automatic login for League of Legends. See the [official website page](https://w
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
-* [Windows Input Simulator](https://inputsimulator.codeplex.com/) by [michaelnoonan](https://www.codeplex.com/site/users/view/michaelnoonan) &ndash; [Microsoft Public License](https://msdn.microsoft.com/en-us/library/ff647676.aspx)
+* [Windows Input Simulator](https://github.com/michaelnoonan/inputsimulator) by [michaelnoonan](https://github.com/michaelnoonan) &ndash; [Microsoft Public License](https://msdn.microsoft.com/en-us/library/ff647676.aspx)
