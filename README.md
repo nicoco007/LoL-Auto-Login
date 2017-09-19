@@ -4,9 +4,7 @@
 Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
 
 # Known issues
-* The client window is sometimes not detected correctly and the program fails to log in.
-* ~~Sometimes, the client refuses to recieve keyboard input from LoL Auto Login. Restarting once or twice usually fixes the issue.~~ Seems to be working nearly 100% of the time now.
-* ~~Logging into the Alpha Client sometimes causes an "Authentication Failed" error **or** fails to trigger the login button; Might be related to speed.~~ Seems to work now, probably was an issue with the client itself.
+* The client window is sometimes not detected correctly and the program fails to log in. The client tends to spawn multiple windows, and the program sometimes gets confused as to which window is the right one.
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
