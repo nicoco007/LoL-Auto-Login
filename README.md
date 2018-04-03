@@ -1,5 +1,5 @@
 # LoL Auto Login
-[![Build Status](https://ci.gnyra.com/job/LoL-Auto-Login/job/master/badge/icon)](https://ci.gnyra.com/blue/organizations/jenkins/LoL-Auto-Login)
+[![Jenkins](https://img.shields.io/jenkins/s/https/ci.gnyra.com/job/LoL-Auto-Login/job/master.svg?style=flat-square)](https://ci.gnyra.com/blue/organizations/jenkins/LoL-Auto-Login)
 
 **Project is currently on hold while I work on school & other higher-priority projects. Sorry!**
 
