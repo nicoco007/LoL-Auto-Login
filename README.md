@@ -10,4 +10,6 @@ Automatic login for League of Legends. See the [official website page](https://w
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
-* [Windows Input Simulator](https://github.com/michaelnoonan/inputsimulator) by [michaelnoonan](https://github.com/michaelnoonan) &ndash; [Microsoft Public License](https://msdn.microsoft.com/en-us/library/ff647676.aspx)
+* [AutoIt](https://www.autoitscript.com) by Jonathan Bennett and the AutoIt Team &ndash; [AutoIt License](https://www.autoitscript.com/autoit3/docs/license.htm)
+* [Fody](https://github.com/Fody/Fody) by Simon Cropp and Cameron MacFarland &ndash; [MIT License](https://github.com/Fody/Fody/blob/master/License.txt)
+* [YamlDotNet](https://github.com/aaubry/YamlDotNet) by Antoine Aubry &ndash; [MIT License](https://github.com/aaubry/YamlDotNet/blob/master/LICENSE)
