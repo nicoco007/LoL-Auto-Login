@@ -200,12 +200,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="reference_login.png" />
-    <Content Include="AutoItX3.Assembly.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="AutoItX3.Assembly.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="AutoItX3.Assembly.dll" />
+    <Content Include="AutoItX3.Assembly.xml" />
     <Content Include="AutoItX3.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
