@@ -12,11 +12,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using WindowsInput;
-using WindowsInput.Native;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
+using AutoIt;
 
 /// Copyright © 2015-2017 nicoco007
 ///
@@ -896,12 +895,9 @@ namespace LoLAutoLogin
 
             // log
             Log.Info("Entering password...");
-            
-            // create input simulator instance
-            var sim = new InputSimulator();
 
-            // enter password one character at a time, with one additional iteration for pressing the enter key
-            for (int i = 0; (i <= passArray.Length) && (clientHandle != IntPtr.Zero); i++)
+            // enter password one character at a time
+            for (int i = 0; i <= passArray.Length && clientHandle != IntPtr.Zero; i++)
             {
                 // get window rectangle, in case it is resized or moved
                 RECT rect;
@@ -910,14 +906,11 @@ namespace LoLAutoLogin
                 Log.Verbose("Client rectangle=" + rect.ToString());
 
                 // move cursor above password box
-                sim.Mouse.LeftButtonUp();
+                AutoItX.MouseUp("primary");
                 NativeMethods.SetForegroundWindow(clientHandle);
-                Cursor.Position = new Point(rect.Left + (int)(rect.Width * 0.914f), rect.Top + (int)(rect.Height * 0.347f));
-
-                Log.Debug(Cursor.Position.ToString());
 
                 // focus window & click on password box
-                sim.Mouse.LeftButtonClick();
+                AutoItX.MouseClick("primary", rect.Left + (int)(rect.Width * 0.914f), rect.Top + (int)(rect.Height * 0.347f), 1, 0);
 
                 // check if client is foreground window
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
@@ -925,23 +918,20 @@ namespace LoLAutoLogin
                     // enter password character, press enter if complete
                     if (i < passArray.Length)
                     {
-                        // go to end of text box
-                        sim.Keyboard.KeyPress(VirtualKeyCode.END);
-
                         // enter character
-                        sim.Keyboard.TextEntry(passArray[i].ToString());
+                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, string.Format("{{END}}{{ASC {0:000}}}", (int)passArray[i]), 0);
                     }
                     else
                     {
                         // press enter
-                        sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, "{ENTER}", 0);
                     }
                 }
 
                 // get the client handle again
                 clientHandle = GetClientWindowHandle();
             }
-            
+
             // log
             Log.Info("Successfully entered password (well, hopefully)!");
         }
