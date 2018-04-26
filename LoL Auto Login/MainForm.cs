@@ -542,7 +542,7 @@ namespace LoLAutoLogin
             Hide();
 
             // create progress interface
-            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new Progress<ShowBalloonTipEventArgs>((e) =>
+            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new System.Progress<ShowBalloonTipEventArgs>((e) =>
             {
                 // show tooltip
                 notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);

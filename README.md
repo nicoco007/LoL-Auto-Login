@@ -5,6 +5,8 @@
 
 Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
 
+Running LoL Auto Login requires the .NET Framework 4.7.1 Runtime. It is already included in the Windows 10 Fall Creators Update. If you do not have it, you can download it [from Microsoft's Website](https://www.microsoft.com/net/download/dotnet-framework-runtime).
+
 # Known issues
 * The client window is sometimes not detected correctly and the program fails to log in. The client tends to spawn multiple windows, and the program sometimes gets confused as to which window is the right one.
 
