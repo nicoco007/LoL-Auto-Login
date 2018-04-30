@@ -184,7 +184,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Emgu.CV.World.dll" />
-    <Content Include="template.png" />
     <Content Include="lib\concrt140.dll" />
     <Content Include="lib\cvextern.dll" />
     <Content Include="lib\msvcp140.dll" />
