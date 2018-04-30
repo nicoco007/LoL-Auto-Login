@@ -1,23 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Weavers>
-  <Costura>
-    <Unmanaged32Assemblies>
-      AutoItX3
-      x86/concrt140
-      x86/cvextern
-      x86/msvcp140
-      x86/opencv_ffmpeg310
-      x86/opencv_ffmpeg341
-      x86/vcruntime140
-    </Unmanaged32Assemblies>
-    <Unmanaged64Assemblies>
-      AutoItX3
-      x86/concrt140
-      x86/cvextern
-      x86/msvcp140
-      x86/opencv_ffmpeg310
-      x86/opencv_ffmpeg341
-      x86/vcruntime140
-    </Unmanaged64Assemblies>
-  </Costura>
+  <Costura/>
 </Weavers>
