@@ -185,27 +185,15 @@
   <ItemGroup>
     <Content Include="Emgu.CV.World.dll" />
     <Content Include="template.png" />
-    <Content Include="concrt140.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="cvextern.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="msvcp140.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="opencv_ffmpeg341.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="vcruntime140.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="lib\concrt140.dll" />
+    <Content Include="lib\cvextern.dll" />
+    <Content Include="lib\msvcp140.dll" />
+    <Content Include="lib\opencv_ffmpeg341.dll" />
+    <Content Include="lib\vcruntime140.dll" />
     <None Include="Resources\template.png" />
     <Content Include="AutoItX3.Assembly.dll" />
     <Content Include="AutoItX3.Assembly.xml" />
-    <None Include="AutoItX3.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="lib\AutoItX3.dll" />
     <Content Include="FodyWeavers.xml">
       <SubType>Designer</SubType>
     </Content>
@@ -226,6 +214,9 @@
   </Target>
   <Import Project="..\packages\Fody.3.0.3\build\Fody.targets" Condition="Exists('..\packages\Fody.3.0.3\build\Fody.targets')" />
   <Import Project="..\packages\Costura.Fody.2.0.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.2.0.0\build\Costura.Fody.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(ProjectDir)\lib\**" "$(TargetDir)"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
