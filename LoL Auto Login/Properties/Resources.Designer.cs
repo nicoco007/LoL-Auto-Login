@@ -63,9 +63,9 @@ namespace LoLAutoLogin.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap reference_login {
+        internal static System.Drawing.Bitmap template {
             get {
-                object obj = ResourceManager.GetObject("reference_login", resourceCulture);
+                object obj = ResourceManager.GetObject("template", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

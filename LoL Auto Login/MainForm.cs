@@ -16,6 +16,8 @@ using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 using AutoIt;
+using Emgu.CV;
+using Emgu.CV.Structure;
 
 /// Copyright © 2015-2017 nicoco007
 ///
@@ -41,12 +43,8 @@ namespace LoLAutoLogin
 
         // debug info
         private List<ClientWindowMatch> windowsFound = new List<ClientWindowMatch>();
-        private int MinPixelsMatched = int.MaxValue;
-        private int MaxPixelsMatched = int.MinValue;
 
         // these values can be changed through the YAML config file
-        private int ComparisonResolution;
-        private int BrightnessTolerance;
         private double MatchTolerance;
         
         public MainForm()
@@ -86,12 +84,8 @@ namespace LoLAutoLogin
                 new YamlMappingNode(
                     new YamlScalarNode("login-detection"),
                     new YamlMappingNode(
-                        new YamlScalarNode("comparison-resolution"),
-                        new YamlScalarNode("32"),
-                        new YamlScalarNode("brightness-tolerance"),
-                        new YamlScalarNode("10"),
-                        new YamlScalarNode("match-tolerance"),
-                        new YamlScalarNode("0.85")
+                        new YamlScalarNode("template-matching-tolerance"),
+                        new YamlScalarNode("0.75")
                     ),
                     new YamlScalarNode("client-load-timeout"),
                     new YamlScalarNode("30")
@@ -150,9 +144,7 @@ namespace LoLAutoLogin
             try
             {
                 // set vars to loaded values
-                ComparisonResolution = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["comparison-resolution"]).Value);
-                BrightnessTolerance = int.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["brightness-tolerance"]).Value);
-                MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["match-tolerance"]).Value, CultureInfo.InvariantCulture);
+                MatchTolerance = double.Parse(((YamlScalarNode)settings["settings"]["login-detection"]["template-matching-tolerance"]).Value, CultureInfo.InvariantCulture);
                 ClientTimeout = int.Parse(((YamlScalarNode)settings["settings"]["client-load-timeout"]).Value) * 1000;
             }
             catch (Exception ex)
@@ -522,12 +514,6 @@ namespace LoLAutoLogin
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            // debug stats
-            Log.Info("Pixel matching statistics:");
-            Log.Info($"  Minimum: {MinPixelsMatched / Math.Pow(ComparisonResolution, 2):0.00000} ({MinPixelsMatched}/{Math.Pow(ComparisonResolution, 2)})");
-            Log.Info($"  Maximum: {MaxPixelsMatched / Math.Pow(ComparisonResolution, 2):0.00000} ({MaxPixelsMatched}/{Math.Pow(ComparisonResolution, 2)})");
-            Log.Info($"  Required: {Math.Pow(ComparisonResolution, 2) * MatchTolerance / Math.Pow(ComparisonResolution, 2):0.00000} ({(int)(Math.Pow(ComparisonResolution, 2) * MatchTolerance)}/{Math.Pow(ComparisonResolution, 2)})");
-
             Log.Info("Shutting down");
         }
 
@@ -559,14 +545,16 @@ namespace LoLAutoLogin
                     // log
                     Log.Info("Client is already open!");
 
+                    var passwordRect = GetPasswordRect(clientHandle);
+
                     // check if password box is visible (not logged in)
-                    if (PasswordBoxIsVisible(clientHandle))
+                    if (passwordRect != Rectangle.Empty)
                     {
                         // log
                         Log.Info("Client is open on login page, entering password.");
 
                         // client is on login page, enter password
-                        EnterPassword(clientHandle, showBalloonTip);
+                        EnterPassword(clientHandle, passwordRect, showBalloonTip);
                     }
                     else
                     {
@@ -603,13 +591,13 @@ namespace LoLAutoLogin
                             var found = WaitForPasswordBox(showBalloonTip);
 
                             // check if the password box was found
-                            if (clientHandle != IntPtr.Zero && found)
+                            if (clientHandle != IntPtr.Zero && found != Rectangle.Empty)
                             {
                                 // log
                                 Log.Info($"Password box found after {sw.ElapsedMilliseconds} ms!");
 
                                 // enter password
-                                EnterPassword(clientHandle, showBalloonTip);
+                                EnterPassword(clientHandle, found, showBalloonTip);
                             }
                             else
                             {
@@ -662,11 +650,11 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="progress">Progress interface used to pass messages</param>
         /// <returns>Whether the password box was found or not.</returns>
-        private bool WaitForPasswordBox(IProgress<ShowBalloonTipEventArgs> progress)
+        private Rectangle WaitForPasswordBox(IProgress<ShowBalloonTipEventArgs> progress)
         {
 
             // create found & handle varables
-            var found = false;
+            Rectangle found = Rectangle.Empty;
             IntPtr clientHandle;
 
             // loop while not found and while client handle is something
@@ -682,7 +670,7 @@ namespace LoLAutoLogin
                 try
                 {
                     // check if password box is visible
-                    found = PasswordBoxIsVisible(clientHandle);
+                    found = GetPasswordRect(clientHandle);
                 }
                 catch (Exception ex)
                 {
@@ -700,14 +688,14 @@ namespace LoLAutoLogin
 
                     // exit application
                     Application.Exit();
-                    return false;
+                    return Rectangle.Empty;
 
                 }
 
                 // sleep
                 Thread.Sleep(500);
             }
-            while (clientHandle != IntPtr.Zero && !found);
+            while (clientHandle != IntPtr.Zero && found == Rectangle.Empty);
 
             // return whether client was found or not
             return found;
@@ -719,26 +707,21 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <returns>Whether the password box is visible or not.</returns>
-        public bool PasswordBoxIsVisible(IntPtr clientHandle)
+        public Rectangle GetPasswordRect(IntPtr clientHandle)
         {
             // check that the handle is valid
-            if (clientHandle == IntPtr.Zero) return false;
+            if (clientHandle == IntPtr.Zero)
+                return Rectangle.Empty;
 
             // get client window image
-            var clientBitmap = new Bitmap(ScreenCapture.CaptureWindow(clientHandle));
-            
-            // get reference image
-            Bitmap reference = Properties.Resources.reference_login;
-
-            // get login sidebar thing
-            Bitmap cropped = CropImage(clientBitmap, new Rectangle((int)(clientBitmap.Width * 0.825), 0, (int)(clientBitmap.Width * 0.175), clientBitmap.Height));
+            var source = new Image<Bgr, byte>(new Bitmap(ScreenCapture.CaptureWindow(clientHandle)));
+            var template = new Image<Bgr, byte>(Properties.Resources.template);
 
             // compare the images
-            var found = CompareImage(reference, cropped, 10, MatchTolerance);
-
-            // dispose of bitmaps
-            reference.Dispose();
-            cropped.Dispose();
+            var found = CompareImage(source, template, MatchTolerance);
+            
+            source.Dispose();
+            template.Dispose();
 
             // force garbage collection
             GC.Collect();
@@ -748,63 +731,30 @@ namespace LoLAutoLogin
         }
 
         /// <summary>
-        /// Generates a "hash" composed of brightness values of a resized version of the image
-        /// </summary>
-        /// <param name="source">Source bitmap</param>
-        /// <returns></returns>
-        public List<short> GetHash(Bitmap source)
-        {
-            // create list
-            List<short> list = new List<short>();
-
-            // resize bitmap
-            Bitmap resized = new Bitmap(source, new Size(ComparisonResolution, ComparisonResolution));
-
-            // iterate through every pixel
-            for (int i = 0; i < resized.Width; i++)
-            {
-                for (int j = 0; j < resized.Height; j++)
-                {
-                    // get brightness
-                    float b = resized.GetPixel(i, j).GetBrightness();
-
-                    // convert brightness 0-1 to 0-255 value
-                    list.Add((short) (b * 255));
-                }
-            }
-
-            // return brightness list
-            return list;
-        }
-
-        /// <summary>
         /// Compares two images using their hashes & supplied tolerance
         /// </summary>
         /// <param name="a">First image</param>
         /// <param name="b">Second image</param>
-        /// <param name="brightnessTolerance">Tolerance, from 0 to 255, when comparing the brightness of pixels</param>
         /// <param name="matchTolerance">Percent tolerance of similar pixel count versus total pixel count</param>
         /// <returns>Whether the images are similar or not</returns>
-        public bool CompareImage(Bitmap a, Bitmap b, double brightnessTolerance = 10, double matchTolerance = 0.85)
+        public Rectangle CompareImage(Image<Bgr, byte> source, Image<Bgr, byte> template, double matchTolerance = 0.80)
         {
-            // get hashes
-            List<short> hashA = GetHash(a);
-            List<short> hashB = GetHash(b);
+            using (Image<Gray, float> result = source.MatchTemplate(template, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed))
+            {
+                double[] minValues, maxValues;
+                Point[] minLocations, maxLocations;
 
-            // get amount of similar pixels
-            int similar = hashA.Zip(hashB, (i, j) => Math.Abs(i - j) < brightnessTolerance).Count(sim => sim);
+                result.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
+                
+                Log.Info($"Template matching: needed {matchTolerance}, got {maxValues[0]}");
 
-            // log
-            Log.Debug("Comparison: " + similar + "/" + hashA.Count);
+                if (maxValues[0] > matchTolerance)
+                {
+                    return new Rectangle(maxLocations[0], template.Size);
+                }
+            }
 
-            if (similar > MaxPixelsMatched)
-                MaxPixelsMatched = similar;
-
-            if (similar < MinPixelsMatched)
-                MinPixelsMatched = similar;
-
-            // return true if the amount of similar pixels is over tolerance, false if not
-            return similar > hashA.Count * matchTolerance;
+            return Rectangle.Empty;
         }
 
         /// <summary>
@@ -823,32 +773,13 @@ namespace LoLAutoLogin
             // return if val is between min and max
             return val >= min && val <= max;
         }
-        
-        /// <summary>
-        /// Crop an image.
-        /// </summary>
-        /// <param name="bitmap">Bitmap to crop</param>
-        /// <param name="rect">Crop rectangle</param>
-        /// <returns>Cropped image</returns>
-        private Bitmap CropImage(Bitmap bitmap, Rectangle rect)
-        {
-            // create bitmap
-            Bitmap cropped = new Bitmap(rect.Width, rect.Height);
-
-            // draw image on cropped bitmap
-            using (Graphics g = Graphics.FromImage(cropped))
-                g.DrawImage(bitmap, -rect.X, -rect.Y);
-
-            // return cropped bitmap
-            return cropped;
-        }
 
         /// <summary>
         /// Enters the password into the client's password box.
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        public void EnterPassword(IntPtr clientHandle, IProgress<ShowBalloonTipEventArgs> progress)
+        public void EnterPassword(IntPtr clientHandle, Rectangle passwordRect, IProgress<ShowBalloonTipEventArgs> progress)
         {
             // set window to foreground
             NativeMethods.SetForegroundWindow(clientHandle);
@@ -859,7 +790,6 @@ namespace LoLAutoLogin
             // try to read password from file
             try
             {
-
                 // create file stream
                 using (var file = new FileStream("password", FileMode.Open, FileAccess.Read))
                 {
@@ -870,7 +800,6 @@ namespace LoLAutoLogin
                     // decrypt password
                     password = Encryption.Decrypt(buffer);
                 }
-
             }
             catch (Exception ex)
             {
@@ -910,7 +839,7 @@ namespace LoLAutoLogin
                 NativeMethods.SetForegroundWindow(clientHandle);
 
                 // focus window & click on password box
-                AutoItX.MouseClick("primary", rect.Left + (int)(rect.Width * 0.914f), rect.Top + (int)(rect.Height * 0.347f), 1, 0);
+                AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
 
                 // check if client is foreground window
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
