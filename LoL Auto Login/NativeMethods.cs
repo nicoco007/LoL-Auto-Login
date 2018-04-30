@@ -169,5 +169,14 @@ namespace LoLAutoLogin
 
         [DllImport("gdi32.dll")]
         internal static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+        
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        internal static extern IntPtr ILCreateFromPathW(string pszPath);
+
+        [DllImport("shell32.dll")]
+        internal static extern int SHOpenFolderAndSelectItems(IntPtr pidlFolder, int cild, IntPtr apidl, int dwFlags);
+
+        [DllImport("shell32.dll")]
+        internal static extern void ILFree(IntPtr pidl);
     }
 }

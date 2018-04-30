@@ -47,7 +47,9 @@ namespace LoLAutoLogin
 
         // these values can be changed through the YAML config file
         private double MatchTolerance;
-        
+
+        private ShowBalloonTipEventArgs latestBalloonTip;
+
         public MainForm()
         {
             // init
@@ -529,9 +531,9 @@ namespace LoLAutoLogin
             Hide();
 
             // create progress interface
-            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new System.Progress<ShowBalloonTipEventArgs>((e) =>
+            IProgress<ShowBalloonTipEventArgs> showBalloonTip = new Progress<ShowBalloonTipEventArgs>((e) =>
             {
-                // show tooltip
+                latestBalloonTip = e;
                 notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
             });
 
@@ -619,9 +621,6 @@ namespace LoLAutoLogin
                     }
                 }
             });
-
-            // done, exit application
-            Application.Exit();
         }
 
         /// <summary>
@@ -683,12 +682,13 @@ namespace LoLAutoLogin
                     // show balloon tip to inform user of error
                     progress.Report(new ShowBalloonTipEventArgs(
                         "LoL Auto Login has encountered a fatal error",
-                        "Please check your logs for more information.",
-                        ToolTipIcon.Error
+                        "Click here to access the log. If this issue persists, please submit an issue.",
+                        ToolTipIcon.Error,
+                        true,
+                        (sender, e) => OpenFolderAndSelectFile(Log.GetLogFilePath())
                     ));
 
                     // exit application
-                    Application.Exit();
                     return Rectangle.Empty;
 
                 }
@@ -809,12 +809,12 @@ namespace LoLAutoLogin
                 // show balloon tip to inform user of error
                 progress.Report(new ShowBalloonTipEventArgs(
                                 "LoL Auto Login has encountered a fatal error",
-                                "Please check your logs for more information.",
-                                ToolTipIcon.Error
+                                "Click here to access the log. If this issue persists, please submit an issue.",
+                                ToolTipIcon.Error,
+                                true,
+                                (sender, e) => OpenFolderAndSelectFile(Log.GetLogFilePath())
                             ));
-
-                // exit application
-                Application.Exit();
+                
                 return;
             }
 
@@ -862,6 +862,8 @@ namespace LoLAutoLogin
 
             // log
             Log.Info("Successfully entered password (well, hopefully)!");
+
+            Application.Exit();
         }
 
         /// <summary>
@@ -869,6 +871,32 @@ namespace LoLAutoLogin
         /// </summary>
         /// <returns>Handle of the client.</returns>
         public IntPtr GetClientWindowHandle() => GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
-    }
 
+        private void notifyIcon_BalloonTipClicked(object sender, EventArgs e)
+        {
+            if (latestBalloonTip != null)
+            {
+                latestBalloonTip.OnClick(e);
+
+                if (latestBalloonTip.ExitOnClose)
+                    Application.Exit();
+            }
+        }
+
+        private void notifyIcon_BalloonTipClosed(object sender, EventArgs e)
+        {
+            if (latestBalloonTip != null && latestBalloonTip.ExitOnClose)
+                Application.Exit();
+        }
+
+        private void OpenFolderAndSelectFile(string filePath)
+        {
+            if (filePath == null)
+                throw new ArgumentNullException("Parameter filePath cannot be null");
+
+            IntPtr pidl = NativeMethods.ILCreateFromPathW(filePath);
+            NativeMethods.SHOpenFolderAndSelectItems(pidl, 0, IntPtr.Zero, 0);
+            NativeMethods.ILFree(pidl);
+        }
+    }
 }

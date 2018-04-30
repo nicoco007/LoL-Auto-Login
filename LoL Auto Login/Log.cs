@@ -84,10 +84,11 @@ namespace LoLAutoLogin
 
             try
             {
-                var dir = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs");
-                var file = Path.Combine(dir, LogFile);
+                var dir = GetLogFileDirectory();
+                var file = GetLogFilePath();
 
-                if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                if (dir != null && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
                 using (var sw = new StreamWriter(file, true))
                     sw.WriteLine(text);
@@ -102,6 +103,16 @@ namespace LoLAutoLogin
         {
             Error($"An error of type {ex.GetType()} occured: {ex.Message}");
             Error(ex.StackTrace);
+        }
+
+        public static string GetLogFileDirectory()
+        {
+            return Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs");
+        }
+
+        public static string GetLogFilePath()
+        {
+            return Path.Combine(GetLogFileDirectory(), LogFile);
         }
     }
 }

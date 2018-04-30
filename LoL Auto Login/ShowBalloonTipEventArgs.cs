@@ -23,12 +23,21 @@ namespace LoLAutoLogin
         public string Title { get; }
         public string Message { get; }
         public ToolTipIcon Icon { get; }
+        public bool ExitOnClose { get; }
+        public event EventHandler Click;
 
-        public ShowBalloonTipEventArgs(string title, string message, ToolTipIcon icon)
+        public ShowBalloonTipEventArgs(string title, string message, ToolTipIcon icon, bool exitOnClose = false, EventHandler onClick = null)
         {
             Title = title;
             Message = message;
             Icon = icon;
+            ExitOnClose = exitOnClose;
+            Click += onClick;
+        }
+
+        public void OnClick(EventArgs e)
+        {
+            Click?.Invoke(this, e);
         }
     }
 }
