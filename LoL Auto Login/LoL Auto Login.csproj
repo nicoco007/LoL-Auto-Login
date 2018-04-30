@@ -188,7 +188,6 @@
     <Content Include="lib\concrt140.dll" />
     <Content Include="lib\cvextern.dll" />
     <Content Include="lib\msvcp140.dll" />
-    <Content Include="lib\opencv_ffmpeg341.dll" />
     <Content Include="lib\vcruntime140.dll" />
     <None Include="Resources\template.png" />
     <Content Include="AutoItX3.Assembly.dll" />
