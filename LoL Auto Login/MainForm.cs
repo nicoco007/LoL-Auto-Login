@@ -749,9 +749,7 @@ namespace LoLAutoLogin
                 Log.Info($"Template matching: needed {matchTolerance}, got {maxValues[0]}");
 
                 if (maxValues[0] > matchTolerance)
-                {
                     return new Rectangle(maxLocations[0], template.Size);
-                }
             }
 
             return Rectangle.Empty;
