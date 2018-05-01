@@ -47,9 +47,9 @@ namespace LoLAutoLogin
                 new YamlScalarNode("login-detection"),
                 new YamlMappingNode(
                     new YamlScalarNode("logo-matching-tolerance"),
-                    new YamlScalarNode("0.90"),
-                    new YamlScalarNode("password-matching-tolerance"),
                     new YamlScalarNode("0.80"),
+                    new YamlScalarNode("password-matching-tolerance"),
+                    new YamlScalarNode("0.20"),
                     new YamlScalarNode("debug"),
                     new YamlScalarNode("false")
                 ),

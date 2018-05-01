@@ -190,8 +190,8 @@
     <Content Include="lib\cvextern.dll" />
     <Content Include="lib\msvcp140.dll" />
     <Content Include="lib\vcruntime140.dll" />
-    <None Include="Resources\loginLogo.png" />
     <None Include="Resources\template.png" />
+    <None Include="Resources\loginLogo.png" />
     <Content Include="AutoItX3.Assembly.dll" />
     <Content Include="AutoItX3.Assembly.xml" />
     <None Include="lib\AutoItX3.dll" />

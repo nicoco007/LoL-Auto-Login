@@ -94,57 +94,86 @@ namespace LoLAutoLogin
         /// <param name=template">Second image</param>
         /// <param name="tolerance">Percent tolerance for matching the template to a spot in te image</param>
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
-        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance = 0.80)
+        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, double[] scales, RectangleF areaOfInterest)
         {
-            var cvSource = new Image<Rgb, byte>(source);
-            var cvTemplate = new Image<Rgb, byte>(template);
-            var result = Rectangle.Empty;
+            Image<Rgb, byte> cvSource = new Image<Rgb, byte>(source);
+            Image<Rgb, byte> cvTemplate = new Image<Rgb, byte>(template);
 
-            using (Image<Gray, float> matches = cvSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed))
+            if (areaOfInterest != RectangleF.Empty)
             {
+                Rectangle actualSize = new Rectangle(
+                    (int)(source.Width * areaOfInterest.Left),
+                    (int)(source.Height * areaOfInterest.Top),
+                    (int)(source.Width * areaOfInterest.Width),
+                    (int)(source.Height * areaOfInterest.Height)
+                );
+
+                cvSource.ROI = actualSize;
+            }
+
+            var result = Rectangle.Empty;
+            double resultScale = 1.0;
+            double max = tolerance;
+
+            foreach (double scale in scales)
+            {
+                Image<Rgb, byte> temp = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Linear);
+
+                if (cvTemplate.Width > temp.Width || cvTemplate.Height > temp.Height)
+                    continue;
+
+                Image<Gray, float> matches = temp.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
+                    
                 double[] minValues, maxValues;
                 Point[] minLocations, maxLocations;
 
                 matches.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
 
-                Logger.Info($"Template matching: wanted {tolerance}, got {maxValues[0]}");
+                Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
 
-                if (maxValues[0] > tolerance)
+                if (maxValues[0] > max)
+                {
                     result = new Rectangle(maxLocations[0], template.Size);
-            }
+                    resultScale = scale;
+                    max = maxValues[0];
+                }
 
-            if (Settings.ClientDetectionDebug)
-            {
-                try
+                if (Settings.ClientDetectionDebug)
                 {
-                    if (!Directory.Exists(Settings.DebugDirectory))
-                        Directory.CreateDirectory(Settings.DebugDirectory);
-
-                    var now = DateTime.Now.ToString(@"yyyy-MM-dd.fffffff\THH-mm-ss");
-                    
-                    cvSource.Save(Path.Combine(Settings.DebugDirectory, now + "_source.png"));
-
-                    if (result != Rectangle.Empty)
+                    try
                     {
-                        var copy = cvSource.Copy();
+                        if (!Directory.Exists(Settings.DebugDirectory))
+                            Directory.CreateDirectory(Settings.DebugDirectory);
 
-                        copy.Draw(result, new Rgb(Color.Red));
-                        copy.Save(Path.Combine(Settings.DebugDirectory, now + "_matched.png"));
-                        copy.Dispose();
+                        var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
+
+                        temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
+
+                        if (maxValues[0] > tolerance)
+                        {
+                            temp.Draw(new Rectangle(maxLocations[0], template.Size), new Rgb(Color.Red));
+                            temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_matched@{scale}.png"));
+                        }
+
                     }
+                    catch (IOException ex)
+                    {
+                        Logger.Error("Failed to save debug images to " + Settings.DebugDirectory);
+                        Logger.PrintException(ex);
+                    }
+                }
 
-                }
-                catch (IOException ex)
-                {
-                    Logger.Error("Failed to save debug images to " + Settings.DebugDirectory);
-                    Logger.PrintException(ex);
-                }
+                matches.Dispose();
+                temp.Dispose();
             }
 
             cvSource.Dispose();
             cvTemplate.Dispose();
 
-            return result;
+            if (areaOfInterest != Rectangle.Empty && result != Rectangle.Empty)
+                return new Rectangle((int)(source.Width * areaOfInterest.Left + result.Left / resultScale), (int)(source.Height * areaOfInterest.Top + result.Top / resultScale), result.Width, result.Height);
+            else
+                return result;
         }
 
         /// <summary>
@@ -180,7 +209,7 @@ namespace LoLAutoLogin
                 NativeMethods.GetWindowRect(hwnd, out rect);
                 Logger.Trace($"Found window {{Handle={hwnd},Rectangle={rect}}}");
 
-                if (rect.Size.Width > image.Size.Width && rect.Size.Height > image.Size.Height && CompareImage(CaptureWindow(hwnd), image, tolerance) != Rectangle.Empty)
+                if (CompareImage(CaptureWindow(hwnd), image, tolerance, new double[] { 1, 0.8, 0.64 }, new RectangleF(0.8125f, 0.0f, 0.2f, 1.0f)) != Rectangle.Empty)
                     return hwnd;
             }
 

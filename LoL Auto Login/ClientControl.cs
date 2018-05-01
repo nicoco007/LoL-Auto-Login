@@ -53,8 +53,12 @@ namespace LoLAutoLogin
                     
                     Rectangle passwordRect;
 
+                    clientHandle = GetClientWindowHandle();
+
+                    Console.WriteLine(GetPasswordRect(clientHandle));
+
                     // check if password box is visible (not logged in)
-                    if ((clientHandle = GetClientWindowHandle()) != IntPtr.Zero && (passwordRect = GetPasswordRect(clientHandle)) != Rectangle.Empty)
+                    if (clientHandle != IntPtr.Zero && (passwordRect = GetPasswordRect(clientHandle)) != Rectangle.Empty)
                     {
                         Logger.Info("Client is open on login page, entering password");
 
@@ -178,7 +182,7 @@ namespace LoLAutoLogin
                 return Rectangle.Empty;
 
             // compare the images
-            var found = Util.CompareImage(Util.CaptureWindow(clientHandle), Properties.Resources.template, Settings.PasswordMatchTolerance);
+            var found = Util.CompareImage(Util.CaptureWindow(clientHandle), Properties.Resources.template, Settings.PasswordMatchTolerance, new double[] { 1, 0.8125, 0.64 }, new RectangleF(0.8f, 0.0f, 0.2f, 1.0f));
 
             // force garbage collection
             GC.Collect();
@@ -210,8 +214,13 @@ namespace LoLAutoLogin
 
             // create character array from password
             var passArray = password.ToCharArray();
-            
+
             Logger.Info("Entering password...");
+
+            RECT rect;
+            NativeMethods.GetWindowRect(clientHandle, out rect);
+
+            AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
 
             int i = 0;
 
@@ -219,7 +228,6 @@ namespace LoLAutoLogin
             while (i <= passArray.Length && NativeMethods.IsWindow(clientHandle))
             {
                 // get window rectangle, in case it is resized or moved
-                RECT rect;
                 NativeMethods.GetWindowRect(clientHandle, out rect);
 
                 Logger.Trace("Client rectangle: " + rect.ToString());
