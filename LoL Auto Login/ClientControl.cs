@@ -201,36 +201,29 @@ namespace LoLAutoLogin
             
             Logger.Info("Entering password...");
 
+            int i = 0;
+
             // enter password one character at a time
-            for (int i = 0; i <= passArray.Length && NativeMethods.IsWindow(clientHandle); i++)
+            while (i <= passArray.Length && NativeMethods.IsWindow(clientHandle))
             {
                 // get window rectangle, in case it is resized or moved
                 RECT rect;
                 NativeMethods.GetWindowRect(clientHandle, out rect);
-                WindowUtil.AddFoundWindow(clientHandle, rect);
-                Logger.Trace("Client rectangle=" + rect.ToString());
 
-                // move cursor above password box
-                AutoItX.MouseUp("primary");
-                NativeMethods.SetForegroundWindow(clientHandle);
+                Logger.Trace("Client rectangle: " + rect.ToString());
 
                 // focus window & click on password box
-                AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
+                NativeMethods.SetForegroundWindow(clientHandle);
 
                 // check if client is foreground window
                 if (NativeMethods.GetForegroundWindow() == clientHandle)
                 {
-                    // enter password character, press enter if complete
                     if (i < passArray.Length)
-                    {
-                        // enter character
-                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, string.Format("{{END}}{{ASC {0:000}}}", (int)passArray[i]), 0);
-                    }
+                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, string.Format("{{ASC {0:000}}}", (int)passArray[i]), 0);
                     else
-                    {
-                        // press enter
                         AutoItX.ControlSend(clientHandle, IntPtr.Zero, "{ENTER}", 0);
-                    }
+
+                    i++;
                 }
             }
             
