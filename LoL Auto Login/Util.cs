@@ -1,4 +1,19 @@
-﻿using Emgu.CV;
+﻿// Copyright © 2015-2018 Nicolas Gnyra
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see http://www.gnu.org/licenses/.
+
+using Emgu.CV;
 using Emgu.CV.Structure;
 using System;
 using System.Drawing;
@@ -8,10 +23,16 @@ namespace LoLAutoLogin
 {
     internal static class Util
     {
+        /// <summary>
+        /// Opens the folder containing the specified file in the Windows Explorer and focuses the file
+        /// </summary>
+        /// <param name="filePath">File to show to the user</param>
         internal static void OpenFolderAndSelectFile(string filePath)
         {
             if (filePath == null)
                 throw new ArgumentNullException("Parameter filePath cannot be null");
+
+            Logger.Info("Opening " + filePath);
 
             IntPtr pidl = NativeMethods.ILCreateFromPathW(filePath);
             NativeMethods.SHOpenFolderAndSelectItems(pidl, 0, IntPtr.Zero, 0);
@@ -23,8 +44,10 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="handle">The handle to the window. (In windows forms, this is obtained by the Handle property)</param>
         /// <returns></returns>
-        public static Bitmap CaptureWindow(IntPtr handle)
+        internal static Bitmap CaptureWindow(IntPtr handle)
         {
+            Logger.Debug("Capturing window with handle " + handle);
+
             // get te hDC of the target window
             var hdcSrc = NativeMethods.GetWindowDC(handle);
 
@@ -67,11 +90,11 @@ namespace LoLAutoLogin
         /// <summary>
         /// Compares two images using their hashes & supplied tolerance
         /// </summary>
-        /// <param name="a">First image</param>
-        /// <param name="b">Second image</param>
-        /// <param name="matchTolerance">Percent tolerance of similar pixel count versus total pixel count</param>
-        /// <returns>Whether the images are similar or not</returns>
-        public static Rectangle CompareImage(Bitmap source, Bitmap template, double matchTolerance = 0.80)
+        /// <param name="source">Source image</param>
+        /// <param name=template">Second image</param>
+        /// <param name="tolerance">Percent tolerance for matching the template to a spot in te image</param>
+        /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
+        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance = 0.80)
         {
             var cvSource = new Image<Rgb, byte>(source);
             var cvTemplate = new Image<Rgb, byte>(template);
@@ -84,12 +107,10 @@ namespace LoLAutoLogin
 
                 matches.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
 
-                Logger.Info($"Template matching: needed {matchTolerance}, got {maxValues[0]}");
+                Logger.Info($"Template matching: wanted {tolerance}, got {maxValues[0]}");
 
-                if (maxValues[0] > matchTolerance)
-                {
+                if (maxValues[0] > tolerance)
                     result = new Rectangle(maxLocations[0], template.Size);
-                }
             }
 
             if (Settings.ClientDetectionDebug)
@@ -124,6 +145,46 @@ namespace LoLAutoLogin
             cvTemplate.Dispose();
 
             return result;
+        }
+
+        /// <summary>
+        /// Focus all windows with the specified class & window names
+        /// </summary>
+        /// <param name="className">Class name of the window(s)</param>
+        /// <param name="windowName">Name of the window(s)</param>
+        internal static void FocusWindows(string className, string windowName)
+        {
+            var hwnd = IntPtr.Zero;
+
+            while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
+                NativeMethods.SetForegroundWindow(hwnd);
+        }
+
+        /// <summary>
+        /// Fetches a window handle with the specified class and window names that contains the specified image
+        /// </summary>
+        /// <param name="className">Class name of the window(s)</param>
+        /// <param name="windowName">Name of the window(s)</param>
+        /// <param name="image">Image that the window must contain</param>
+        /// <param name="tolerance">Matching tolerance</param>
+        /// <returns></returns>
+        internal static IntPtr GetSingleWindowFromImage(string className, string windowName, Bitmap image, float tolerance = 0.8f)
+        {
+            Logger.Debug($"Trying to find window handle for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
+
+            var hwnd = IntPtr.Zero;
+            RECT rect;
+
+            while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
+            {
+                NativeMethods.GetWindowRect(hwnd, out rect);
+                Logger.Trace($"Found window {{Handle={hwnd},Rectangle={rect}}}");
+
+                if (rect.Size.Width > image.Size.Width && rect.Size.Height > image.Size.Height && CompareImage(CaptureWindow(hwnd), image, tolerance) != Rectangle.Empty)
+                    return hwnd;
+            }
+
+            return IntPtr.Zero;
         }
     }
 }
