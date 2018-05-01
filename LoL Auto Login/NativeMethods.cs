@@ -100,7 +100,7 @@ namespace LoLAutoLogin
 
     internal class NativeMethods
     {
-        internal const int SRCCOPY = 0x00CC0020; // BitBlt dwRop parameter
+        internal const int SRCCOPY = 0x00CC0020;
         
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
@@ -108,7 +108,7 @@ namespace LoLAutoLogin
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpClassName, string lpWindowName);
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Ansi)] // ANSI required for .NET 4.0
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -141,7 +141,7 @@ namespace LoLAutoLogin
         internal static extern IntPtr GetWindowDC(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        internal static extern IntPtr ReleaseDC(IntPtr hWnd, IntPtr hDC);
+        internal static extern bool ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
         [DllImport("kernel32.dll")]
         internal static extern uint GetLastError();
