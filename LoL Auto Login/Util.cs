@@ -100,14 +100,18 @@ namespace LoLAutoLogin
                         Directory.CreateDirectory(Settings.DebugDirectory);
 
                     var now = DateTime.Now.ToString(@"yyyy-MM-dd.fffffff\THH-mm-ss");
-                    var copy = cvSource.Copy();
-
-                    copy.Draw(result, new Rgb(Color.Red));
-
+                    
                     cvSource.Save(Path.Combine(Settings.DebugDirectory, now + "_source.png"));
-                    copy.Save(Path.Combine(Settings.DebugDirectory, now + "_matched.png"));
 
-                    copy.Dispose();
+                    if (result != Rectangle.Empty)
+                    {
+                        var copy = cvSource.Copy();
+
+                        copy.Draw(result, new Rgb(Color.Red));
+                        copy.Save(Path.Combine(Settings.DebugDirectory, now + "_matched.png"));
+                        copy.Dispose();
+                    }
+
                 }
                 catch (IOException ex)
                 {

@@ -11,6 +11,9 @@ namespace LoLAutoLogin
 {
     internal static class ClientControl
     {
+        private const string CLIENT_CLASS = "RCLIENT";
+        private const string CLIENT_NAME = null;
+
         /// <summary>
         /// 
         /// </summary>
@@ -28,18 +31,17 @@ namespace LoLAutoLogin
         {
             await Task.Factory.StartNew(() =>
             {
-                // create handle variable
                 IntPtr clientHandle;
 
                 // check if client is already running & window is present
-                if (Process.GetProcessesByName("LeagueClient").Length > 0 && (clientHandle = GetClientWindowHandle()) != IntPtr.Zero)
+                if (Process.GetProcessesByName("LeagueClient").Length > 0)
                 {
                     Logger.Info("Client is already open");
-
-                    var passwordRect = GetPasswordRect(clientHandle);
+                    
+                    Rectangle passwordRect;
 
                     // check if password box is visible (not logged in)
-                    if (passwordRect != Rectangle.Empty)
+                    if ((clientHandle = GetClientWindowHandle()) != IntPtr.Zero && (passwordRect = GetPasswordRect(clientHandle)) != Rectangle.Empty)
                     {
                         Logger.Info("Client is open on login page, entering password");
 
@@ -51,7 +53,9 @@ namespace LoLAutoLogin
                         Logger.Info("Client doesn't seem to be on login page; focusing client");
 
                         // client is logged in, show window
-                        NativeMethods.SetForegroundWindow(clientHandle);
+                        FocusClient();
+
+                        Application.Exit();
                     }
                 }
                 else
@@ -179,9 +183,6 @@ namespace LoLAutoLogin
         /// <param name="progress">Progress interface used to pass messages</param>
         public static void EnterPassword(IntPtr clientHandle, Rectangle passwordRect)
         {
-            // set window to foreground
-            NativeMethods.SetForegroundWindow(clientHandle);
-
             // create password string
             string password;
             
@@ -236,6 +237,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private static IntPtr GetClientWindowHandle() => WindowUtil.GetSingleWindowFromImage("RCLIENT", null, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
+        private static IntPtr GetClientWindowHandle() => WindowUtil.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
+        private static void FocusClient() => WindowUtil.FocusWindows(CLIENT_CLASS, CLIENT_NAME);
     }
 }

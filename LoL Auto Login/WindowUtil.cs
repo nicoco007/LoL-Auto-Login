@@ -1,13 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Text;
 
 namespace LoLAutoLogin
 {
     internal static class WindowUtil
     {
+        internal static void FocusWindows(string className, string windowName)
+        {
+            var hwnd = IntPtr.Zero;
+
+            while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
+                NativeMethods.SetForegroundWindow(hwnd);
+        }
+
         internal static IntPtr GetSingleWindowFromImage(string className, string windowName, Bitmap image, float tolerance = 0.8f)
         {
             Logger.Debug($"Trying to find window handle for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
