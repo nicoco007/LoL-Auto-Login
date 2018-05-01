@@ -250,11 +250,11 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private static IntPtr GetClientWindowHandle() => WindowUtil.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
+        private static IntPtr GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
 
         /// <summary>
         /// Focuses all League Client windows
         /// </summary>
-        private static void FocusClient() => WindowUtil.FocusWindows(CLIENT_CLASS, CLIENT_NAME);
+        private static void FocusClient() => Util.FocusWindows(CLIENT_CLASS, CLIENT_NAME);
     }
 }
