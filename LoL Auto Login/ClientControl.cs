@@ -163,7 +163,7 @@ namespace LoLAutoLogin
                 return Rectangle.Empty;
 
             // compare the images
-            var found = Util.CompareImage(Util.CaptureWindow(clientHandle), Properties.Resources.template, Settings.MatchTolerance);
+            var found = Util.CompareImage(Util.CaptureWindow(clientHandle), Properties.Resources.template, Settings.PasswordMatchTolerance);
 
             // force garbage collection
             GC.Collect();
@@ -202,7 +202,7 @@ namespace LoLAutoLogin
             Logger.Info("Entering password...");
 
             // enter password one character at a time
-            for (int i = 0; i <= passArray.Length && clientHandle != IntPtr.Zero; i++)
+            for (int i = 0; i <= passArray.Length && NativeMethods.IsWindow(clientHandle); i++)
             {
                 // get window rectangle, in case it is resized or moved
                 RECT rect;
@@ -232,9 +232,6 @@ namespace LoLAutoLogin
                         AutoItX.ControlSend(clientHandle, IntPtr.Zero, "{ENTER}", 0);
                     }
                 }
-
-                // get the client handle again
-                clientHandle = GetClientWindowHandle();
             }
             
             Logger.Info("Successfully entered password (well, hopefully)!");
@@ -246,6 +243,6 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        public static IntPtr GetClientWindowHandle() => WindowUtil.GetSingleWindowFromSize("RCLIENT", null, 1000, 500);
+        private static IntPtr GetClientWindowHandle() => WindowUtil.GetSingleWindowFromImage("RCLIENT", null, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
     }
 }

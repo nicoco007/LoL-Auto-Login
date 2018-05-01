@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LoLAutoLogin
 {
@@ -13,56 +11,20 @@ namespace LoLAutoLogin
         // debug info
         private static List<ClientWindowMatch> windowsFound = new List<ClientWindowMatch>();
 
-        /// <summary>
-        /// Gets a window with specified size using class name and window name.
-        /// </summary>
-        /// <param name="lpClassName">Class name</param>
-        /// <param name="lpWindowName">Window name</param>
-        /// <param name="width">Window minimum width</param>
-        /// <param name="height">Window minimum height</param>
-        /// <returns>The specified window's handle</returns>
-        internal static IntPtr GetSingleWindowFromSize(string lpClassName, string lpWindowName, int width, int height)
+        internal static IntPtr GetSingleWindowFromImage(string className, string windowName, Bitmap image, float tolerance = 0.8f)
         {
-            Logger.Debug($"Trying to find window handle {{ClassName={(lpClassName ?? "null")},WindowName={(lpWindowName ?? "null")},Size={new Size(width, height)}}}");
+            Logger.Debug($"Trying to find window handle for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
 
-            // try to get window handle and rectangle using specified arguments
-            var hwnd = NativeMethods.FindWindow(lpClassName, lpWindowName);
+            var hwnd = IntPtr.Zero;
             RECT rect;
-            NativeMethods.GetWindowRect(hwnd, out rect);
 
-            // check if handle is nothing
-            if (hwnd == IntPtr.Zero)
+            while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
             {
-                Logger.Trace("Failed to find window with specified arguments!");
-
-                return IntPtr.Zero;
-            }
-            
-            Logger.Trace($"Found window {{Handle={hwnd},Rectangle={rect}}}");
-
-            if (rect.Size.Width >= width && rect.Size.Height >= height)
-            {
-                Logger.Trace("Correct window handle found!");
-
-                AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
-
-                return hwnd;
-            }
-
-            while (NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName) != IntPtr.Zero)
-            {
-                hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, lpClassName, lpWindowName);
                 NativeMethods.GetWindowRect(hwnd, out rect);
-
                 Logger.Trace($"Found window {{Handle={hwnd},Rectangle={rect}}}");
 
-                if (rect.Size.Width < width || rect.Size.Height < height) continue;
-
-                Logger.Trace("Correct window handle found!");
-
-                AddFoundWindow(hwnd, rect, lpClassName, lpWindowName);
-
-                return hwnd;
+                if (rect.Size.Width > image.Size.Width && rect.Size.Height > image.Size.Height && Util.CompareImage(Util.CaptureWindow(hwnd), image, tolerance) != Rectangle.Empty)
+                    return hwnd;
             }
 
             return IntPtr.Zero;

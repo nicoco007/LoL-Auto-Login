@@ -99,7 +99,7 @@ namespace LoLAutoLogin
                     if (!Directory.Exists(Settings.DebugDirectory))
                         Directory.CreateDirectory(Settings.DebugDirectory);
 
-                    var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss");
+                    var now = DateTime.Now.ToString(@"yyyy-MM-dd.fffffff\THH-mm-ss");
                     var copy = cvSource.Copy();
 
                     copy.Draw(result, new Rgb(Color.Red));
