@@ -220,7 +220,8 @@ namespace LoLAutoLogin
             RECT rect;
             NativeMethods.GetWindowRect(clientHandle, out rect);
 
-            AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
+            if (!Settings.DisableClick)
+                AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
 
             int i = 0;
 

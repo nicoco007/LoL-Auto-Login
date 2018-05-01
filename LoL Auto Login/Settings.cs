@@ -26,6 +26,7 @@ namespace LoLAutoLogin
     {
         internal static float LogoMatchTolerance { get; private set; }
         internal static float PasswordMatchTolerance { get; private set; }
+        internal static bool DisableClick { get; private set; }
         internal static bool ClientDetectionDebug { get; private set; }
         internal static int ClientTimeout { get; private set; }
 
@@ -50,6 +51,8 @@ namespace LoLAutoLogin
                     new YamlScalarNode("0.80"),
                     new YamlScalarNode("password-matching-tolerance"),
                     new YamlScalarNode("0.20"),
+                    new YamlScalarNode("disable-click"),
+                    new YamlScalarNode("false"),
                     new YamlScalarNode("debug"),
                     new YamlScalarNode("false")
                 ),
@@ -101,6 +104,7 @@ namespace LoLAutoLogin
                 // set vars to loaded values
                 LogoMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["logo-matching-tolerance"]).Value, CultureInfo.InvariantCulture);
                 PasswordMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["password-matching-tolerance"]).Value, CultureInfo.InvariantCulture);
+                DisableClick = bool.Parse(((YamlScalarNode)settings["login-detection"]["disable-click"]).Value);
                 ClientDetectionDebug = bool.Parse(((YamlScalarNode)settings["login-detection"]["debug"]).Value);
                 ClientTimeout = int.Parse(((YamlScalarNode)settings["client-load-timeout"]).Value) * 1000;
             }
