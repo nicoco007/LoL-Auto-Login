@@ -124,12 +124,14 @@ namespace LoLAutoLogin
             sw.Start();
 
             // create client handle variable
-            IntPtr clientHandle;
+            IntPtr clientHandle = GetClientWindowHandle();
 
             // search for window until client timeout is reached or window is found
-            do
+            while (sw.ElapsedMilliseconds < Settings.ClientTimeout && clientHandle == IntPtr.Zero)
+            {
+                Thread.Sleep(500);
                 clientHandle = GetClientWindowHandle();
-            while (sw.ElapsedMilliseconds < Settings.ClientTimeout && clientHandle == IntPtr.Zero);
+            };
 
             // return found handle
             return clientHandle;
@@ -149,17 +151,13 @@ namespace LoLAutoLogin
             // loop while not found and while client handle is something
             do
             {
-                // get client handle
                 clientHandle = GetClientWindowHandle();
-
-                // additional check just in case
+                
                 if (clientHandle == IntPtr.Zero)
                     continue;
                 
-                // check if password box is visible
                 found = GetPasswordRect(clientHandle);
-
-                // sleep
+                
                 Thread.Sleep(500);
             }
             while (clientHandle != IntPtr.Zero && found == Rectangle.Empty);
@@ -173,7 +171,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <returns>Whether the password box is visible or not.</returns>
-        public static Rectangle GetPasswordRect(IntPtr clientHandle)
+        private static Rectangle GetPasswordRect(IntPtr clientHandle)
         {
             // check that the handle is valid
             if (clientHandle == IntPtr.Zero)
@@ -194,7 +192,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        public static void EnterPassword(IntPtr clientHandle, Rectangle passwordRect)
+        private static void EnterPassword(IntPtr clientHandle, Rectangle passwordRect)
         {
             // create password string
             string password;
