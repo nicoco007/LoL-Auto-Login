@@ -24,9 +24,8 @@ namespace LoLAutoLogin
 {
     internal static class Settings
     {
-        internal static float LogoMatchTolerance { get; private set; }
         internal static float PasswordMatchTolerance { get; private set; }
-        internal static bool DisableClick { get; private set; }
+        internal static bool EnableClick { get; private set; }
         internal static bool ClientDetectionDebug { get; private set; }
         internal static int ClientTimeout { get; private set; }
 
@@ -47,12 +46,10 @@ namespace LoLAutoLogin
             var defaultSettings = new YamlMappingNode(
                 new YamlScalarNode("login-detection"),
                 new YamlMappingNode(
-                    new YamlScalarNode("logo-matching-tolerance"),
-                    new YamlScalarNode("0.80"),
-                    new YamlScalarNode("password-matching-tolerance"),
-                    new YamlScalarNode("0.20"),
-                    new YamlScalarNode("disable-click"),
-                    new YamlScalarNode("false"),
+                    new YamlScalarNode("tolerance"),
+                    new YamlScalarNode("0.75"),
+                    new YamlScalarNode("enable-click"),
+                    new YamlScalarNode("true"),
                     new YamlScalarNode("debug"),
                     new YamlScalarNode("false")
                 ),
@@ -102,9 +99,8 @@ namespace LoLAutoLogin
             try
             {
                 // set vars to loaded values
-                LogoMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["logo-matching-tolerance"]).Value, CultureInfo.InvariantCulture);
-                PasswordMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["password-matching-tolerance"]).Value, CultureInfo.InvariantCulture);
-                DisableClick = bool.Parse(((YamlScalarNode)settings["login-detection"]["disable-click"]).Value);
+                PasswordMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["tolerance"]).Value, CultureInfo.InvariantCulture);
+                EnableClick = bool.Parse(((YamlScalarNode)settings["login-detection"]["enable-click"]).Value);
                 ClientDetectionDebug = bool.Parse(((YamlScalarNode)settings["login-detection"]["debug"]).Value);
                 ClientTimeout = int.Parse(((YamlScalarNode)settings["client-load-timeout"]).Value) * 1000;
             }
@@ -123,7 +119,7 @@ namespace LoLAutoLogin
 
         private static T ReadYaml<T>(string file) where T : YamlNode
         {
-            T read = default(T);
+            T read = null;
 
             using (var reader = new StreamReader(file))
             {

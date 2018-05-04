@@ -44,7 +44,7 @@ namespace LoLAutoLogin
         {
             await Task.Factory.StartNew(() =>
             {
-                IntPtr clientHandle;
+                Window clientWindow;
 
                 // check if client is already running & window is present
                 if (Process.GetProcessesByName("LeagueClient").Length > 0)
@@ -53,17 +53,15 @@ namespace LoLAutoLogin
                     
                     Rectangle passwordRect;
 
-                    clientHandle = GetClientWindowHandle();
-
-                    Console.WriteLine(GetPasswordRect(clientHandle));
+                    clientWindow = GetClientWindowHandle();
 
                     // check if password box is visible (not logged in)
-                    if (clientHandle != IntPtr.Zero && (passwordRect = GetPasswordRect(clientHandle)) != Rectangle.Empty)
+                    if (clientWindow != null && (passwordRect = GetPasswordRect(clientWindow)) != Rectangle.Empty)
                     {
                         Logger.Info("Client is open on login page, entering password");
 
                         // client is on login page, enter password
-                        EnterPassword(clientHandle, passwordRect);
+                        EnterPassword(clientWindow, passwordRect);
                     }
                     else
                     {
@@ -87,10 +85,10 @@ namespace LoLAutoLogin
                     sw.Start();
 
                     // get client handle
-                    clientHandle = AwaitClientHandle();
+                    clientWindow = AwaitClientHandle();
 
                     // check if we got a valid handle
-                    if (clientHandle != IntPtr.Zero)
+                    if (clientWindow != null)
                     {
                         Logger.Info($"Client found after {sw.ElapsedMilliseconds} ms");
 
@@ -98,11 +96,11 @@ namespace LoLAutoLogin
                         var found = WaitForPasswordBox();
 
                         // check if the password box was found
-                        if (clientHandle != IntPtr.Zero && found != Rectangle.Empty)
+                        if (found != Rectangle.Empty)
                         {
                             Logger.Info($"Password box found after {sw.ElapsedMilliseconds} ms");
 
-                            EnterPassword(clientHandle, found);
+                            EnterPassword(clientWindow, found);
                         }
                         else
                         {
@@ -121,24 +119,24 @@ namespace LoLAutoLogin
         /// Hangs until the client window is found or the preset timeout is reached.
         /// </summary>
         /// <returns>Client window handle if found, zero if not.</returns>
-        private static IntPtr AwaitClientHandle()
+        private static Window AwaitClientHandle()
         {
             // create & start stopwatch
             var sw = new Stopwatch();
             sw.Start();
 
             // create client handle variable
-            IntPtr clientHandle = GetClientWindowHandle();
+            Window clientWindow = GetClientWindowHandle();
 
             // search for window until client timeout is reached or window is found
-            while (sw.ElapsedMilliseconds < Settings.ClientTimeout && clientHandle == IntPtr.Zero)
+            while (sw.ElapsedMilliseconds < Settings.ClientTimeout && clientWindow == null)
             {
                 Thread.Sleep(500);
-                clientHandle = GetClientWindowHandle();
+                clientWindow = GetClientWindowHandle();
             };
 
             // return found handle
-            return clientHandle;
+            return clientWindow;
         }
 
         /// <summary>
@@ -150,21 +148,21 @@ namespace LoLAutoLogin
         {
             // create found & handle varables
             Rectangle found = Rectangle.Empty;
-            IntPtr clientHandle;
+            Window clientWindow;
 
             // loop while not found and while client handle is something
             do
             {
-                clientHandle = GetClientWindowHandle();
+                clientWindow = GetClientWindowHandle();
                 
-                if (clientHandle == IntPtr.Zero)
+                if (clientWindow == null)
                     continue;
                 
-                found = GetPasswordRect(clientHandle);
+                found = GetPasswordRect(clientWindow);
                 
                 Thread.Sleep(500);
             }
-            while (clientHandle != IntPtr.Zero && found == Rectangle.Empty);
+            while (clientWindow != null && found == Rectangle.Empty);
 
             // return whether client was found or not
             return found;
@@ -175,14 +173,14 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <returns>Whether the password box is visible or not.</returns>
-        private static Rectangle GetPasswordRect(IntPtr clientHandle)
+        private static Rectangle GetPasswordRect(Window clientWindow)
         {
             // check that the handle is valid
-            if (clientHandle == IntPtr.Zero)
+            if (clientWindow == null)
                 return Rectangle.Empty;
 
             // compare the images
-            var found = Util.CompareImage(Util.CaptureWindow(clientHandle), Properties.Resources.template, Settings.PasswordMatchTolerance, new double[] { 1, 0.8125, 0.64 }, new RectangleF(0.8f, 0.0f, 0.2f, 1.0f));
+            var found = Util.CompareImage(clientWindow.Capture(), Properties.Resources.template, Settings.PasswordMatchTolerance, new Size(1024, 576), new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
 
             // force garbage collection
             GC.Collect();
@@ -196,7 +194,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        private static void EnterPassword(IntPtr clientHandle, Rectangle passwordRect)
+        private static void EnterPassword(Window clientWindow, Rectangle passwordRect)
         {
             // create password string
             string password;
@@ -215,34 +213,31 @@ namespace LoLAutoLogin
             // create character array from password
             var passArray = password.ToCharArray();
 
-            Logger.Info("Entering password...");
+            Logger.Info("Entering password");
 
-            RECT rect;
-            NativeMethods.GetWindowRect(clientHandle, out rect);
+            Rectangle rect = clientWindow.GetRect();
 
-            if (!Settings.DisableClick)
+            if (Settings.EnableClick)
                 AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
 
             int i = 0;
 
             // enter password one character at a time
-            while (i <= passArray.Length && NativeMethods.IsWindow(clientHandle))
+            while (i <= passArray.Length && clientWindow.Exists())
             {
                 // get window rectangle, in case it is resized or moved
-                NativeMethods.GetWindowRect(clientHandle, out rect);
-
-                Logger.Trace("Client rectangle: " + rect.ToString());
+                rect = clientWindow.GetRect();
 
                 // focus window & click on password box
-                NativeMethods.SetForegroundWindow(clientHandle);
+                clientWindow.Focus();
 
                 // check if client is foreground window
-                if (NativeMethods.GetForegroundWindow() == clientHandle)
+                if (clientWindow.IsFocused())
                 {
                     if (i < passArray.Length)
-                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, string.Format("{{ASC {0:000}}}", (int)passArray[i]), 0);
+                        AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, string.Format("{{ASC {0:000}}}", (int)passArray[i]), 0);
                     else
-                        AutoItX.ControlSend(clientHandle, IntPtr.Zero, "{ENTER}", 0);
+                        AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{ENTER}", 0);
 
                     i++;
                 }
@@ -257,7 +252,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private static IntPtr GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, Properties.Resources.loginLogo, Settings.LogoMatchTolerance);
+        private static Window GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, new Size(1024, 576), Properties.Resources.template, new Size(1024, 576), Settings.PasswordMatchTolerance);
 
         /// <summary>
         /// Focuses all League Client windows

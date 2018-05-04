@@ -16,6 +16,7 @@
 using Emgu.CV;
 using Emgu.CV.Structure;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
@@ -94,10 +95,17 @@ namespace LoLAutoLogin
         /// <param name=template">Second image</param>
         /// <param name="tolerance">Percent tolerance for matching the template to a spot in te image</param>
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
-        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, double[] scales, RectangleF areaOfInterest)
+        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, Size baseSize, RectangleF areaOfInterest)
         {
             Image<Rgb, byte> cvSource = new Image<Rgb, byte>(source);
             Image<Rgb, byte> cvTemplate = new Image<Rgb, byte>(template);
+
+            double[] scales;
+
+            if (source.Height / baseSize.Height != source.Width / baseSize.Width)
+                scales = new double[] { (double)baseSize.Height / source.Height, (double)baseSize.Width / source.Width };
+            else
+                scales = new double[] { (double)baseSize.Height / source.Height };
 
             if (areaOfInterest != RectangleF.Empty)
             {
@@ -123,7 +131,7 @@ namespace LoLAutoLogin
                     continue;
 
                 Image<Gray, float> matches = temp.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
-                    
+
                 double[] minValues, maxValues;
                 Point[] minLocations, maxLocations;
 
@@ -183,10 +191,8 @@ namespace LoLAutoLogin
         /// <param name="windowName">Name of the window(s)</param>
         internal static void FocusWindows(string className, string windowName)
         {
-            var hwnd = IntPtr.Zero;
-
-            while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
-                NativeMethods.SetForegroundWindow(hwnd);
+            foreach (var window in GetWindows(className, windowName))
+                window.Focus();
         }
 
         /// <summary>
@@ -197,23 +203,48 @@ namespace LoLAutoLogin
         /// <param name="image">Image that the window must contain</param>
         /// <param name="tolerance">Matching tolerance</param>
         /// <returns></returns>
-        internal static IntPtr GetSingleWindowFromImage(string className, string windowName, Bitmap image, float tolerance = 0.8f)
+        internal static Window GetSingleWindowFromImage(string className, string windowName, Size minWindowSize, Bitmap image, Size baseWindowSize, float tolerance = 0.8f)
         {
-            Logger.Debug($"Trying to find window handle for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
+            var windows = GetWindows(className, windowName);
+
+            foreach (var window in windows)
+            {
+                Size windowSize = window.GetRect().Size;
+
+                if (windowSize.Width < minWindowSize.Width || windowSize.Height < minWindowSize.Height)
+                    continue;
+
+                Bitmap bitmap = window.Capture();
+
+                var result = CompareImage(bitmap, image, tolerance, baseWindowSize, new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
+
+                bitmap.Dispose();
+
+                if (result != Rectangle.Empty)
+                    return window;
+            }
+
+            return null;
+        }
+
+        internal static List<Window> GetWindows(string className, string windowName)
+        {
+            Logger.Debug($"Trying to find window handles for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
 
             var hwnd = IntPtr.Zero;
-            RECT rect;
+            var windows = new List<Window>();
 
             while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
             {
-                NativeMethods.GetWindowRect(hwnd, out rect);
-                Logger.Trace($"Found window {{Handle={hwnd},Rectangle={rect}}}");
+                Window window = new Window(hwnd, className, windowName);
+                windows.Add(window);
 
-                if (CompareImage(CaptureWindow(hwnd), image, tolerance, new double[] { 1, 0.8, 0.64 }, new RectangleF(0.8125f, 0.0f, 0.2f, 1.0f)) != Rectangle.Empty)
-                    return hwnd;
+                Logger.Trace("Found window " + window);
             }
 
-            return IntPtr.Zero;
+            Logger.Debug($"Found {windows.Count} windows");
+
+            return windows;
         }
     }
 }
