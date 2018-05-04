@@ -102,8 +102,8 @@ namespace LoLAutoLogin
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
         internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, Size baseSize, RectangleF areaOfInterest)
         {
-            Image<Rgb, byte> cvSource = new Image<Rgb, byte>(source).Canny(50, 200).Convert<Rgb, byte>();
-            Image<Rgb, byte> cvTemplate = new Image<Rgb, byte>(template);
+            Image<Gray, byte> cvSource = new Image<Rgb, byte>(source).Canny(50, 200);
+            Image<Gray, byte> cvTemplate = new Image<Gray, byte>(template);
 
             double[] scales;
 
@@ -130,12 +130,12 @@ namespace LoLAutoLogin
 
             foreach (double scale in scales)
             {
-                Image<Rgb, byte> temp = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Linear);
+                Image<Gray, byte> resizedSource = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Linear);
 
-                if (cvTemplate.Width > temp.Width || cvTemplate.Height > temp.Height)
+                if (cvTemplate.Width > resizedSource.Width || cvTemplate.Height > resizedSource.Height)
                     continue;
 
-                Image<Gray, float> matches = temp.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
+                Image<Gray, float> matches = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
 
                 double[] minValues, maxValues;
                 Point[] minLocations, maxLocations;
@@ -160,13 +160,15 @@ namespace LoLAutoLogin
 
                         var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
 
-                        temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
+                        source.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
+                        resizedSource.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
 
-                        if (maxValues[0] > tolerance)
-                        {
-                            temp.Draw(new Rectangle(maxLocations[0], template.Size), new Rgb(Color.Red));
-                            temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_matched@{scale}.png"));
-                        }
+                        var temp = resizedSource.Convert<Rgb, byte>();
+
+                        temp.Draw(new Rectangle(maxLocations[0], template.Size), new Rgb(Color.Red));
+                        temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_matched@{scale}-{maxValues[0]}.png"));
+
+                        temp.Dispose();
 
                     }
                     catch (IOException ex)
@@ -177,7 +179,7 @@ namespace LoLAutoLogin
                 }
 
                 matches.Dispose();
-                temp.Dispose();
+                resizedSource.Dispose();
             }
 
             cvSource.Dispose();
