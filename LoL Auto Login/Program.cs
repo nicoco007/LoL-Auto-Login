@@ -27,12 +27,6 @@ namespace LoLAutoLogin
         [STAThread]
         private static void Main()
         {
-            if (Environment.GetCommandLineArgs().Contains("--debug") || Environment.GetCommandLineArgs().Contains("-d"))
-                Logger.Level = LogLevel.Debug;
-
-            if (Environment.GetCommandLineArgs().Contains("--verbose") || Environment.GetCommandLineArgs().Contains("-v"))
-                Logger.Level = LogLevel.Trace;
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

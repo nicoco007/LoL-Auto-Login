@@ -165,7 +165,7 @@ namespace LoLAutoLogin
             }
         }
     }
-
+    
     internal enum LogLevel
     {
         Trace,

@@ -52,23 +52,37 @@ namespace LoLAutoLogin
             string fileName = Path.Combine(Folders.Configuration.FullName, "LeagueClientSettings.yaml");
             ClientInfo info;
 
-            try
+            if (File.Exists(fileName))
             {
-                info = new ClientInfo(fileName);
+                try
+                {
+                    info = new ClientInfo(fileName);
 
-                Logger.Info($"Region: {info.Region}; Locale: {info.Locale}");
+                    Logger.Info($"Region: {info.Region}; Locale: {info.Locale}");
 
-                if (!info.RemembersUsername)
-                    Logger.Warn("Client isn't configured to remember username");
+                    if (!info.RemembersUsername)
+                        Logger.Warn("Client isn't configured to remember username");
+                }
+                catch (Exception ex)
+                {
+                    Logger.PrintException(ex);
+                    Logger.Warn("Failed to load client settings");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Logger.PrintException(ex);
-                Logger.Warn("Failed to load settings from " + fileName);
+                Logger.Info($"Client configuration not found at \"{fileName}\"");
             }
 
             // load settings
             Settings.Load();
+
+            LogLevel logLevel;
+
+            if (Enum.TryParse(Settings.LogLevel, true, out logLevel))
+                Logger.Level = logLevel;
+            else
+                Logger.Info($"Invalid log level \"{Settings.LogLevel}\"");
 
             CheckLocation();
 

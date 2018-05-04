@@ -16,9 +16,7 @@
 using System;
 using System.Globalization;
 using System.IO;
-using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
-using YamlDotNet.Serialization;
 
 namespace LoLAutoLogin
 {
@@ -28,6 +26,7 @@ namespace LoLAutoLogin
         internal static bool EnableClick { get; private set; }
         internal static bool ClientDetectionDebug { get; private set; }
         internal static int ClientTimeout { get; private set; }
+        internal static string LogLevel { get; private set; }
 
         internal static string DebugDirectory { get { return Path.Combine(Directory.GetCurrentDirectory(), "debug"); } }
 
@@ -54,7 +53,9 @@ namespace LoLAutoLogin
                     new YamlScalarNode("false")
                 ),
                 new YamlScalarNode("client-load-timeout"),
-                new YamlScalarNode("30")
+                new YamlScalarNode("30"),
+                new YamlScalarNode("log-level"),
+                new YamlScalarNode("info")
             );
 
             // create settings variable
@@ -103,6 +104,7 @@ namespace LoLAutoLogin
                 EnableClick = bool.Parse(((YamlScalarNode)settings["login-detection"]["enable-click"]).Value);
                 ClientDetectionDebug = bool.Parse(((YamlScalarNode)settings["login-detection"]["debug"]).Value);
                 ClientTimeout = int.Parse(((YamlScalarNode)settings["client-load-timeout"]).Value) * 1000;
+                LogLevel = ((YamlScalarNode)settings["log-level"]).Value;
             }
             catch (Exception ex)
             {
