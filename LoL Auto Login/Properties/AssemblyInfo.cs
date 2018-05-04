@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("LoL Auto Login")]
-[assembly: AssemblyCopyright("Copyright © 2015-2017 nicoco007")]
+[assembly: AssemblyCopyright("Copyright © 2015-2018 nicoco007")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
