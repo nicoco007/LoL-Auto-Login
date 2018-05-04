@@ -171,6 +171,7 @@ namespace LoLAutoLogin
             // hide & dispose of taskbar icon
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
+            notifyIcon = null;
 
             Logger.CleanFiles();
         }
