@@ -46,7 +46,8 @@ namespace LoLAutoLogin
         private async void MainForm_Load(object sender, EventArgs e)
         {
             // start logging
-            Logger.Info("Started LoL Auto Login v{0}", Assembly.GetExecutingAssembly().GetName().Version);
+            Logger.Info("Started LoL Auto Login v" + Assembly.GetExecutingAssembly().GetName().Version);
+            Logger.Info($"Currently running {Util.GetFriendlyOSVersion()}");
 
             // load settings
             Settings.Load();
@@ -122,8 +123,8 @@ namespace LoLAutoLogin
                 if (!Regex.IsMatch(reader.ReadToEnd(), @"^[a-zA-Z0-9\+\/]*={0,3}$"))
                     return true;
 
-                Logger.Info("Password is old format, prompting user to enter password again");
-                MessageBox.Show(@"Password encryption has been changed. You will be prompted to enter your password once again.", @"LoL Auto Login - Encryption method changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Logger.Info("Password is old format; prompting user to enter password again");
+                MessageBox.Show("Password encryption has been changed. You will be prompted to enter your password once again.", "LoL Auto Login - Encryption method changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             return false;
@@ -134,13 +135,12 @@ namespace LoLAutoLogin
             // check if a password was inputted
             if (string.IsNullOrEmpty(passTextBox.Text))
             {
-                MessageBox.Show(this, "You must enter a password!", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "You must enter a password!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
-            Logger.Info("Encrypting & saving password to file...");
 
-            // try to write password to file
+            Logger.Info("Encrypting & saving password to file");
+            
             try
             {
                 using (var file = new FileStream("password", FileMode.OpenOrCreate, FileAccess.Write))
@@ -148,19 +148,28 @@ namespace LoLAutoLogin
                     var data = Encryption.Encrypt(passTextBox.Text);
                     file.Write(data, 0, data.Length);
                 }
-
-                Hide();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Something went wrong when trying to save your password:" + Environment.NewLine + Environment.NewLine + ex.StackTrace, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 
+                Logger.Error("Could not save password to file");
+                Logger.PrintException(ex, false);
+
+                return;
+            }
+
+            Hide();
+
+            try
+            {
                 await ClientControl.RunLogin();
             }
             catch (Exception ex)
             {
-                // show error message
-                MessageBox.Show(this, "Something went wrong when trying to save your password:" + Environment.NewLine + Environment.NewLine + ex.StackTrace, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                // print error message to log
-                Logger.Fatal("Could not save password to file!");
-                Logger.PrintException(ex, false);
+                Logger.Fatal("Failed to run login sequence");
+                Logger.PrintException(ex);
+                ShowFatalErrorBalloonTip();
             }
         }
 

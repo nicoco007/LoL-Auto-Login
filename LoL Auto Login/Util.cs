@@ -15,10 +15,12 @@
 
 using Emgu.CV;
 using Emgu.CV.Structure;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Text;
 
 namespace LoLAutoLogin
 {
@@ -245,6 +247,38 @@ namespace LoLAutoLogin
             Logger.Debug($"Found {windows.Count} windows");
 
             return windows;
+        }
+
+        internal static string GetFriendlyOSVersion()
+        {
+            string productName = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString();
+            string csdVersion = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CSDVersion", "").ToString();
+            string releaseId = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId", "").ToString();
+
+            if (string.IsNullOrEmpty(productName))
+                return "Unknown";
+
+            StringBuilder name = new StringBuilder();
+
+            if (!productName.StartsWith("Microsoft"))
+                name.Append("Microsoft ");
+
+            name.Append(productName);
+
+            if (!string.IsNullOrEmpty(csdVersion)) {
+                name.Append(" ");
+                name.Append(csdVersion);
+            }
+
+            if (!string.IsNullOrEmpty(releaseId))
+            {
+                name.Append(" release ");
+                name.Append(releaseId);
+            }
+
+            name.Append(Environment.Is64BitOperatingSystem ? " x64" : " x86");
+
+            return name.ToString();
         }
     }
 }
