@@ -120,7 +120,8 @@ namespace LoLAutoLogin
                 
                 foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var msg = $"{now} [{tag}] {str}";
+                    var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
+                    var msg = $"{now} [{tag}] {filteredStr}";
 
                     Console.WriteLine(msg);
                         
@@ -131,10 +132,10 @@ namespace LoLAutoLogin
                 if (writer != null)
                     writer.Dispose();
             }
-            catch(Exception ex)
+            catch(IOException ex)
             {
                 writeToFile = false; // disable writing to file to avoid spam message boxes
-                MessageBox.Show("Failed to write to log: " + ex.StackTrace);
+                MessageBox.Show("Failed to write to log file: " + ex.StackTrace);
             }
         }
 
