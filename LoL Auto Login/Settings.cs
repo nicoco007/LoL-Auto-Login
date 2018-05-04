@@ -34,11 +34,11 @@ namespace LoLAutoLogin
         internal static void Load()
         {
             // get config directory & settings file
-            var dir = Path.Combine(Directory.GetCurrentDirectory(), "Config");
-            var settingsFile = Path.Combine(dir, "LoLAutoLoginSettings.yaml");
+            var settingsFile = Path.Combine(Folders.Configuration.FullName, "LoLAutoLoginSettings.yaml");
 
             // make sure the config directory exists
-            Directory.CreateDirectory(dir);
+            if (!Folders.Configuration.Exists)
+                Folders.Configuration.Create();
             
             Logger.Info($"Loading settings from \"{settingsFile}\"");
 
@@ -66,7 +66,7 @@ namespace LoLAutoLogin
                 try
                 {
                     // load settings from yaml
-                    var loadedSettings = ReadYaml<YamlMappingNode>(settingsFile);
+                    var loadedSettings = Util.ReadYaml<YamlMappingNode>(settingsFile);
 
                     // merge settings if not empty, use default if it is
                     if (loadedSettings != null)
@@ -114,30 +114,7 @@ namespace LoLAutoLogin
             }
 
             // write yaml
-            WriteYaml(settingsFile, settings);
-        }
-
-        private static T ReadYaml<T>(string file) where T : YamlNode
-        {
-            T read = null;
-
-            using (var reader = new StreamReader(file))
-            {
-                var deserializer = new Deserializer();
-                var parser = new Parser(reader);
-                read = deserializer.Deserialize<T>(parser);
-            }
-
-            return read;
-        }
-
-        private static void WriteYaml<T>(string file, T yaml) where T : YamlNode
-        {
-            using (var writer = new StreamWriter(file))
-            {
-                var serializer = new SerializerBuilder().EnsureRoundtrip().Build();
-                writer.Write(serializer.Serialize(yaml));
-            }
+            Util.WriteYaml(settingsFile, settings);
         }
 
         private static YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b, bool mergeNonSharedValues = true)

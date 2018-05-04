@@ -123,6 +123,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientInfo.cs" />
+    <Compile Include="Folders.cs" />
     <Compile Include="ClientControl.cs" />
     <Compile Include="ClientWindowMatch.cs" />
     <Compile Include="Encryption.cs" />

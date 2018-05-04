@@ -47,7 +47,25 @@ namespace LoLAutoLogin
         {
             // start logging
             Logger.Info("Started LoL Auto Login v" + Assembly.GetExecutingAssembly().GetName().Version);
-            Logger.Info($"Currently running {Util.GetFriendlyOSVersion()}");
+            Logger.Info($"OS Version: {Util.GetFriendlyOSVersion()}");
+
+            string fileName = Path.Combine(Folders.Configuration.FullName, "LeagueClientSettings.yaml");
+            ClientInfo info;
+
+            try
+            {
+                info = new ClientInfo(fileName);
+
+                Logger.Info($"Region: {info.Region}; Locale: {info.Locale}");
+
+                if (!info.RemembersUsername)
+                    Logger.Warn("Client isn't configured to remember username");
+            }
+            catch (Exception ex)
+            {
+                Logger.PrintException(ex);
+                Logger.Warn("Failed to load settings from " + fileName);
+            }
 
             // load settings
             Settings.Load();

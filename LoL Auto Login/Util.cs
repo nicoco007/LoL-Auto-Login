@@ -21,6 +21,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using YamlDotNet.Core;
+using YamlDotNet.RepresentationModel;
+using YamlDotNet.Serialization;
 
 namespace LoLAutoLogin
 {
@@ -279,6 +282,29 @@ namespace LoLAutoLogin
             name.Append(Environment.Is64BitOperatingSystem ? " x64" : " x86");
 
             return name.ToString();
+        }
+        
+        internal static T ReadYaml<T>(string file) where T : YamlNode
+        {
+            T read = null;
+
+            using (var reader = new StreamReader(file))
+            {
+                var deserializer = new Deserializer();
+                var parser = new Parser(reader);
+                read = deserializer.Deserialize<T>(parser);
+            }
+
+            return read;
+        }
+
+        internal static void WriteYaml<T>(string file, T yaml) where T : YamlNode
+        {
+            using (var writer = new StreamWriter(file))
+            {
+                var serializer = new SerializerBuilder().EnsureRoundtrip().Build();
+                writer.Write(serializer.Serialize(yaml));
+            }
         }
     }
 }

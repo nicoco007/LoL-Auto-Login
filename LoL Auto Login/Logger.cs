@@ -38,9 +38,8 @@ namespace LoLAutoLogin
     internal static class Logger
     {
         internal static LogLevel Level = LogLevel.Info;
-
-        internal static string LogsDirectory { get { return Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs"); } }
-        internal static string LogFile { get { return Path.Combine(LogsDirectory, LogFileName); } }
+        
+        internal static string LogFile { get { return Path.Combine(Folders.Logs.FullName, LogFileName); } }
 
         internal static readonly string LogFileName = $@"{DateTime.Now:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log";
 
@@ -107,12 +106,12 @@ namespace LoLAutoLogin
             
             try
             {
-                var dir = LogsDirectory;
+                var dir = Folders.Logs;
                 var file = LogFile;
                 var now = (DateTime.Now - StartTime).ToString("G");
 
-                if (dir != null && !Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
+                if (dir != null && !dir.Exists)
+                    dir.Create();
 
                 StreamWriter writer = null;
 
@@ -141,9 +140,9 @@ namespace LoLAutoLogin
 
         internal static void CleanFiles()
         {
-            if (Directory.Exists(LogsDirectory))
+            if (Folders.Logs.Exists)
             {
-                FileInfo[] logFiles = new DirectoryInfo(LogsDirectory).GetFiles().OrderByDescending(f => f.LastWriteTime).ToArray();
+                FileInfo[] logFiles = Folders.Logs.GetFiles().OrderByDescending(f => f.LastWriteTime).ToArray();
 
                 if (logFiles.Length > 50)
                 {
