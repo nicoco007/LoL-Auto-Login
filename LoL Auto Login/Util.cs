@@ -102,7 +102,7 @@ namespace LoLAutoLogin
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
         internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, Size baseSize, RectangleF areaOfInterest)
         {
-            Image<Rgb, byte> cvSource = new Image<Rgb, byte>(source);
+            Image<Rgb, byte> cvSource = new Image<Rgb, byte>(source).Canny(50, 200).Convert<Rgb, byte>();
             Image<Rgb, byte> cvTemplate = new Image<Rgb, byte>(template);
 
             double[] scales;

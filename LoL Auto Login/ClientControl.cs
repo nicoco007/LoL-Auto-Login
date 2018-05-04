@@ -180,7 +180,7 @@ namespace LoLAutoLogin
                 return Rectangle.Empty;
 
             // compare the images
-            var found = Util.CompareImage(clientWindow.Capture(), Properties.Resources.template, Settings.PasswordMatchTolerance, new Size(1024, 576), new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
+            var found = Util.CompareImage(clientWindow.Capture(), Properties.Resources.template_canny, Settings.PasswordMatchTolerance, new Size(1024, 576), new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
 
             // force garbage collection
             GC.Collect();
@@ -252,7 +252,7 @@ namespace LoLAutoLogin
         /// Retrieves the handle of the League Client window.
         /// </summary>
         /// <returns>Handle of the client.</returns>
-        private static Window GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, new Size(1024, 576), Properties.Resources.template, new Size(1024, 576), Settings.PasswordMatchTolerance);
+        private static Window GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, new Size(1024, 576), Properties.Resources.template_canny, new Size(1024, 576), Settings.PasswordMatchTolerance);
 
         /// <summary>
         /// Focuses all League Client windows
