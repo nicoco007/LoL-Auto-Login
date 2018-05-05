@@ -13,7 +13,7 @@ Running LoL Auto Login requires the .NET Framework 4.7.1 Runtime. It is already 
 You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in the Config directory.
 
 * **login-detection**:
-  * **tolerance** (*default: 0.75*) The minimum correlation value when searching for the password box. If LoL Auto Login doesn't seem to detect your client, you should try reducing this value. It shouldn't have to be less than 0.50.
+  * **tolerance** (*default: 0.90*) The minimum correlation value when searching for the password box. If LoL Auto Login doesn't seem to detect your client, you should try reducing this value. It shouldn't have to be less than 0.50.
   * **enable-click** (*default: true*) Whether LoL Auto Login should click on the password box once it finds it or not. This forces the password box to be focused, but if you don't like the cursor moving you can disable it by setting this to `false`.
   * **debug** (*default: false*) Enabling this option saves debug images to the `Debug` folder inside your home League of Legends folder for debugging purposes. You may be asked to enable this if you submit an issue.
 * **client-load-timeout** (*default: 30*) How long to wait (in seconds) before giving up on searching for the client.
