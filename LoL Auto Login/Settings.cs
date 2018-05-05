@@ -28,8 +28,6 @@ namespace LoLAutoLogin
         internal static int ClientTimeout { get; private set; }
         internal static string LogLevel { get; private set; }
 
-        internal static string DebugDirectory { get { return Path.Combine(Directory.GetCurrentDirectory(), "debug"); } }
-
         internal static void Load()
         {
             // get config directory & settings file
@@ -46,7 +44,7 @@ namespace LoLAutoLogin
                 new YamlScalarNode("login-detection"),
                 new YamlMappingNode(
                     new YamlScalarNode("tolerance"),
-                    new YamlScalarNode("0.80"),
+                    new YamlScalarNode("0.90"),
                     new YamlScalarNode("enable-click"),
                     new YamlScalarNode("true"),
                     new YamlScalarNode("debug"),

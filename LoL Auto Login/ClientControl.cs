@@ -15,6 +15,7 @@
 
 using AutoIt;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -53,7 +54,7 @@ namespace LoLAutoLogin
                     
                     Rectangle passwordRect;
 
-                    clientWindow = GetClientWindowHandle();
+                    clientWindow = GetClientWindow();
 
                     // check if password box is visible (not logged in)
                     if (clientWindow != null && (passwordRect = GetPasswordRect(clientWindow)) != Rectangle.Empty)
@@ -126,13 +127,13 @@ namespace LoLAutoLogin
             sw.Start();
 
             // create client handle variable
-            Window clientWindow = GetClientWindowHandle();
+            Window clientWindow = GetClientWindow();
 
             // search for window until client timeout is reached or window is found
             while (sw.ElapsedMilliseconds < Settings.ClientTimeout && clientWindow == null)
             {
                 Thread.Sleep(500);
-                clientWindow = GetClientWindowHandle();
+                clientWindow = GetClientWindow();
             };
 
             // return found handle
@@ -153,7 +154,7 @@ namespace LoLAutoLogin
             // loop while not found and while client handle is something
             do
             {
-                clientWindow = GetClientWindowHandle();
+                clientWindow = GetClientWindow();
                 
                 if (clientWindow == null)
                     continue;
@@ -179,8 +180,18 @@ namespace LoLAutoLogin
             if (clientWindow == null)
                 return Rectangle.Empty;
 
+            var sizes = new Dictionary<Size, Bitmap>();
+
+            sizes.Add(new Size(1024, 576), Properties.Resources.template_1024_canny);
+            sizes.Add(new Size(1280, 720), Properties.Resources.template_1280_canny);
+            sizes.Add(new Size(1600, 900), Properties.Resources.template_1600_canny);
+
+            var windowBitmap = clientWindow.Capture();
+
             // compare the images
-            var found = Util.CompareImage(clientWindow.Capture(), Properties.Resources.template_canny, Settings.PasswordMatchTolerance, new Size(1024, 576), new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
+            var found = Util.CompareImage(windowBitmap, sizes, Settings.PasswordMatchTolerance, new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
+
+            windowBitmap.Dispose();
 
             // force garbage collection
             GC.Collect();
@@ -248,12 +259,17 @@ namespace LoLAutoLogin
             Application.Exit();
         }
 
-        /// <summary>
-        /// Retrieves the handle of the League Client window.
-        /// </summary>
-        /// <returns>Handle of the client.</returns>
-        private static Window GetClientWindowHandle() => Util.GetSingleWindowFromImage(CLIENT_CLASS, CLIENT_NAME, new Size(1024, 576), Properties.Resources.template_canny, new Size(1024, 576), Settings.PasswordMatchTolerance);
+        private static Window GetClientWindow()
+        {
+            List<Window> windows = Util.GetWindows(CLIENT_CLASS, CLIENT_NAME);
 
+            foreach (var window in windows)
+                if (GetPasswordRect(window) != Rectangle.Empty)
+                    return window;
+
+            return null;
+        }
+        
         /// <summary>
         /// Focuses all League Client windows
         /// </summary>

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
@@ -100,10 +101,16 @@ namespace LoLAutoLogin
         /// <param name=template">Second image</param>
         /// <param name="tolerance">Percent tolerance for matching the template to a spot in te image</param>
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
-        internal static Rectangle CompareImage(Bitmap source, Bitmap template, double tolerance, Size baseSize, RectangleF areaOfInterest)
+        internal static Rectangle CompareImage(Bitmap source, Dictionary<Size, Bitmap> templates, double tolerance, RectangleF areaOfInterest)
         {
-            Image<Gray, byte> cvSource = new Image<Rgb, byte>(source).Canny(50, 200);
-            Image<Gray, byte> cvTemplate = new Image<Gray, byte>(template);
+            KeyValuePair<Size, Bitmap> closest = templates.OrderBy(item => Math.Abs(source.Width - item.Key.Width) + Math.Abs(source.Height - item.Key.Height)).First();
+            Size baseSize = closest.Key;
+
+            Image<Gray, byte> cvSource = new Image<Gray, byte>(source).Canny(50, 200);
+            Image<Gray, byte> cvTemplate = new Image<Gray, byte>(closest.Value);
+
+            Logger.Debug("Base size: " + baseSize);
+            Logger.Debug("Template size: " + cvTemplate.Size);
 
             double[] scales;
 
@@ -130,7 +137,12 @@ namespace LoLAutoLogin
 
             foreach (double scale in scales)
             {
-                Image<Gray, byte> resizedSource = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Linear);
+                Image<Gray, byte> resizedSource;
+
+                if (scale != 1)
+                    resizedSource = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Lanczos4);
+                else
+                    resizedSource = cvSource.Copy();
 
                 if (cvTemplate.Width > resizedSource.Width || cvTemplate.Height > resizedSource.Height)
                     continue;
@@ -146,7 +158,7 @@ namespace LoLAutoLogin
 
                 if (maxValues[0] > max)
                 {
-                    result = new Rectangle(maxLocations[0], template.Size);
+                    result = new Rectangle(maxLocations[0], cvTemplate.Size);
                     resultScale = scale;
                     max = maxValues[0];
                 }
@@ -155,26 +167,26 @@ namespace LoLAutoLogin
                 {
                     try
                     {
-                        if (!Directory.Exists(Settings.DebugDirectory))
-                            Directory.CreateDirectory(Settings.DebugDirectory);
+                        if (!Folders.Debug.Exists)
+                            Folders.Debug.Create();
 
                         var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
 
-                        source.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
-                        resizedSource.Save(Path.Combine(Settings.DebugDirectory, $"{now}_source@{scale}.png"));
+                        cvSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@1.png"));
+                        resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
 
                         var temp = resizedSource.Convert<Rgb, byte>();
 
-                        temp.Draw(new Rectangle(maxLocations[0], template.Size), new Rgb(Color.Red));
-                        temp.Save(Path.Combine(Settings.DebugDirectory, $"{now}_matched@{scale}-{maxValues[0]}.png"));
+                        temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
+                        temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
 
                         temp.Dispose();
 
                     }
-                    catch (IOException ex)
+                    catch (Exception ex)
                     {
-                        Logger.Error("Failed to save debug images to " + Settings.DebugDirectory);
                         Logger.PrintException(ex);
+                        Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
                     }
                 }
 
@@ -200,38 +212,6 @@ namespace LoLAutoLogin
         {
             foreach (var window in GetWindows(className, windowName))
                 window.Focus();
-        }
-
-        /// <summary>
-        /// Fetches a window handle with the specified class and window names that contains the specified image
-        /// </summary>
-        /// <param name="className">Class name of the window(s)</param>
-        /// <param name="windowName">Name of the window(s)</param>
-        /// <param name="image">Image that the window must contain</param>
-        /// <param name="tolerance">Matching tolerance</param>
-        /// <returns></returns>
-        internal static Window GetSingleWindowFromImage(string className, string windowName, Size minWindowSize, Bitmap image, Size baseWindowSize, float tolerance = 0.8f)
-        {
-            var windows = GetWindows(className, windowName);
-
-            foreach (var window in windows)
-            {
-                Size windowSize = window.GetRect().Size;
-
-                if (windowSize.Width < minWindowSize.Width || windowSize.Height < minWindowSize.Height)
-                    continue;
-
-                Bitmap bitmap = window.Capture();
-
-                var result = CompareImage(bitmap, image, tolerance, baseWindowSize, new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
-
-                bitmap.Dispose();
-
-                if (result != Rectangle.Empty)
-                    return window;
-            }
-
-            return null;
         }
 
         internal static List<Window> GetWindows(string className, string windowName)

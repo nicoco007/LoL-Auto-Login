@@ -63,9 +63,9 @@ namespace LoLAutoLogin.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap template {
+        internal static System.Drawing.Bitmap template_1024_canny {
             get {
-                object obj = ResourceManager.GetObject("template", resourceCulture);
+                object obj = ResourceManager.GetObject("template_1024_canny", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,19 @@ namespace LoLAutoLogin.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap template_canny {
+        internal static System.Drawing.Bitmap template_1280_canny {
             get {
-                object obj = ResourceManager.GetObject("template_canny", resourceCulture);
+                object obj = ResourceManager.GetObject("template_1280_canny", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap template_1600_canny {
+            get {
+                object obj = ResourceManager.GetObject("template_1600_canny", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
