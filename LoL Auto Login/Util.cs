@@ -109,6 +109,7 @@ namespace LoLAutoLogin
             Image<Gray, byte> cvSource = new Image<Gray, byte>(source).Canny(50, 200);
             Image<Gray, byte> cvTemplate = new Image<Gray, byte>(closest.Value);
 
+            Logger.Debug("Source size: " + cvSource.Size);
             Logger.Debug("Base size: " + baseSize);
             Logger.Debug("Template size: " + cvTemplate.Size);
 
@@ -146,51 +147,55 @@ namespace LoLAutoLogin
 
                 if (cvTemplate.Width > resizedSource.Width || cvTemplate.Height > resizedSource.Height)
                     continue;
-
-                Image<Gray, float> matches = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
-
+                
                 double[] minValues, maxValues;
                 Point[] minLocations, maxLocations;
-
-                matches.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
-
-                Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
-
-                if (maxValues[0] > max)
+                
+                for (int i = 0; i < 2; i++)
                 {
-                    result = new Rectangle(maxLocations[0], cvTemplate.Size);
-                    resultScale = scale;
-                    max = maxValues[0];
-                }
+                    Image<Gray, float> match = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
 
-                if (Settings.ClientDetectionDebug)
-                {
-                    try
+                    match.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
+
+                    Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
+                    Logger.Info("Location: " + maxLocations[0]);
+
+                    if (maxValues[0] > max)
                     {
-                        if (!Folders.Debug.Exists)
-                            Folders.Debug.Create();
-
-                        var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
-
-                        cvSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@1.png"));
-                        resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
-
-                        var temp = resizedSource.Convert<Rgb, byte>();
-
-                        temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
-                        temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
-
-                        temp.Dispose();
-
+                        result = new Rectangle(maxLocations[0], cvTemplate.Size);
+                        resultScale = scale;
+                        max = maxValues[0];
+                        resizedSource.Draw(result, new Gray(0), -1);
                     }
-                    catch (Exception ex)
+
+                    if (Settings.ClientDetectionDebug)
                     {
-                        Logger.PrintException(ex);
-                        Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
-                    }
-                }
+                        try
+                        {
+                            if (!Folders.Debug.Exists)
+                                Folders.Debug.Create();
 
-                matches.Dispose();
+                            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
+                            
+                            resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
+
+                            var temp = resizedSource.Convert<Rgb, byte>();
+
+                            temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
+                            temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
+
+                            temp.Dispose();
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.PrintException(ex);
+                            Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
+                        }
+                    }
+
+                    match.Dispose();
+                }
                 resizedSource.Dispose();
             }
 
