@@ -186,7 +186,8 @@ namespace LoLAutoLogin
                 if (Settings.ClientDetectionDebug)
                 {
                     try
-                    {                            
+                    {
+                        cvSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@1.png"));
                         resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
 
                         var temp = resizedSource.Convert<Rgb, byte>();
