@@ -62,8 +62,6 @@ namespace LoLAutoLogin
             var windowRect = new RECT();
             NativeMethods.GetWindowRect(handle, out windowRect);
 
-            Logger.Info(windowRect.ToString());
-
             var width = windowRect.Right - windowRect.Left;
             var height = windowRect.Bottom - windowRect.Top;
 
@@ -171,46 +169,42 @@ namespace LoLAutoLogin
                 double[] minValues, maxValues;
                 Point[] minLocations, maxLocations;
                 
-                for (int i = 0; i < 2; i++)
+                Image<Gray, float> match = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
+
+                match.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
+
+                Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
+                Logger.Info("Location: " + maxLocations[0]);
+
+                if (maxValues[0] > max)
                 {
-                    Image<Gray, float> match = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
-
-                    match.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
-
-                    Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
-                    Logger.Info("Location: " + maxLocations[0]);
-
-                    if (maxValues[0] > max)
-                    {
-                        result = new Rectangle(maxLocations[0], cvTemplate.Size);
-                        resultScale = scale;
-                        max = maxValues[0];
-                        resizedSource.Draw(result, new Gray(0), -1);
-                    }
-
-                    if (Settings.ClientDetectionDebug)
-                    {
-                        try
-                        {                            
-                            resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
-
-                            var temp = resizedSource.Convert<Rgb, byte>();
-
-                            temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
-                            temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
-
-                            temp.Dispose();
-
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.PrintException(ex);
-                            Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
-                        }
-                    }
-
-                    match.Dispose();
+                    result = new Rectangle(maxLocations[0], cvTemplate.Size);
+                    resultScale = scale;
+                    max = maxValues[0];
                 }
+
+                if (Settings.ClientDetectionDebug)
+                {
+                    try
+                    {                            
+                        resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
+
+                        var temp = resizedSource.Convert<Rgb, byte>();
+
+                        temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
+                        temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
+
+                        temp.Dispose();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.PrintException(ex);
+                        Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
+                    }
+                }
+
+                match.Dispose();
                 resizedSource.Dispose();
             }
 
