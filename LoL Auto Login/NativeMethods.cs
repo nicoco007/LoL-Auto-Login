@@ -143,6 +143,9 @@ namespace LoLAutoLogin
         [DllImport("user32.dll")]
         internal static extern bool ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool SetProcessDPIAware();
+
         [DllImport("kernel32.dll")]
         internal static extern uint GetLastError();
 

@@ -62,6 +62,8 @@ namespace LoLAutoLogin
             var windowRect = new RECT();
             NativeMethods.GetWindowRect(handle, out windowRect);
 
+            Logger.Info(windowRect.ToString());
+
             var width = windowRect.Right - windowRect.Left;
             var height = windowRect.Bottom - windowRect.Top;
 
@@ -103,6 +105,24 @@ namespace LoLAutoLogin
         /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
         internal static Rectangle CompareImage(Bitmap source, Dictionary<Size, Bitmap> templates, double tolerance, RectangleF areaOfInterest)
         {
+            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
+
+            if (Settings.ClientDetectionDebug)
+            {
+                try
+                {
+                    if (!Folders.Debug.Exists)
+                        Folders.Debug.Create();
+
+                    source.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source_original.png"));
+                }
+                catch (Exception ex)
+                {
+                    Logger.PrintException(ex);
+                    Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
+                }
+            }
+
             KeyValuePair<Size, Bitmap> closest = templates.OrderBy(item => Math.Abs(source.Width - item.Key.Width) + Math.Abs(source.Height - item.Key.Height)).First();
             Size baseSize = closest.Key;
 
@@ -112,7 +132,7 @@ namespace LoLAutoLogin
             Logger.Debug("Source size: " + cvSource.Size);
             Logger.Debug("Base size: " + baseSize);
             Logger.Debug("Template size: " + cvTemplate.Size);
-
+            
             double[] scales;
 
             if (source.Height / baseSize.Height != source.Width / baseSize.Width)
@@ -171,12 +191,7 @@ namespace LoLAutoLogin
                     if (Settings.ClientDetectionDebug)
                     {
                         try
-                        {
-                            if (!Folders.Debug.Exists)
-                                Folders.Debug.Create();
-
-                            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
-                            
+                        {                            
                             resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
 
                             var temp = resizedSource.Convert<Rgb, byte>();

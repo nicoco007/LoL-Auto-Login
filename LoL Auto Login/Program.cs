@@ -27,6 +27,8 @@ namespace LoLAutoLogin
         [STAThread]
         private static void Main()
         {
+            NativeMethods.SetProcessDPIAware();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
