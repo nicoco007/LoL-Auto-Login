@@ -49,6 +49,9 @@ namespace LoLAutoLogin
             Logger.Info("Started LoL Auto Login v" + Assembly.GetExecutingAssembly().GetName().Version);
             Logger.Info($"OS Version: {Util.GetFriendlyOSVersion()}");
 
+            foreach (Screen screen in Screen.AllScreens)
+                Logger.Info(string.Format("Screen {0}: {1}", screen.DeviceName, screen.Bounds));
+
             string fileName = Path.Combine(Folders.Configuration.FullName, "LeagueClientSettings.yaml");
             ClientInfo info;
 
