@@ -193,6 +193,10 @@
     <Content Include="lib\cvextern.dll" />
     <Content Include="lib\msvcp140.dll" />
     <Content Include="lib\vcruntime140.dll" />
+    <None Include="Resources\template-2880-canny.png" />
+    <None Include="Resources\template-1920-canny.png" />
+    <None Include="Resources\template-2400-canny.png" />
+    <None Include="Resources\template-1536-canny.png" />
     <None Include="Resources\template-1280-canny.png" />
     <None Include="Resources\template-1600-canny.png" />
     <None Include="Resources\template-1024-canny.png" />

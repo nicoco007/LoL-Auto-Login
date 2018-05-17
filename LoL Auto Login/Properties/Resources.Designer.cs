@@ -83,9 +83,49 @@ namespace LoLAutoLogin.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap template_1536_canny {
+            get {
+                object obj = ResourceManager.GetObject("template_1536_canny", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap template_1600_canny {
             get {
                 object obj = ResourceManager.GetObject("template_1600_canny", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap template_1920_canny {
+            get {
+                object obj = ResourceManager.GetObject("template_1920_canny", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap template_2400_canny {
+            get {
+                object obj = ResourceManager.GetObject("template_2400_canny", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap template_2880_canny {
+            get {
+                object obj = ResourceManager.GetObject("template_2880_canny", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

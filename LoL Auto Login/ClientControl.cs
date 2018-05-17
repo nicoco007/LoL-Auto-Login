@@ -184,7 +184,11 @@ namespace LoLAutoLogin
 
             sizes.Add(new Size(1024, 576), Properties.Resources.template_1024_canny);
             sizes.Add(new Size(1280, 720), Properties.Resources.template_1280_canny);
+            sizes.Add(new Size(1536, 864), Properties.Resources.template_1536_canny);
             sizes.Add(new Size(1600, 900), Properties.Resources.template_1600_canny);
+            sizes.Add(new Size(1920, 1080), Properties.Resources.template_1920_canny);
+            sizes.Add(new Size(2400, 1350), Properties.Resources.template_2400_canny);
+            sizes.Add(new Size(2880, 1620), Properties.Resources.template_2880_canny);
 
             var windowBitmap = clientWindow.Capture();
 
