@@ -229,7 +229,10 @@ namespace LoLAutoLogin
             Rectangle rect = clientWindow.GetRect();
 
             if (Settings.EnableClick)
+            {
                 AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
+                AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{BACKSPACE}", 0);
+            }
 
             int i = 0;
 
