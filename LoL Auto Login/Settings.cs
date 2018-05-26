@@ -45,7 +45,7 @@ namespace LoLAutoLogin
                 new YamlMappingNode(
                     new YamlScalarNode("tolerance"),
                     new YamlScalarNode("0.70"),
-                    new YamlScalarNode("enable-click"),
+                    new YamlScalarNode("always-click"),
                     new YamlScalarNode("true"),
                     new YamlScalarNode("debug"),
                     new YamlScalarNode("false")
