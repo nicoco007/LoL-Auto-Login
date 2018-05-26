@@ -62,7 +62,7 @@ namespace LoLAutoLogin
                         Logger.Info("Client is open on login page, entering password");
 
                         // client is on login page, enter password
-                        EnterPassword(clientWindow, passwordRect);
+                        EnterPassword(clientWindow, passwordRect, true);
                     }
                     else
                     {
@@ -101,7 +101,7 @@ namespace LoLAutoLogin
                         {
                             Logger.Info($"Password box found after {sw.ElapsedMilliseconds} ms");
 
-                            EnterPassword(clientWindow, found);
+                            EnterPassword(clientWindow, found, false);
                         }
                         else
                         {
@@ -209,7 +209,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        private static void EnterPassword(Window clientWindow, Rectangle passwordRect)
+        private static void EnterPassword(Window clientWindow, Rectangle passwordRect, bool running)
         {
             // create password string
             string password;
@@ -232,7 +232,7 @@ namespace LoLAutoLogin
 
             Rectangle rect = clientWindow.GetRect();
 
-            if (Settings.EnableClick)
+            if (running || Settings.AlwaysClick)
             {
                 AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
                 AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{BACKSPACE}", 0);
