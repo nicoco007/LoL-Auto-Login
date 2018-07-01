@@ -14,7 +14,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -92,130 +94,6 @@ namespace LoLAutoLogin
             NativeMethods.DeleteObject(hBitmap);
 
             return img;
-        }
-
-        /// <summary>
-        /// Compares two images using their hashes & supplied tolerance
-        /// </summary>
-        /// <param name="source">Source image</param>
-        /// <param name=template">Second image</param>
-        /// <param name="tolerance">Percent tolerance for matching the template to a spot in te image</param>
-        /// <returns>The rectangle where the template is located in the source based on the tolerance</returns>
-        internal static Rectangle CompareImage(Bitmap source, Dictionary<Size, Bitmap> templates, double tolerance, RectangleF areaOfInterest)
-        {
-            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
-
-            if (Settings.ClientDetectionDebug)
-            {
-                try
-                {
-                    if (!Folders.Debug.Exists)
-                        Folders.Debug.Create();
-
-                    source.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source_original.png"));
-                }
-                catch (Exception ex)
-                {
-                    Logger.PrintException(ex);
-                    Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
-                }
-            }
-
-            KeyValuePair<Size, Bitmap> closest = templates.OrderBy(item => Math.Abs(source.Width - item.Key.Width) + Math.Abs(source.Height - item.Key.Height)).First();
-            Size baseSize = closest.Key;
-
-            Image<Gray, byte> cvSource = new Image<Gray, byte>(source).Canny(50, 200);
-            Image<Gray, byte> cvTemplate = new Image<Gray, byte>(closest.Value);
-
-            Logger.Debug("Source size: " + cvSource.Size);
-            Logger.Debug("Base size: " + baseSize);
-            Logger.Debug("Template size: " + cvTemplate.Size);
-            
-            double[] scales;
-
-            if (source.Height / baseSize.Height != source.Width / baseSize.Width)
-                scales = new double[] { (double)baseSize.Height / source.Height, (double)baseSize.Width / source.Width };
-            else
-                scales = new double[] { (double)baseSize.Height / source.Height };
-
-            if (areaOfInterest != RectangleF.Empty)
-            {
-                Rectangle actualSize = new Rectangle(
-                    (int)(source.Width * areaOfInterest.Left),
-                    (int)(source.Height * areaOfInterest.Top),
-                    (int)(source.Width * areaOfInterest.Width),
-                    (int)(source.Height * areaOfInterest.Height)
-                );
-
-                cvSource.ROI = actualSize;
-            }
-
-            var result = Rectangle.Empty;
-            double resultScale = 1.0;
-            double max = tolerance;
-
-            foreach (double scale in scales)
-            {
-                Image<Gray, byte> resizedSource;
-
-                if (scale != 1)
-                    resizedSource = cvSource.Resize(scale, Emgu.CV.CvEnum.Inter.Lanczos4);
-                else
-                    resizedSource = cvSource.Copy();
-
-                if (cvTemplate.Width > resizedSource.Width || cvTemplate.Height > resizedSource.Height)
-                    continue;
-                
-                double[] minValues, maxValues;
-                Point[] minLocations, maxLocations;
-                
-                Image<Gray, float> match = resizedSource.MatchTemplate(cvTemplate, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
-
-                match.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
-
-                Logger.Info($"Template matching: wanted {tolerance:0.00}, got {maxValues[0]:0.00000000} @ {scale} scale");
-                Logger.Info("Location: " + maxLocations[0]);
-
-                if (maxValues[0] > max)
-                {
-                    result = new Rectangle(maxLocations[0], cvTemplate.Size);
-                    resultScale = scale;
-                    max = maxValues[0];
-                }
-
-                if (Settings.ClientDetectionDebug)
-                {
-                    try
-                    {
-                        cvSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@1.png"));
-                        resizedSource.Save(Path.Combine(Folders.Debug.FullName, $"{now}_source@{scale}.png"));
-
-                        var temp = resizedSource.Convert<Rgb, byte>();
-
-                        temp.Draw(new Rectangle(maxLocations[0], cvTemplate.Size), new Rgb(Color.Red));
-                        temp.Save(Path.Combine(Folders.Debug.FullName, $"{now}_matched@{scale}-{maxValues[0]}.png"));
-
-                        temp.Dispose();
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.PrintException(ex);
-                        Logger.Error($"Failed to save debug images to \"{Folders.Debug.FullName}\"");
-                    }
-                }
-
-                match.Dispose();
-                resizedSource.Dispose();
-            }
-
-            cvSource.Dispose();
-            cvTemplate.Dispose();
-
-            if (areaOfInterest != Rectangle.Empty && result != Rectangle.Empty)
-                return new Rectangle((int)(source.Width * areaOfInterest.Left + result.Left / resultScale), (int)(source.Height * areaOfInterest.Top + result.Top / resultScale), result.Width, result.Height);
-            else
-                return result;
         }
 
         /// <summary>
@@ -302,6 +180,123 @@ namespace LoLAutoLogin
                 var serializer = new SerializerBuilder().EnsureRoundtrip().Build();
                 writer.Write(serializer.Serialize(yaml));
             }
+        }
+
+        /// <summary>
+        /// Some funky stuff to get rectangles out of an image
+        /// </summary>
+        /// <param name="source">Source image</param>
+        /// <param name="regionOfInterest">Relative region in image on which to search (adjust according to image size from 0.0 to 1.0)</param>
+        /// <returns></returns>
+        internal static List<Rectangle> FindRectangles(Bitmap source, RectangleF regionOfInterest)
+        {
+            var img = new Image<Rgb, byte>(source);
+
+            img.ROI = new Rectangle(
+                (int)Math.Round(regionOfInterest.X * img.Width),
+                (int)Math.Round(regionOfInterest.Y * img.Height),
+                (int)Math.Round(regionOfInterest.Width * img.Width),
+                (int)Math.Round(regionOfInterest.Height * img.Height)
+            );
+
+            int minArea = (int)(8000f * img.Width / 1600); // box area is 8806 on 1600x900
+
+            var gray = img.Canny(180, 120);
+
+            if (Settings.ClientDetectionDebug)
+                SaveDebugImage(gray, "canny.png");
+
+            List<Rectangle> boxList = new List<Rectangle>();
+
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+            int count = contours.Size;
+
+            for (int i = 0; i < count; i++)
+            {
+                var contour = contours[i];
+                var approxContour = new VectorOfPoint();
+
+                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.05, true);
+
+                if (CvInvoke.ContourArea(approxContour, false) > minArea)
+                {
+                    if (approxContour.Size == 4)
+                    {
+                        bool isRectangle = true;
+                        Point[] pts = approxContour.ToArray();
+                        LineSegment2D[] edges = PointCollection.PolyLine(pts, true);
+
+                        for (int j = 0; j < edges.Length; j++)
+                        {
+                            double angle = Math.Abs(edges[(j + 1) % edges.Length].GetExteriorAngleDegree(edges[j]));
+
+                            if (angle < 80 || angle > 100)
+                            {
+                                isRectangle = false;
+                                break;
+                            }
+                        }
+
+                        if (isRectangle)
+                            boxList.Add(CvInvoke.MinAreaRect(approxContour).MinAreaRect());
+                    }
+                }
+
+                contour.Dispose();
+                approxContour.Dispose();
+            }
+
+            contours.Dispose();
+
+            // order by descending area
+            boxList.Sort((a, b) =>
+            {
+                return (a.Width * a.Height) < (b.Width * b.Height) ? 1 : -1;
+            });
+
+            // save image with all found rectangles
+            if (Settings.ClientDetectionDebug)
+            {
+                foreach (var box in boxList)
+                    img.Draw(box, new Rgb(255, 0, 0), 1);
+
+                SaveDebugImage(img, "output.png");
+            }
+
+            if (regionOfInterest != Rectangle.Empty)
+                boxList = boxList.Select(b => new Rectangle(b.X + source.Width - img.Width, b.Y + source.Height - img.Height, b.Width, b.Height)).ToList();
+
+            return boxList;
+        }
+
+        internal static bool SimilarSize(Rectangle rect1, Rectangle rect2, int threshold = 5)
+        {
+            return Math.Abs(rect1.Width - rect2.Width) < threshold && Math.Abs(rect1.Height - rect2.Height) < threshold;
+        }
+
+        internal static bool SimilarX(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        {
+            return Math.Abs(Math.Abs(rect1.X - rect2.X) - offset) < threshold;
+        }
+
+        internal static bool SimilarY(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        {
+            return Math.Abs(Math.Abs(rect1.Y - rect2.Y) - offset) < threshold;
+        }
+
+        internal static void SaveDebugImage(Image image, string name)
+        {
+            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
+
+            image.Save(Path.Combine(Folders.Debug.FullName, now + "_" + name));
+        }
+
+        internal static void SaveDebugImage<TColor, TDepth>(Image<TColor, TDepth> image, string name) where TColor: struct, IColor where TDepth: new()
+        {
+            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
+
+            image.Save(Path.Combine(Folders.Debug.FullName, now + "_" + name));
         }
     }
 }

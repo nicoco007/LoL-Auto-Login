@@ -14,6 +14,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
 using AutoIt;
+using Emgu.CV;
+using Emgu.CV.Structure;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -169,31 +171,43 @@ namespace LoLAutoLogin
             return found;
         }
 
-        /// <summary>
-        /// Checks to see if the password box is visible in the client's window.
-        /// </summary>
-        /// <param name="clientHandle">Handle of the client window</param>
-        /// <returns>Whether the password box is visible or not.</returns>
         private static Rectangle GetPasswordRect(Window clientWindow)
         {
             // check that the handle is valid
             if (clientWindow == null)
                 return Rectangle.Empty;
 
-            var sizes = new Dictionary<Size, Bitmap>();
-
-            sizes.Add(new Size(1024, 576), Properties.Resources.template_1024_canny);
-            sizes.Add(new Size(1280, 720), Properties.Resources.template_1280_canny);
-            sizes.Add(new Size(1536, 864), Properties.Resources.template_1536_canny);
-            sizes.Add(new Size(1600, 900), Properties.Resources.template_1600_canny);
-            sizes.Add(new Size(1920, 1080), Properties.Resources.template_1920_canny);
-            sizes.Add(new Size(2400, 1350), Properties.Resources.template_2400_canny);
-            sizes.Add(new Size(2880, 1620), Properties.Resources.template_2880_canny);
+            var result = Rectangle.Empty;
 
             var windowBitmap = clientWindow.Capture();
 
             // compare the images
-            var found = Util.CompareImage(windowBitmap, sizes, Settings.PasswordMatchTolerance, new RectangleF(0.8125f, 0.0f, 0.1875f, 1.0f));
+            var found = Util.FindRectangles(windowBitmap, new RectangleF(0.825f, 0.0f, 0.175f, 1.0f));
+
+            int ydist = (int)(70f * windowBitmap.Width / 1600);
+
+            for (int i = 0; i < found.Count; i++)
+            {
+                for (int j = i + 1; j < found.Count; j++)
+                {
+                    var rect1 = found[i];
+                    var rect2 = found[j];
+
+                    if (Util.SimilarSize(rect1, rect2) && Util.SimilarX(rect1, rect2) && Util.SimilarY(rect1, rect2, 15, ydist) && rect1.Top < rect2.Top)
+                    {
+                        result = rect2;
+                        break;
+                    }
+                }
+            }
+
+            if (Settings.ClientDetectionDebug)
+            {
+                using (var graphics = Graphics.FromImage(windowBitmap))
+                    graphics.DrawRectangle(new Pen(new SolidBrush(Color.Red)), result);
+
+                Util.SaveDebugImage(windowBitmap, "password-box.png");
+            }
 
             windowBitmap.Dispose();
 
@@ -201,7 +215,7 @@ namespace LoLAutoLogin
             GC.Collect();
 
             // return
-            return found;
+            return result;
         }
 
         /// <summary>

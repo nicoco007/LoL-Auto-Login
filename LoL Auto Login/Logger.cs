@@ -99,10 +99,15 @@ namespace LoLAutoLogin
 
         }
 
-        internal static void Write(string tag, string text, params object[] arg)
+        private static void Write(string tag, string text, params object[] arg)
         {
             if (arg.Length > 0)
                 text = string.Format(text, arg);
+
+            var st = new System.Diagnostics.StackTrace(true);
+            var frame = st.GetFrame(2);
+            var fileName = Path.GetFileName(frame.GetFileName());
+            var line = frame.GetFileLineNumber();
             
             try
             {
@@ -121,7 +126,7 @@ namespace LoLAutoLogin
                 foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
                 {
                     var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
-                    var msg = $"{now} [{tag}] {filteredStr}";
+                    var msg = $"{now} [{tag}] <{fileName}:{line}> {filteredStr}";
 
                     Console.WriteLine(msg);
                         
