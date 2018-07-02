@@ -48,6 +48,21 @@ namespace LoLAutoLogin
 
         private static async Task Run()
         {
+            if (Settings.GetBooleanValue("login-detection.debug", false))
+            {
+                if (!Folders.Debug.Exists)
+                    Folders.Debug.Create();
+
+                Logger.Info("Cleaning debug directory");
+
+                foreach (FileInfo file in Folders.Debug.EnumerateFiles())
+                    file.Delete();
+            }
+            else if (Folders.Debug.Exists)
+            {
+                Folders.Debug.Delete(true);
+            }
+
             LoadNotifyIcon();
             ShowSystemInfo();
             CheckLocation();
