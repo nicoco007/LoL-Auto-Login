@@ -43,7 +43,7 @@ namespace LoLAutoLogin
 
             Success = true;
 
-            Application.Exit();
+            Close();
         }
     }
 }

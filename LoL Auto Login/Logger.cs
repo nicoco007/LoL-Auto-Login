@@ -92,13 +92,6 @@ namespace LoLAutoLogin
                 Write("FATAL", message, arg);
         }
 
-        internal static void FatalError(string message, Exception ex)
-        {
-            Fatal(message);
-            PrintException(ex, true);
-            Program.ShowFatalErrorBalloonTip();
-        }
-
         internal static void PrintException(Exception ex, bool fatal = false)
         {
             string msg = $"An error of type {ex.GetType()} occured: {ex.Message}";

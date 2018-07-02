@@ -115,7 +115,7 @@ namespace LoLAutoLogin
             int value = defaultValue;
 
             if (!int.TryParse(strValue, out value))
-                Logger.Warn("Failed to parse {0} as integer", strValue);
+                Logger.Warn("Failed to parse \"{0}\" as integer", strValue);
 
             return value;
         }
@@ -131,7 +131,7 @@ namespace LoLAutoLogin
             float value = defaultValue;
 
             if (!float.TryParse(strValue, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                Logger.Warn("Failed to parse {0} as float", strValue);
+                Logger.Warn("Failed to parse \"{0}\" as float", strValue);
 
             return value;
         }
@@ -147,7 +147,7 @@ namespace LoLAutoLogin
             bool value = defaultValue;
 
             if (!bool.TryParse(strValue, out value))
-                Logger.Warn("Failed to parse {0} as boolean", strValue);
+                Logger.Warn("Failed to parse \"{0}\" as boolean", strValue);
 
             return value;
         }

@@ -14,7 +14,6 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
 using System;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -34,6 +33,8 @@ namespace LoLAutoLogin
         [STAThread]
         private static void Main()
         {
+            LoadSettings();
+
             // start logging
             Logger.Info("Started LoL Auto Login v" + Assembly.GetExecutingAssembly().GetName().Version);
 
@@ -43,14 +44,78 @@ namespace LoLAutoLogin
             Application.SetCompatibleTextRenderingDefault(false);
 
             Run().Wait();
-
-            Logger.Info("death");
         }
 
         private static async Task Run()
         {
             LoadNotifyIcon();
+            ShowSystemInfo();
+            CheckLocation();
 
+            // check if a Shift key is being pressed
+            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
+            {
+                Logger.Info("Shift key is being pressed - starting client without running LoL Auto Login");
+
+                // try launching league of legends
+                try
+                {
+                    ClientControl.Start();
+                    Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    // print error to log and show balloon tip to inform user of fatal error
+                    FatalError("Could not start League of Legends!", ex);
+                }
+
+                return;
+            }
+
+            if (!PasswordExists())
+            {
+                Logger.Info("Password file not found, prompting user to enter password");
+
+                var form = new MainForm();
+                Application.Run(form);
+
+                if (form.Success != true)
+                    Shutdown();
+            }
+
+            try
+            {
+                await ClientControl.RunLogin();
+            }
+            catch (Exception ex)
+            {
+                // print error to log and show balloon tip to inform user of fatal error
+                FatalError("Could not start League of Legends!", ex);
+            }
+
+            while (true) { }
+        }
+
+        private static void LoadNotifyIcon()
+        {
+            notifyIcon = new NotifyIcon();
+            notifyIcon.Icon = Properties.Resources.Icon;
+            notifyIcon.Visible = true;
+            notifyIcon.Text = "LoL Auto Login";
+
+            var menu = new ContextMenu();
+
+            var item = new MenuItem("&Exit", (sender, e) => Shutdown());
+            menu.MenuItems.Add(item);
+
+            notifyIcon.ContextMenu = menu;
+
+            notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
+            notifyIcon.BalloonTipClosed += NotifyIcon_BalloonTipClosed;
+        }
+
+        private static void ShowSystemInfo()
+        {
             Logger.Info($"OS Version: {Util.GetFriendlyOSVersion()}");
 
             foreach (Screen screen in Screen.AllScreens)
@@ -80,8 +145,10 @@ namespace LoLAutoLogin
             {
                 Logger.Info($"Client configuration not found at \"{fileName}\"");
             }
+        }
 
-            // load settings
+        private static void LoadSettings()
+        {
             Settings.Load();
 
             LogLevel logLevel;
@@ -90,69 +157,7 @@ namespace LoLAutoLogin
             if (Enum.TryParse(strLevel, true, out logLevel))
                 Logger.Level = logLevel;
             else
-                Logger.Info($"Invalid log level \"{strLevel}\"");
-
-            CheckLocation();
-
-            // check if a Shift key is being pressed
-            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
-            {
-                Logger.Info("Shift key is being pressed - starting client without running LoL Auto Login");
-
-                // try launching league of legends
-                try
-                {
-                    ClientControl.Start();
-                    Shutdown();
-                }
-                catch (Exception ex)
-                {
-                    // print error to log and show balloon tip to inform user of fatal error
-                    Logger.FatalError("Could not start League of Legends!", ex);
-                }
-
-                return;
-            }
-
-            if (!PasswordExists())
-            {
-                Logger.Info("Password file not found, prompting user to enter password");
-
-                var form = new MainForm();
-                Application.Run(form);
-
-                if (form.Success != true)
-                    Shutdown();
-            }
-
-            try
-            {
-                await ClientControl.RunLogin();
-            }
-            catch (Exception ex)
-            {
-                // print error to log and show balloon tip to inform user of fatal error
-                Logger.FatalError("Could not start League of Legends!", ex);
-            }
-
-            while (true) { }
-        }
-
-        private static void LoadNotifyIcon()
-        {
-            notifyIcon = new NotifyIcon();
-            Console.WriteLine(notifyIcon != null);
-            notifyIcon.Icon = Properties.Resources.Icon;
-            notifyIcon.Visible = true;
-            notifyIcon.Text = "LoL Auto Login";
-
-            var menu = new ContextMenu();
-            var item = new MenuItem("&Exit", (sender, e) => Shutdown());
-            menu.MenuItems.Add(item);
-            notifyIcon.ContextMenu = menu;
-
-            notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
-            notifyIcon.BalloonTipClosed += NotifyIcon_BalloonTipClosed;
+                Logger.Info($"Invalid log level \"{strLevel}\", defaulting to INFO");
         }
 
         private static void NotifyIcon_BalloonTipClicked(object sender, EventArgs e)
@@ -221,8 +226,11 @@ namespace LoLAutoLogin
             notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
         }
 
-        internal static void ShowFatalErrorBalloonTip()
+        internal static void FatalError(string message, Exception ex)
         {
+            Logger.Fatal(message);
+            Logger.PrintException(ex, true);
+
             ShowBalloonTip(new ShowBalloonTipEventArgs(
                 "LoL Auto Login has encountered a fatal error",
                 "Click here to access the log. If this issue persists, please submit an issue.",
