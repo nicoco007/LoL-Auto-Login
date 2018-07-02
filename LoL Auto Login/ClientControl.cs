@@ -14,16 +14,12 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
 using AutoIt;
-using Emgu.CV;
-using Emgu.CV.Structure;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace LoLAutoLogin
 {
@@ -73,7 +69,7 @@ namespace LoLAutoLogin
                         // client is logged in, show window
                         FocusClient();
 
-                        Application.Exit();
+                        Program.Shutdown();
                     }
                 }
                 else
@@ -123,6 +119,7 @@ namespace LoLAutoLogin
         /// <summary>
         /// Hangs until the client window is found or the preset timeout is reached.
         /// </summary>
+        /// <param name="timeout">Timeout in milliseconds</param>
         /// <returns>Client window handle if found, zero if not.</returns>
         private static Window AwaitClientHandle(int timeout)
         {
@@ -147,7 +144,6 @@ namespace LoLAutoLogin
         /// <summary>
         /// Hangs until the password box for the client is found or the client exits.
         /// </summary>
-        /// <param name="progress">Progress interface used to pass messages</param>
         /// <returns>Whether the password box was found or not.</returns>
         private static Rectangle WaitForPasswordBox()
         {
@@ -186,8 +182,10 @@ namespace LoLAutoLogin
             // compare the images
             var found = Util.FindRectangles(windowBitmap, new RectangleF(0.825f, 0.0f, 0.175f, 1.0f));
 
+            // distance between username and password boxes
             int ydist = (int)(70f * windowBitmap.Width / 1600);
 
+            // iterate in pairs through all found rectangles and try to find two that look like they're the login boxes
             for (int i = 0; i < found.Count; i++)
             {
                 for (int j = i + 1; j < found.Count; j++)
@@ -227,19 +225,7 @@ namespace LoLAutoLogin
         /// <param name="progress">Progress interface used to pass messages</param>
         private static void EnterPassword(Window clientWindow, Rectangle passwordRect, bool running)
         {
-            // create password string
-            string password;
-            
-            // create file stream
-            using (var file = new FileStream("password", FileMode.Open, FileAccess.Read))
-            {
-                // read bytes
-                var buffer = new byte[file.Length];
-                file.Read(buffer, 0, (int)file.Length);
-
-                // decrypt password
-                password = Encryption.Decrypt(buffer);
-            }
+            string password = PasswordManager.Load();
 
             // create character array from password
             var passArray = password.ToCharArray();
@@ -279,7 +265,7 @@ namespace LoLAutoLogin
             
             Logger.Info("Successfully entered password (well, hopefully)!");
 
-            Application.Exit();
+            Program.Shutdown();
         }
 
         private static Window GetClientWindow()

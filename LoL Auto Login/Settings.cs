@@ -77,8 +77,8 @@ namespace LoLAutoLogin
                 }
                 catch (Exception ex)
                 {
-                    Logger.PrintException(ex);
                     Logger.Warn("Failed to parse YAML, reverting to default settings.");
+                    Logger.PrintException(ex);
                     
                     settings = defaultSettings;
                 }
@@ -166,6 +166,9 @@ namespace LoLAutoLogin
                 else
                     break;
             }
+
+            if (currentNode == null)
+                Logger.Warn("Failed to find node with path " + key);
 
             return currentNode;
         }

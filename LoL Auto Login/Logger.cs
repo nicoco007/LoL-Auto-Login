@@ -92,6 +92,13 @@ namespace LoLAutoLogin
                 Write("FATAL", message, arg);
         }
 
+        internal static void FatalError(string message, Exception ex)
+        {
+            Fatal(message);
+            PrintException(ex, true);
+            Program.ShowFatalErrorBalloonTip();
+        }
+
         internal static void PrintException(Exception ex, bool fatal = false)
         {
             string msg = $"An error of type {ex.GetType()} occured: {ex.Message}";
@@ -116,8 +123,9 @@ namespace LoLAutoLogin
 
             var st = new System.Diagnostics.StackTrace(true);
             var frame = st.GetFrame(2);
-            var fileName = Path.GetFileName(frame.GetFileName());
+            var fileName = Path.GetFileNameWithoutExtension(frame.GetFileName());
             var line = frame.GetFileLineNumber();
+            var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
             
             try
             {
@@ -136,7 +144,7 @@ namespace LoLAutoLogin
                 foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
                 {
                     var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
-                    var msg = $"{now} [{tag}] <{fileName}:{line}> {filteredStr}";
+                    var msg = $"{now} [{tag}] <{fileName}:{line} (Thread {threadId})> {filteredStr}";
 
                     Console.WriteLine(msg);
                         

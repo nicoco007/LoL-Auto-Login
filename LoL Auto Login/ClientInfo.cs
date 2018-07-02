@@ -9,18 +9,27 @@ namespace LoLAutoLogin
         internal string Region { get; }
         internal bool RemembersUsername { get; }
 
-        internal ClientInfo(string yamlPath)
+        private ClientInfo(string locale, string region, bool remembersUsername)
         {
-            Logger.Info($"Loading client info from \"{yamlPath}\"");
+            Locale = locale;
+            Region = region;
+            RemembersUsername = remembersUsername;
+        }
 
-            if (!File.Exists(yamlPath))
+        internal static ClientInfo FromFile(string filePath)
+        {
+            Logger.Info($"Loading client info from \"{filePath}\"");
+
+            if (!File.Exists(filePath))
                 throw new FileNotFoundException();
 
-            var root = Util.ReadYaml<YamlMappingNode>(yamlPath);
+            YamlMappingNode root = Util.ReadYaml<YamlMappingNode>(filePath);
 
-            Locale = (root?["install"]?["globals"]?["locale"] as YamlScalarNode)?.Value;
-            Region = (root?["install"]?["globals"]?["region"] as YamlScalarNode)?.Value;
-            RemembersUsername = bool.Parse((root?["install"]?["login-remember-me"]?["rememberMe"] as YamlScalarNode)?.Value);
+            string locale = (root?["install"]?["globals"]?["locale"] as YamlScalarNode)?.Value;
+            string region = (root?["install"]?["globals"]?["region"] as YamlScalarNode)?.Value;
+            bool remembersUsername = bool.Parse((root?["install"]?["login-remember-me"]?["rememberMe"] as YamlScalarNode)?.Value);
+
+            return new ClientInfo(locale, region, remembersUsername);
         }
     }
 }
