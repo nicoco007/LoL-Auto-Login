@@ -203,7 +203,7 @@ namespace LoLAutoLogin
 
             var gray = img.Canny(180, 120);
 
-            if (Settings.ClientDetectionDebug)
+            if (Settings.GetBooleanValue("login-detection.debug", false))
                 SaveDebugImage(gray, "canny.png");
 
             List<Rectangle> boxList = new List<Rectangle>();
@@ -256,7 +256,7 @@ namespace LoLAutoLogin
             });
 
             // save image with all found rectangles
-            if (Settings.ClientDetectionDebug)
+            if (Settings.GetBooleanValue("login-detection.debug", false))
             {
                 foreach (var box in boxList)
                     img.Draw(box, new Rgb(255, 0, 0), 1);

@@ -81,11 +81,12 @@ namespace LoLAutoLogin
             Settings.Load();
 
             LogLevel logLevel;
+            string strLevel = Settings.GetStringValue("log-level", "info");
 
-            if (Enum.TryParse(Settings.LogLevel, true, out logLevel))
+            if (Enum.TryParse(strLevel, true, out logLevel))
                 Logger.Level = logLevel;
             else
-                Logger.Info($"Invalid log level \"{Settings.LogLevel}\"");
+                Logger.Info($"Invalid log level \"{strLevel}\"");
 
             CheckLocation();
 

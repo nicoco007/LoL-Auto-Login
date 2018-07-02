@@ -22,11 +22,7 @@ namespace LoLAutoLogin
 {
     internal static class Settings
     {
-        internal static float PasswordMatchTolerance { get; private set; }
-        internal static bool AlwaysClick { get; private set; }
-        internal static bool ClientDetectionDebug { get; private set; }
-        internal static int ClientTimeout { get; private set; }
-        internal static string LogLevel { get; private set; }
+        private static YamlNode root;
 
         internal static void Load()
         {
@@ -43,8 +39,6 @@ namespace LoLAutoLogin
             var defaultSettings = new YamlMappingNode(
                 new YamlScalarNode("login-detection"),
                 new YamlMappingNode(
-                    new YamlScalarNode("tolerance"),
-                    new YamlScalarNode("0.70"),
                     new YamlScalarNode("always-click"),
                     new YamlScalarNode("false"),
                     new YamlScalarNode("debug"),
@@ -66,6 +60,8 @@ namespace LoLAutoLogin
                 {
                     // load settings from yaml
                     var loadedSettings = Util.ReadYaml<YamlMappingNode>(settingsFile);
+
+                    root = loadedSettings;
 
                     // merge settings if not empty, use default if it is
                     if (loadedSettings != null)
@@ -94,27 +90,84 @@ namespace LoLAutoLogin
                 settings = defaultSettings;
             }
 
-            // wrap in try/catch in case there's a parsing error
-            try
-            {
-                // set vars to loaded values
-                PasswordMatchTolerance = float.Parse(((YamlScalarNode)settings["login-detection"]["tolerance"]).Value, CultureInfo.InvariantCulture);
-                AlwaysClick = bool.Parse(((YamlScalarNode)settings["login-detection"]["always-click"]).Value);
-                ClientDetectionDebug = bool.Parse(((YamlScalarNode)settings["login-detection"]["debug"]).Value);
-                ClientTimeout = int.Parse(((YamlScalarNode)settings["client-load-timeout"]).Value) * 1000;
-                LogLevel = ((YamlScalarNode)settings["log-level"]).Value;
-            }
-            catch (Exception ex)
-            {
-                Logger.PrintException(ex);
-                Logger.Warn("Failed to parse YAML values, reverting to default settings.");
-
-                // use default settings
-                settings = defaultSettings;
-            }
-
             // write yaml
             Util.WriteYaml(settingsFile, settings);
+        }
+
+        internal static string GetStringValue(string key, string defaultValue)
+        {
+            var node = GetNodeByPath(key);
+
+            if (node == null || !(node is YamlScalarNode))
+                return defaultValue;
+
+            return (node as YamlScalarNode).Value;
+        }
+
+        internal static int GetIntegerValue(string key, int defaultValue)
+        {
+            var node = GetNodeByPath(key);
+
+            if (node == null || !(node is YamlScalarNode))
+                return defaultValue;
+
+            string strValue = (node as YamlScalarNode).Value;
+            int value = defaultValue;
+
+            if (!int.TryParse(strValue, out value))
+                Logger.Warn("Failed to parse {0} as integer", strValue);
+
+            return value;
+        }
+
+        internal static float GetFloatValue(string key, float defaultValue)
+        {
+            var node = GetNodeByPath(key);
+
+            if (node == null || !(node is YamlScalarNode))
+                return defaultValue;
+
+            string strValue = (node as YamlScalarNode).Value;
+            float value = defaultValue;
+
+            if (!float.TryParse(strValue, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+                Logger.Warn("Failed to parse {0} as float", strValue);
+
+            return value;
+        }
+
+        internal static bool GetBooleanValue(string key, bool defaultValue)
+        {
+            var node = GetNodeByPath(key);
+
+            if (node == null || !(node is YamlScalarNode))
+                return defaultValue;
+
+            string strValue = (node as YamlScalarNode).Value;
+            bool value = defaultValue;
+
+            if (!bool.TryParse(strValue, out value))
+                Logger.Warn("Failed to parse {0} as boolean", strValue);
+
+            return value;
+        }
+
+        private static YamlNode GetNodeByPath(string key)
+        {
+            Logger.Trace($"Getting key \"{key}\"");
+
+            string[] parts = key.Split('.');
+            YamlNode currentNode = root;
+
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (currentNode != null && currentNode is YamlMappingNode && (currentNode as YamlMappingNode).Children.ContainsKey(parts[i]))
+                    currentNode = currentNode[parts[i]];
+                else
+                    break;
+            }
+
+            return currentNode;
         }
 
         private static YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b, bool mergeNonSharedValues = true)

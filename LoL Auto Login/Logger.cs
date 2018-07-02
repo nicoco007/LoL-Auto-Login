@@ -35,6 +35,16 @@ using System.Windows.Forms;
 
 namespace LoLAutoLogin
 {
+    internal enum LogLevel
+    {
+        Trace,
+        Debug,
+        Info,
+        Warning,
+        Error,
+        Fatal
+    }
+
     internal static class Logger
     {
         internal static LogLevel Level = LogLevel.Info;
@@ -169,15 +179,5 @@ namespace LoLAutoLogin
                 }
             }
         }
-    }
-    
-    internal enum LogLevel
-    {
-        Trace,
-        Debug,
-        Info,
-        Warning,
-        Error,
-        Fatal
     }
 }
