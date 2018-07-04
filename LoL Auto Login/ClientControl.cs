@@ -79,6 +79,8 @@ namespace LoLAutoLogin
                     Logger.Info("Client is not running, launching client");
                     Logger.Info($"Waiting for {clientTimeout} ms");
 
+                    Program.SetNotifyIconText("Waiting for client");
+
                     Start();
 
                     // create & start stopwatch
@@ -231,6 +233,7 @@ namespace LoLAutoLogin
             var passArray = password.ToCharArray();
 
             Logger.Info("Entering password");
+            Program.SetNotifyIconText("Entering password");
 
             Rectangle rect = clientWindow.GetRect();
 

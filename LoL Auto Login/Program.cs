@@ -131,6 +131,14 @@ namespace LoLAutoLogin
             notifyIcon.BalloonTipClosed += NotifyIcon_BalloonTipClosed;
         }
 
+        internal static void SetNotifyIconText(string status)
+        {
+            notifyIcon.Text = "LoL Auto Login";
+
+            if (!string.IsNullOrEmpty(status))
+                notifyIcon.Text += " – " + status;
+        }
+
         private static void ShowSystemInfo()
         {
             Logger.Info($"OS Version: " + Util.GetFriendlyOSVersion());
