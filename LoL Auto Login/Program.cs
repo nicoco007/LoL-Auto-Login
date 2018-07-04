@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -24,6 +25,7 @@ namespace LoLAutoLogin
 {
     internal static class Program
     {
+        private static ManualResetEvent resetEvent = new ManualResetEvent(false);
         private static NotifyIcon notifyIcon;
         private static ShowBalloonTipEventArgs latestBalloonTip;
 
@@ -108,7 +110,7 @@ namespace LoLAutoLogin
                 FatalError("Could not start League of Legends!", ex);
             }
 
-            while (true) { }
+            resetEvent.WaitOne();
         }
 
         private static void LoadNotifyIcon()
@@ -131,7 +133,7 @@ namespace LoLAutoLogin
 
         private static void ShowSystemInfo()
         {
-            Logger.Info($"OS Version: {Util.GetFriendlyOSVersion()}");
+            Logger.Info($"OS Version: " + Util.GetFriendlyOSVersion());
 
             foreach (Screen screen in Screen.AllScreens)
                 Logger.Info(string.Format("Screen {0}: {1}", screen.DeviceName, screen.Bounds));
@@ -203,7 +205,7 @@ namespace LoLAutoLogin
 
             Logger.CleanFiles();
 
-            Environment.Exit(Environment.ExitCode);
+            resetEvent.Set();
         }
 
         private static void CheckLocation()
@@ -221,7 +223,8 @@ namespace LoLAutoLogin
 
         private static bool PasswordExists()
         {
-            if (!File.Exists("password")) return false;
+            if (!File.Exists("password"))
+                return false;
 
             using (var reader = new StreamReader("password"))
             {
