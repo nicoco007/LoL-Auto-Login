@@ -1,10 +1,10 @@
 #define Name "LoL Auto Login"
-#define Version "2.1.0"
+#define BuildNumber GetEnv("BUILD_NUMBER")
+#define Version "2.1.0." + BuildNumber
 #define Publisher "nicoco007"
 #define URL "https://www.nicoco007.com/lol-auto-login/"
 #define ExeName "LoLAutoLogin.exe"
 #define DesktopShortcutName "League of Legends"
-#define BuildNumber GetEnv("BUILD_NUMBER")
 
 #define NameNoSpaces StringChange(Name, " ", "")
         
@@ -19,7 +19,7 @@ AppSupportURL={#URL}
 AppUpdatesURL={#URL}
 DefaultDirName=C:\Riot Games\League of Legends
 DisableProgramGroupPage=yes
-OutputBaseFilename={#NameNoSpaces}-v{#Version}.{#BuildNumber}
+OutputBaseFilename={#NameNoSpaces}-v{#Version}
 Compression=lzma
 SolidCompression=yes
 DirExistsWarning=no
