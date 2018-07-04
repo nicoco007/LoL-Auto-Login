@@ -29,7 +29,7 @@ UninstallDisplayIcon={app}\{#ExeName}
 WizardSmallImageFile="installer\WizardSmallImageFile\*.bmp"
 
 [Messages]
-BeveledLabel=  {#Name} v{#Version} Build {#BuildNumber}
+BeveledLabel=  {#Name} v{#Version}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
