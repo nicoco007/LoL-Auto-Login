@@ -4,13 +4,13 @@ using System.Text;
 
 namespace LoLAutoLogin
 {
-    internal class Window
+    public class Window
     {
-        internal IntPtr Handle { get; private set; }
-        internal string ClassName { get; private set; }
-        internal string Name { get; private set; }
+        public IntPtr Handle { get; private set; }
+        public string ClassName { get; private set; }
+        public string Name { get; private set; }
 
-        internal Window(IntPtr handle, string className, string name)
+        public Window(IntPtr handle, string className, string name)
         {
             if (string.IsNullOrEmpty(className))
             {
@@ -31,29 +31,29 @@ namespace LoLAutoLogin
             Name = name;
         }
 
-        internal Rectangle GetRect()
+        public Rectangle GetRect()
         {
             RECT rect;
             NativeMethods.GetWindowRect(Handle, out rect);
             return rect;
         }
 
-        internal Bitmap Capture()
+        public Bitmap Capture()
         {
             return Util.CaptureWindow(Handle);
         }
 
-        internal void Focus()
+        public void Focus()
         {
             NativeMethods.SetForegroundWindow(Handle);
         }
 
-        internal bool Exists()
+        public bool Exists()
         {
             return NativeMethods.IsWindow(Handle);
         }
 
-        internal bool IsFocused()
+        public bool IsFocused()
         {
             return NativeMethods.GetForegroundWindow() == Handle;
         }

@@ -182,7 +182,7 @@ namespace LoLAutoLogin
             var windowBitmap = clientWindow.Capture();
 
             // compare the images
-            var found = Util.FindRectangles(windowBitmap, new RectangleF(0.825f, 0.0f, 0.175f, 1.0f));
+            var found = Util.FindRectangles(windowBitmap);
 
             // distance between username and password boxes
             int ydist = (int)(70f * windowBitmap.Width / 1600);
@@ -195,9 +195,13 @@ namespace LoLAutoLogin
                     var rect1 = found[i];
                     var rect2 = found[j];
 
-                    if (Util.SimilarSize(rect1, rect2) && Util.SimilarX(rect1, rect2) && Util.SimilarY(rect1, rect2, 15, ydist) && rect1.Top < rect2.Top)
+                    if (Util.SimilarSize(rect1, rect2) && Util.SimilarX(rect1, rect2) && Util.SimilarY(rect1, rect2, 15, ydist))
                     {
-                        result = rect2;
+                        if (rect1.Top > rect2.Top)
+                            result = rect1;
+                        else
+                            result = rect2;
+
                         break;
                     }
                 }

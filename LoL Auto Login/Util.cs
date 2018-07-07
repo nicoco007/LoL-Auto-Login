@@ -13,16 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
-using Emgu.CV.Util;
+using Accord;
+using Accord.Imaging;
+using Accord.Imaging.Filters;
+using Accord.Math.Geometry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
@@ -30,13 +29,13 @@ using YamlDotNet.Serialization;
 
 namespace LoLAutoLogin
 {
-    internal static class Util
+    public static class Util
     {
         /// <summary>
         /// Opens the folder containing the specified file in the Windows Explorer and focuses the file
         /// </summary>
         /// <param name="filePath">File to show to the user</param>
-        internal static void OpenFolderAndSelectFile(string filePath)
+        public static void OpenFolderAndSelectFile(string filePath)
         {
             if (filePath == null)
                 throw new ArgumentNullException("Parameter filePath cannot be null");
@@ -53,7 +52,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="handle">The handle to the window. (In windows forms, this is obtained by the Handle property)</param>
         /// <returns></returns>
-        internal static Bitmap CaptureWindow(IntPtr handle)
+        public static Bitmap CaptureWindow(IntPtr handle)
         {
             Logger.Debug("Capturing window with handle " + handle);
 
@@ -88,7 +87,7 @@ namespace LoLAutoLogin
             NativeMethods.ReleaseDC(handle, hdcSrc);
 
             // get a .NET image object for it
-            Bitmap img = Image.FromHbitmap(hBitmap);
+            Bitmap img = System.Drawing.Image.FromHbitmap(hBitmap);
 
             // free up the Bitmap object
             NativeMethods.DeleteObject(hBitmap);
@@ -101,13 +100,13 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="className">Class name of the window(s)</param>
         /// <param name="windowName">Name of the window(s)</param>
-        internal static void FocusWindows(string className, string windowName)
+        public static void FocusWindows(string className, string windowName)
         {
             foreach (var window in GetWindows(className, windowName))
                 window.Focus();
         }
 
-        internal static List<Window> GetWindows(string className, string windowName)
+        public static List<Window> GetWindows(string className, string windowName)
         {
             Logger.Debug($"Trying to find window handles for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
 
@@ -127,7 +126,7 @@ namespace LoLAutoLogin
             return windows;
         }
 
-        internal static string GetFriendlyOSVersion()
+        public static string GetFriendlyOSVersion()
         {
             string productName = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "").ToString();
             string csdVersion = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CSDVersion", "").ToString();
@@ -159,7 +158,7 @@ namespace LoLAutoLogin
             return name.ToString();
         }
         
-        internal static T ReadYaml<T>(string file) where T : YamlNode
+        public static T ReadYaml<T>(string file) where T : YamlNode
         {
             T read = null;
 
@@ -173,7 +172,7 @@ namespace LoLAutoLogin
             return read;
         }
 
-        internal static void WriteYaml<T>(string file, T yaml) where T : YamlNode
+        public static void WriteYaml<T>(string file, T yaml) where T : YamlNode
         {
             using (var writer = new StreamWriter(file))
             {
@@ -186,113 +185,92 @@ namespace LoLAutoLogin
         /// Some funky stuff to get rectangles out of an image
         /// </summary>
         /// <param name="source">Source image</param>
-        /// <param name="regionOfInterest">Relative region in image on which to search (adjust according to image size from 0.0 to 1.0)</param>
         /// <returns></returns>
-        internal static List<Rectangle> FindRectangles(Bitmap source, RectangleF regionOfInterest)
+        public static List<Rectangle> FindRectangles(Bitmap source)
         {
-            var img = new Image<Rgb, byte>(source);
-
-            img.ROI = new Rectangle(
-                (int)Math.Round(regionOfInterest.X * img.Width),
-                (int)Math.Round(regionOfInterest.Y * img.Height),
-                (int)Math.Round(regionOfInterest.Width * img.Width),
-                (int)Math.Round(regionOfInterest.Height * img.Height)
-            );
-
-            int minArea = (int)(8000f * img.Width / 1600); // box area is 8806 on 1600x900
-
-            var gray = img.Canny(180, 120);
+            Bitmap canny = Grayscale.CommonAlgorithms.RMY.Apply(source);
+            Logger.Info(canny.PixelFormat.ToString());
+            CannyEdgeDetector edgeDetector = new CannyEdgeDetector(0, 20);
+            edgeDetector.ApplyInPlace(canny);
 
             if (Settings.GetBooleanValue("login-detection.debug", false))
-                SaveDebugImage(gray, "canny.png");
+                SaveDebugImage(canny, "canny.png");
 
-            List<Rectangle> boxList = new List<Rectangle>();
+            BlobCounter blobCounter = new BlobCounter();
 
-            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
-            CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
-            int count = contours.Size;
+            blobCounter.FilterBlobs = true;
+            blobCounter.MinWidth = 200 * source.Width / 1600;
+            blobCounter.MinHeight = 30 * source.Height / 900;
 
-            for (int i = 0; i < count; i++)
+            blobCounter.ProcessImage(canny);
+            Blob[] blobs = blobCounter.GetObjectsInformation();
+            List<Rectangle> rectangles = new List<Rectangle>();
+
+            SimpleShapeChecker shapeChecker = new SimpleShapeChecker();
+
+
+            for (int i = 0; i < blobs.Length; i++)
             {
-                var contour = contours[i];
-                var approxContour = new VectorOfPoint();
+                List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);
+                List<IntPoint> corners;
 
-                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.05, true);
-
-                if (CvInvoke.ContourArea(approxContour, false) > minArea)
-                {
-                    if (approxContour.Size == 4)
-                    {
-                        bool isRectangle = true;
-                        Point[] pts = approxContour.ToArray();
-                        LineSegment2D[] edges = PointCollection.PolyLine(pts, true);
-
-                        for (int j = 0; j < edges.Length; j++)
-                        {
-                            double angle = Math.Abs(edges[(j + 1) % edges.Length].GetExteriorAngleDegree(edges[j]));
-
-                            if (angle < 80 || angle > 100)
-                            {
-                                isRectangle = false;
-                                break;
-                            }
-                        }
-
-                        if (isRectangle)
-                            boxList.Add(CvInvoke.MinAreaRect(approxContour).MinAreaRect());
-                    }
-                }
-
-                contour.Dispose();
-                approxContour.Dispose();
+                if (shapeChecker.IsConvexPolygon(edgePoints, out corners))
+                    rectangles.Add(blobs[i].Rectangle);
             }
-
-            contours.Dispose();
-
+            
             // order by descending area
-            boxList.Sort((a, b) =>
+            rectangles.Sort((a, b) =>
             {
-                return (a.Width * a.Height) < (b.Width * b.Height) ? 1 : -1;
+                return (a.Width * a.Height) > (b.Width * b.Height) ? 1 : -1;
             });
 
             // save image with all found rectangles
             if (Settings.GetBooleanValue("login-detection.debug", false))
             {
-                foreach (var box in boxList)
-                    img.Draw(box, new Rgb(255, 0, 0), 1);
+                Bitmap output = new Bitmap(source);
+                Graphics graphics = Graphics.FromImage(output);
+                Pen red = new Pen(Color.Red, 2);
 
-                SaveDebugImage(img, "output.png");
+                foreach (var rect in rectangles)
+                    graphics.DrawRectangle(red, rect);
+
+                SaveDebugImage(output, "output.png");
+
+                red.Dispose();
+                graphics.Dispose();
+                output.Dispose();
             }
 
-            if (regionOfInterest != Rectangle.Empty)
-                boxList = boxList.Select(b => new Rectangle(b.X + source.Width - img.Width, b.Y + source.Height - img.Height, b.Width, b.Height)).ToList();
-
-            return boxList;
+            return rectangles;
         }
 
-        internal static bool SimilarSize(Rectangle rect1, Rectangle rect2, int threshold = 5)
+        private static System.Drawing.Point[] ToPointsArray(List<IntPoint> points)
+        {
+            System.Drawing.Point[] array = new System.Drawing.Point[points.Count];
+
+            for (int i = 0; i < points.Count; i++)
+                array[i] = new System.Drawing.Point(points[i].X, points[i].Y);
+
+            return array;
+        }
+
+
+        public static bool SimilarSize(Rectangle rect1, Rectangle rect2, int threshold = 5)
         {
             return Math.Abs(rect1.Width - rect2.Width) < threshold && Math.Abs(rect1.Height - rect2.Height) < threshold;
         }
 
-        internal static bool SimilarX(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        public static bool SimilarX(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
         {
             return Math.Abs(Math.Abs(rect1.X - rect2.X) - offset) < threshold;
         }
 
-        internal static bool SimilarY(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        public static bool SimilarY(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
         {
             return Math.Abs(Math.Abs(rect1.Y - rect2.Y) - offset) < threshold;
         }
 
-        internal static void SaveDebugImage(Image image, string name)
-        {
-            var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
-
-            image.Save(Path.Combine(Folders.Debug.FullName, now + "_" + name));
-        }
-
-        internal static void SaveDebugImage<TColor, TDepth>(Image<TColor, TDepth> image, string name) where TColor: struct, IColor where TDepth: new()
+        public static void SaveDebugImage(System.Drawing.Image image, string name)
         {
             var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
 
