@@ -38,12 +38,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\LoL Auto Login\bin\x86\Release\LoLAutoLogin.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\x86\Release\AutoItX3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\x86\Release\concrt140.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\x86\Release\cvextern.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\x86\Release\msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\x86\Release\vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LoL Auto Login\bin\x86\Release\*.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LoL Auto Login\bin\x86\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{commonprograms}\{#Name}"; Filename: "{app}\{#ExeName}"
