@@ -50,7 +50,7 @@ namespace LoLAutoLogin
 
         private static async Task Run()
         {
-            if (Settings.GetBooleanValue("login-detection.debug", false))
+            if (Config.GetBooleanValue("login-detection.debug", false))
             {
                 if (!Folders.Debug.Exists)
                     Folders.Debug.Create();
@@ -174,10 +174,10 @@ namespace LoLAutoLogin
 
         private static void LoadSettings()
         {
-            Settings.Load();
+            Config.Load();
 
             LogLevel logLevel;
-            string strLevel = Settings.GetStringValue("log-level", "info");
+            string strLevel = Config.GetStringValue("log-level", "info");
 
             if (Enum.TryParse(strLevel, true, out logLevel))
                 Logger.Level = logLevel;

@@ -20,7 +20,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace LoLAutoLogin
 {
-    internal static class Settings
+    internal static class Config
     {
         private static YamlNode root;
 
@@ -104,7 +104,7 @@ namespace LoLAutoLogin
             return (node as YamlScalarNode).Value;
         }
 
-        internal static int GetByteValue(string key, byte defaultValue)
+        internal static byte GetByteValue(string key, byte defaultValue)
         {
             var node = GetNodeByPath(key);
 

@@ -190,10 +190,10 @@ namespace LoLAutoLogin
         {
             Bitmap canny = Grayscale.CommonAlgorithms.RMY.Apply(source);
             Logger.Info(canny.PixelFormat.ToString());
-            CannyEdgeDetector edgeDetector = new CannyEdgeDetector(Settings.GetByteValue("login-detection.low-threshold", 0), Settings.GetByteValue("login-detection.high-threshold", 20));
+            CannyEdgeDetector edgeDetector = new CannyEdgeDetector(Config.GetByteValue("login-detection.low-threshold", 0), Config.GetByteValue("login-detection.high-threshold", 20));
             edgeDetector.ApplyInPlace(canny);
 
-            if (Settings.GetBooleanValue("login-detection.debug", false))
+            if (Config.GetBooleanValue("login-detection.debug", false))
                 SaveDebugImage(canny, "canny.png");
 
             BlobCounter blobCounter = new BlobCounter();
@@ -225,7 +225,7 @@ namespace LoLAutoLogin
             });
 
             // save image with all found rectangles
-            if (Settings.GetBooleanValue("login-detection.debug", false))
+            if (Config.GetBooleanValue("login-detection.debug", false))
             {
                 Bitmap output = new Bitmap(source);
                 Graphics graphics = Graphics.FromImage(output);

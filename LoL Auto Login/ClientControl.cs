@@ -74,7 +74,7 @@ namespace LoLAutoLogin
                 }
                 else
                 {
-                    int clientTimeout = Settings.GetIntegerValue("client-load-timeout", 30) * 1000;
+                    int clientTimeout = Config.GetIntegerValue("client-load-timeout", 30) * 1000;
 
                     Logger.Info("Client is not running, launching client");
                     Logger.Info($"Waiting for {clientTimeout} ms");
@@ -207,7 +207,7 @@ namespace LoLAutoLogin
                 }
             }
 
-            if (Settings.GetBooleanValue("login-detection.debug", false))
+            if (Config.GetBooleanValue("login-detection.debug", false))
             {
                 using (var graphics = Graphics.FromImage(windowBitmap))
                     graphics.DrawRectangle(new Pen(new SolidBrush(Color.Red)), result);
@@ -241,7 +241,7 @@ namespace LoLAutoLogin
 
             Rectangle rect = clientWindow.GetRect();
 
-            if (running || Settings.GetBooleanValue("login-detection.always-click", true))
+            if (running || Config.GetBooleanValue("login-detection.always-click", true))
             {
                 AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
                 AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{BACKSPACE}", 0);
