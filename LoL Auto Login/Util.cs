@@ -190,7 +190,7 @@ namespace LoLAutoLogin
         {
             Bitmap canny = Grayscale.CommonAlgorithms.RMY.Apply(source);
             Logger.Info(canny.PixelFormat.ToString());
-            CannyEdgeDetector edgeDetector = new CannyEdgeDetector(0, 20);
+            CannyEdgeDetector edgeDetector = new CannyEdgeDetector(Settings.GetByteValue("login-detection.low-threshold", 0), Settings.GetByteValue("login-detection.high-threshold", 20));
             edgeDetector.ApplyInPlace(canny);
 
             if (Settings.GetBooleanValue("login-detection.debug", false))

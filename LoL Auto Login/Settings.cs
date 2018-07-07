@@ -104,6 +104,22 @@ namespace LoLAutoLogin
             return (node as YamlScalarNode).Value;
         }
 
+        internal static int GetByteValue(string key, byte defaultValue)
+        {
+            var node = GetNodeByPath(key);
+
+            if (node == null || !(node is YamlScalarNode))
+                return defaultValue;
+
+            string strValue = (node as YamlScalarNode).Value;
+            byte value = defaultValue;
+
+            if (!byte.TryParse(strValue, out value))
+                Logger.Warn("Failed to parse \"{0}\" as byte", strValue);
+
+            return value;
+        }
+
         internal static int GetIntegerValue(string key, int defaultValue)
         {
             var node = GetNodeByPath(key);
