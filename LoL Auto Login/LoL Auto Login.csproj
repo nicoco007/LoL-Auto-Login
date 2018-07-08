@@ -135,7 +135,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientInfo.cs" />
-    <Compile Include="ClientWindowStatus.cs" />
+    <Compile Include="ClientWindow.cs" />
     <Compile Include="Folders.cs" />
     <Compile Include="ClientControl.cs" />
     <Compile Include="PasswordManager.cs" />

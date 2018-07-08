@@ -198,8 +198,8 @@ namespace LoLAutoLogin
             BlobCounter blobCounter = new BlobCounter();
 
             blobCounter.FilterBlobs = true;
-            blobCounter.MinWidth = 30 * source.Width / 1600;
-            blobCounter.MinHeight = 30 * source.Height / 900;
+            blobCounter.MinWidth = 10;
+            blobCounter.MinHeight = 10;
 
             blobCounter.ProcessImage(canny);
             Blob[] blobs = blobCounter.GetObjectsInformation();
@@ -219,7 +219,11 @@ namespace LoLAutoLogin
             // order by descending area
             rectangles.Sort((a, b) =>
             {
-                return (a.Width * a.Height) > (b.Width * b.Height) ? 1 : -1;
+                if (a.Width * a.Height > b.Width * b.Height)
+                    return 1;
+                else if (a.Width * a.Height < b.Width * b.Height)
+                    return -1;
+                return 0;
             });
 
             // save image with all found rectangles

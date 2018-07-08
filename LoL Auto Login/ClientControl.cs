@@ -43,7 +43,7 @@ namespace LoLAutoLogin
         {
             await Task.Factory.StartNew(() =>
             {
-                Window clientWindow;
+                ClientWindow clientWindow;
 
                 // check if client is already running & window is present
                 if (Process.GetProcessesByName("LeagueClient").Length > 0)
@@ -123,23 +123,21 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="timeout">Timeout in milliseconds</param>
         /// <returns>Client window handle if found, zero if not.</returns>
-        private static Window AwaitClientHandle(int timeout)
+        private static ClientWindow AwaitClientHandle(int timeout)
         {
-            // create & start stopwatch
             var sw = new Stopwatch();
             sw.Start();
-
-            // create client handle variable
-            Window clientWindow = GetClientWindow();
+            
+            ClientWindow clientWindow;
 
             // search for window until client timeout is reached or window is found
-            while (sw.ElapsedMilliseconds < timeout && clientWindow == null)
+            do
             {
-                Thread.Sleep(500);
                 clientWindow = GetClientWindow();
-            };
-
-            // return found handle
+                Thread.Sleep(500);
+            }
+            while (sw.ElapsedMilliseconds < timeout && clientWindow == null);
+            
             return clientWindow;
         }
 
@@ -151,7 +149,7 @@ namespace LoLAutoLogin
         {
             // create found & handle varables
             Rectangle found = Rectangle.Empty;
-            Window clientWindow;
+            ClientWindow clientWindow;
 
             // loop while not found and while client handle is something
             do
@@ -161,17 +159,15 @@ namespace LoLAutoLogin
                 if (clientWindow == null)
                     continue;
                 
-                found = GetPasswordRect(clientWindow);
-                
                 Thread.Sleep(500);
             }
-            while (clientWindow != null && found == Rectangle.Empty);
+            while (clientWindow != null && clientWindow.Status == ClientStatus.Unknown);
 
             // return whether client was found or not
             return found;
         }
 
-        private static Rectangle GetPasswordRect(Window clientWindow)
+        private static Rectangle GetPasswordRect(ClientWindow clientWindow)
         {
             // check that the handle is valid
             if (clientWindow == null)
@@ -179,10 +175,8 @@ namespace LoLAutoLogin
 
             var result = Rectangle.Empty;
 
-            ClientStatus status = ClientStatus.FromWindow(clientWindow);
-
-            if (status.Type == ClientStatusType.OnLoginScreen)
-                result = status.PasswordBox;
+            if (clientWindow.Status == ClientStatus.OnLoginScreen)
+                result = clientWindow.PasswordBox;
             
             GC.Collect();
             
@@ -242,13 +236,17 @@ namespace LoLAutoLogin
             Program.Shutdown();
         }
 
-        private static Window GetClientWindow()
+        private static ClientWindow GetClientWindow()
         {
             List<Window> windows = Util.GetWindows(CLIENT_CLASS, CLIENT_NAME);
 
             foreach (var window in windows)
-                if (GetPasswordRect(window) != Rectangle.Empty)
-                    return window;
+            {
+                var match = ClientWindow.FromWindow(window);
+
+                if (match.IsMatch)
+                    return match;
+            }
 
             return null;
         }
