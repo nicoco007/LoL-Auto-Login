@@ -161,7 +161,7 @@ namespace LoLAutoLogin
                 
                 Thread.Sleep(500);
             }
-            while (clientWindow != null && clientWindow.Status == ClientStatus.Unknown);
+            while (clientWindow == null || clientWindow.Status == ClientStatus.Unknown);
 
             // return whether client was found or not
             return found;
