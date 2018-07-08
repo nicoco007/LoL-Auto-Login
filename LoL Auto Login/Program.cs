@@ -145,13 +145,13 @@ namespace LoLAutoLogin
                 Logger.Info(string.Format("Screen {0}: {1}", screen.DeviceName, screen.Bounds));
 
             string fileName = Path.Combine(Folders.Configuration.FullName, "LeagueClientSettings.yaml");
-            ClientInfo info;
+            ClientSettings info;
 
             if (File.Exists(fileName))
             {
                 try
                 {
-                    info = ClientInfo.FromFile(fileName);
+                    info = ClientSettings.FromFile(fileName);
 
                     Logger.Info($"Region: {info.Region}; Locale: {info.Locale}");
 

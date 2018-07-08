@@ -18,20 +18,20 @@ using YamlDotNet.RepresentationModel;
 
 namespace LoLAutoLogin
 {
-    public class ClientInfo
+    public class ClientSettings
     {
         internal string Locale { get; }
         internal string Region { get; }
         internal bool RemembersUsername { get; }
 
-        private ClientInfo(string locale, string region, bool remembersUsername)
+        private ClientSettings(string locale, string region, bool remembersUsername)
         {
             Locale = locale;
             Region = region;
             RemembersUsername = remembersUsername;
         }
 
-        internal static ClientInfo FromFile(string filePath)
+        internal static ClientSettings FromFile(string filePath)
         {
             Logger.Info($"Loading client info from \"{filePath}\"");
 
@@ -44,7 +44,7 @@ namespace LoLAutoLogin
             string region = (root?["install"]?["globals"]?["region"] as YamlScalarNode)?.Value;
             bool remembersUsername = bool.Parse((root?["install"]?["login-remember-me"]?["rememberMe"] as YamlScalarNode)?.Value);
 
-            return new ClientInfo(locale, region, remembersUsername);
+            return new ClientSettings(locale, region, remembersUsername);
         }
     }
 }

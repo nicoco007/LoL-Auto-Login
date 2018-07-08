@@ -134,26 +134,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientInfo.cs" />
-    <Compile Include="ClientWindow.cs" />
-    <Compile Include="Folders.cs" />
-    <Compile Include="ClientControl.cs" />
-    <Compile Include="PasswordManager.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="Utility\ClientSettings.cs" />
+    <Compile Include="Model\ClientWindow.cs" />
+    <Compile Include="Utility\Folders.cs" />
+    <Compile Include="Utility\ClientControl.cs" />
+    <Compile Include="Utility\PasswordManager.cs" />
+    <Compile Include="Utility\Logger.cs" />
+    <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
+    <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="NativeMethods.cs" />
+    <Compile Include="Utility\NativeMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="ShowBalloonTipEventArgs.cs" />
-    <Compile Include="Util.cs" />
-    <Compile Include="Window.cs" />
-    <EmbeddedResource Include="MainForm.resx">
+    <Compile Include="Utility\Settings.cs" />
+    <Compile Include="Model\ShowBalloonTipEventArgs.cs" />
+    <Compile Include="Utility\Util.cs" />
+    <Compile Include="Model\Window.cs" />
+    <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
