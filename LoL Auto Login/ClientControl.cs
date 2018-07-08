@@ -208,7 +208,9 @@ namespace LoLAutoLogin
 
             if (running || Config.GetBooleanValue("login-detection.always-click", true))
             {
+                clientWindow.Focus();
                 AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
+                AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "^a", 0);
                 AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{BACKSPACE}", 0);
             }
 
