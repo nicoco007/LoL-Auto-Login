@@ -189,7 +189,6 @@ namespace LoLAutoLogin
         public static List<Rectangle> FindRectangles(Bitmap source)
         {
             Bitmap canny = Grayscale.CommonAlgorithms.RMY.Apply(source);
-            Logger.Info(canny.PixelFormat.ToString());
             CannyEdgeDetector edgeDetector = new CannyEdgeDetector(Config.GetByteValue("login-detection.low-threshold", 0), Config.GetByteValue("login-detection.high-threshold", 20));
             edgeDetector.ApplyInPlace(canny);
 
@@ -199,7 +198,7 @@ namespace LoLAutoLogin
             BlobCounter blobCounter = new BlobCounter();
 
             blobCounter.FilterBlobs = true;
-            blobCounter.MinWidth = 200 * source.Width / 1600;
+            blobCounter.MinWidth = 30 * source.Width / 1600;
             blobCounter.MinHeight = 30 * source.Height / 900;
 
             blobCounter.ProcessImage(canny);
@@ -254,19 +253,31 @@ namespace LoLAutoLogin
         }
 
 
-        public static bool SimilarSize(Rectangle rect1, Rectangle rect2, int threshold = 5)
+        public static bool SimilarSize(Size s1, Size s2, int threshold = 5)
         {
-            return Math.Abs(rect1.Width - rect2.Width) < threshold && Math.Abs(rect1.Height - rect2.Height) < threshold;
+            return Math.Abs(s1.Width - s2.Width) < threshold && Math.Abs(s1.Height - s2.Height) < threshold;
         }
 
-        public static bool SimilarX(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        public static bool SimilarPoint(System.Drawing.Point p1, System.Drawing.Point p2, int threshold = 5)
         {
-            return Math.Abs(Math.Abs(rect1.X - rect2.X) - offset) < threshold;
+            return Math.Abs(p1.X - p2.X) < threshold && Math.Abs(p1.Y - p2.Y) < threshold;
         }
 
-        public static bool SimilarY(Rectangle rect1, Rectangle rect2, int threshold = 5, int offset = 0)
+        public static bool SimilarValue(int val1, int val2, int threshold = 5, int offset = 0)
         {
-            return Math.Abs(Math.Abs(rect1.Y - rect2.Y) - offset) < threshold;
+            return Math.Abs(Math.Abs(val1 - val2) - offset) < threshold;
+        }
+
+        public static bool SimilarRectangle(Rectangle rect1, Rectangle rect2, int threshold = 5)
+        {
+            return SimilarSize(rect1.Size, rect2.Size, threshold) && SimilarPoint(rect1.Location, rect2.Location, threshold);
+        }
+
+        public static bool ApproxContains(Rectangle container, Rectangle rect, int threshold = 5)
+        {
+            Rectangle big = new Rectangle(container.X - threshold, container.Y - threshold, container.Width + threshold, container.Height + threshold);
+
+            return big.Contains(rect);
         }
 
         public static void SaveDebugImage(System.Drawing.Image image, string name)

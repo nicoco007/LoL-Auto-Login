@@ -45,7 +45,9 @@ namespace LoLAutoLogin
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Run().Wait();
+            Run();
+
+            resetEvent.WaitOne();
         }
 
         private static async Task Run()
@@ -82,7 +84,6 @@ namespace LoLAutoLogin
                 }
                 catch (Exception ex)
                 {
-                    // print error to log and show balloon tip to inform user of fatal error
                     FatalError("Could not start League of Legends!", ex);
                 }
 
@@ -106,11 +107,8 @@ namespace LoLAutoLogin
             }
             catch (Exception ex)
             {
-                // print error to log and show balloon tip to inform user of fatal error
                 FatalError("Could not start League of Legends!", ex);
             }
-
-            resetEvent.WaitOne();
         }
 
         private static void LoadNotifyIcon()

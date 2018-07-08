@@ -179,48 +179,13 @@ namespace LoLAutoLogin
 
             var result = Rectangle.Empty;
 
-            var windowBitmap = clientWindow.Capture();
+            ClientStatus status = ClientStatus.FromWindow(clientWindow);
 
-            // compare the images
-            var found = Util.FindRectangles(windowBitmap);
-
-            // distance between username and password boxes
-            int ydist = (int)(70f * windowBitmap.Width / 1600);
-
-            // iterate in pairs through all found rectangles and try to find two that look like they're the login boxes
-            for (int i = 0; i < found.Count; i++)
-            {
-                for (int j = i + 1; j < found.Count; j++)
-                {
-                    var rect1 = found[i];
-                    var rect2 = found[j];
-
-                    if (Util.SimilarSize(rect1, rect2) && Util.SimilarX(rect1, rect2) && Util.SimilarY(rect1, rect2, 15, ydist))
-                    {
-                        if (rect1.Top > rect2.Top)
-                            result = rect1;
-                        else
-                            result = rect2;
-
-                        break;
-                    }
-                }
-            }
-
-            if (Config.GetBooleanValue("login-detection.debug", false))
-            {
-                using (var graphics = Graphics.FromImage(windowBitmap))
-                    graphics.DrawRectangle(new Pen(new SolidBrush(Color.Red)), result);
-
-                Util.SaveDebugImage(windowBitmap, "password-box.png");
-            }
-
-            windowBitmap.Dispose();
-
-            // force garbage collection
+            if (status.Type == ClientStatusType.OnLoginScreen)
+                result = status.PasswordBox;
+            
             GC.Collect();
-
-            // return
+            
             return result;
         }
 
