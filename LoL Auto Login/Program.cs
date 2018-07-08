@@ -45,9 +45,7 @@ namespace LoLAutoLogin
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Run();
-
-            resetEvent.WaitOne();
+            Run().Wait();
         }
 
         private static async Task Run()
@@ -109,6 +107,8 @@ namespace LoLAutoLogin
             {
                 FatalError("Could not start League of Legends!", ex);
             }
+
+            resetEvent.WaitOne();
         }
 
         private static void LoadNotifyIcon()
