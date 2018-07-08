@@ -14,27 +14,22 @@ namespace LoLAutoLogin
     public class ClientWindow : Window
     {
         public bool IsMatch { get { return Status != ClientStatus.Unknown; } }
-        public ClientStatus Status { get; }
-        public Rectangle UsernameBox { get; }
-        public Rectangle PasswordBox { get; }
-        public Rectangle DialogBox { get; }
 
-        private ClientWindow(IntPtr handle, string className, string windowName, ClientStatus status, Rectangle usernameBox, Rectangle passwordBox, Rectangle dialogBox) : base(handle, className, windowName)
+        public ClientStatus Status { get; private set; }
+        public Rectangle UsernameBox { get; private set; }
+        public Rectangle PasswordBox { get; private set; }
+        public Rectangle DialogBox { get; private set; }
+
+        private ClientWindow(IntPtr handle, string className, string windowName) : base(handle, className, windowName) { }
+
+        public void RefreshStatus()
         {
-            Status = status;
-            UsernameBox = usernameBox;
-            PasswordBox = passwordBox;
-            DialogBox = dialogBox;
-        }
+            Status = ClientStatus.Unknown;
+            UsernameBox = Rectangle.Empty;
+            PasswordBox = Rectangle.Empty;
+            DialogBox = Rectangle.Empty;
 
-        public static ClientWindow FromWindow(Window window)
-        {
-            Bitmap capture = window.Capture();
-
-            var status = ClientStatus.Unknown;
-            var usernameBox = Rectangle.Empty;
-            var passwordBox = Rectangle.Empty;
-            var dialogBox = Rectangle.Empty;
+            Bitmap capture = Capture();
 
             List<Rectangle> rectangles = Util.FindRectangles(capture);
 
@@ -62,8 +57,8 @@ namespace LoLAutoLogin
 
                     if (count > 0)
                     {
-                        status = ClientStatus.DialogVisible;
-                        dialogBox = rect1;
+                        Status = ClientStatus.DialogVisible;
+                        DialogBox = rect1;
                         break;
                     }
                 }
@@ -78,17 +73,17 @@ namespace LoLAutoLogin
 
                         if (Util.SimilarSize(rect1.Size, rect2.Size, 2) && Util.SimilarValue(rect1.X, rect2.X, 2) && Util.SimilarValue(rect1.Y, rect2.Y, 15, ydist))
                         {
-                            status = ClientStatus.OnLoginScreen;
+                            Status = ClientStatus.OnLoginScreen;
 
                             if (rect1.Top < rect2.Top)
                             {
-                                usernameBox = rect1;
-                                passwordBox = rect2;
+                                UsernameBox = rect1;
+                                PasswordBox = rect2;
                             }
                             else
                             {
-                                usernameBox = rect2;
-                                passwordBox = rect1;
+                                UsernameBox = rect2;
+                                PasswordBox = rect1;
                             }
 
                             break;
@@ -103,17 +98,22 @@ namespace LoLAutoLogin
 
                 using (var graphics = Graphics.FromImage(output))
                 {
-                    graphics.DrawRectangle(new Pen(Color.Red, 1), usernameBox);
-                    graphics.DrawRectangle(new Pen(Color.Green, 1), passwordBox);
-                    graphics.DrawRectangle(new Pen(Color.Yellow, 1), dialogBox);
+                    graphics.DrawRectangle(new Pen(Color.Red, 1), UsernameBox);
+                    graphics.DrawRectangle(new Pen(Color.Green, 1), PasswordBox);
+                    graphics.DrawRectangle(new Pen(Color.Yellow, 1), DialogBox);
                 }
 
                 Util.SaveDebugImage(output, "password-box.png");
             }
 
-            var result = new ClientWindow(window.Handle, window.ClassName, window.Name, status, usernameBox, passwordBox, dialogBox);
-
             capture.Dispose();
+        }
+
+        public static ClientWindow FromWindow(Window window)
+        {
+            var result = new ClientWindow(window.Handle, window.ClassName, window.Name);
+
+            result.RefreshStatus();
 
             return result;
         }

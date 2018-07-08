@@ -96,7 +96,7 @@ namespace LoLAutoLogin
                         Logger.Info($"Client found after {sw.ElapsedMilliseconds} ms");
 
                         // get password box
-                        var found = WaitForPasswordBox();
+                        var found = WaitForPasswordBox(clientWindow);
 
                         // check if the password box was found
                         if (found != Rectangle.Empty)
@@ -136,7 +136,7 @@ namespace LoLAutoLogin
                 clientWindow = GetClientWindow();
                 Thread.Sleep(500);
             }
-            while (sw.ElapsedMilliseconds < timeout && clientWindow == null);
+            while (sw.ElapsedMilliseconds < timeout && (clientWindow == null || clientWindow.Status == ClientStatus.Unknown));
             
             return clientWindow;
         }
@@ -145,23 +145,19 @@ namespace LoLAutoLogin
         /// Hangs until the password box for the client is found or the client exits.
         /// </summary>
         /// <returns>Whether the password box was found or not.</returns>
-        private static Rectangle WaitForPasswordBox()
+        private static Rectangle WaitForPasswordBox(ClientWindow clientWindow)
         {
             // create found & handle varables
             Rectangle found = Rectangle.Empty;
-            ClientWindow clientWindow;
 
             // loop while not found and while client handle is something
             do
             {
-                clientWindow = GetClientWindow();
-                
-                if (clientWindow == null)
-                    continue;
-                
+                clientWindow.RefreshStatus();
+                found = clientWindow.PasswordBox;
                 Thread.Sleep(500);
             }
-            while (clientWindow == null || clientWindow.Status == ClientStatus.Unknown);
+            while (clientWindow.Status != ClientStatus.OnLoginScreen);
 
             // return whether client was found or not
             return found;
