@@ -208,7 +208,6 @@ namespace LoLAutoLogin
 
             SimpleShapeChecker shapeChecker = new SimpleShapeChecker();
 
-
             for (int i = 0; i < blobs.Length; i++)
             {
                 List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);

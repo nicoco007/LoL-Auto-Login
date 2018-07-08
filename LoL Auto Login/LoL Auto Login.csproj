@@ -141,7 +141,6 @@
     <Compile Include="ClientInfo.cs" />
     <Compile Include="Folders.cs" />
     <Compile Include="ClientControl.cs" />
-    <Compile Include="ClientWindowMatch.cs" />
     <Compile Include="PasswordManager.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MainForm.cs">
