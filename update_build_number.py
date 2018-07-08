@@ -11,7 +11,6 @@ with open("LoL Auto Login\Properties\AssemblyInfo.cs", "r+", encoding="utf-8") a
 
     for line in read_lines:
         write_lines.append(expr.sub(r'[assembly: Assembly\1Version("\2.\3.\4.{}")]'.format(build), line))
-        print(write_lines[-1])
 
     f.seek(0)
     f.truncate(0)
