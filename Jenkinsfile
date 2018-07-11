@@ -11,10 +11,12 @@ pipeline {
         bat 'nuget restore'
         bat 'python update_build_number.py'
         bat 'msbuild /p:Configuration=Release /p:Platform=x86'
-        bat '7z a LoLAutoLogin-%GIT_BRANCH%-%BUILD_NUMBER%.zip "./LoL Auto Login/bin/x86/Release/*.dll" "./LoL Auto Login/bin/x86/Release/*.exe"'
-        archiveArtifacts 'LoLAutoLogin*.zip'
+        bat 'mkdir publish'
+        bat '7z a publish/LoLAutoLogin-%GIT_BRANCH%-%BUILD_NUMBER%.zip "./LoL Auto Login/bin/x86/Release/*.dll" "./LoL Auto Login/bin/x86/Release/*.exe"'
+        archiveArtifacts 'publish/LoLAutoLogin-%GIT_BRANCH%-%BUILD_NUMBER%.zip'
         bat 'iscc installer/installer.iss'
-        archiveArtifacts 'publish/*.exe'
+        bat '7z a LoLAutoLogin-%GIT_BRANCH%-%BUILD_NUMBER%-setup.zip "./publish/*.exe"'
+        archiveArtifacts 'publish/LoLAutoLogin-%GIT_BRANCH%-%BUILD_NUMBER%-setup.zip'
       }
     }
   }
