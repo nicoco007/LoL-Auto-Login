@@ -15,11 +15,14 @@ You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in
 * **login-detection**:
   * **enable-click** (*default: true*) Whether LoL Auto Login should click on the password box once it finds it or not. This forces the password box to be focused, but if you don't like the cursor moving you can disable it by setting this to `false`.
   * **debug** (*default: false*) Enabling this option saves debug images to the `Debug` folder inside your home League of Legends folder for debugging purposes. You may be asked to enable this if you submit an issue.
+  * **low-threshold** (*default: 0*) Low threshold for the Canny edge detector.
+  * **high-threshold** (*default: 20*) High threshold for the Canny edge detector.
 * **client-load-timeout** (*default: 30*) How long to wait (in seconds) before giving up on searching for the client.
-* **log-level** (*default: "info"*) How much stuff to log. Valid options are, in descending order of spamminess, `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
+* **log-level** (*default: "info"*) How much stuff to log. Valid options are, in decreasing order of spamminess, `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
-* [AutoIt](https://www.autoitscript.com) by Jonathan Bennett and the AutoIt Team &ndash; [AutoIt License](https://www.autoitscript.com/autoit3/docs/license.htm)
-* [Fody](https://github.com/Fody/Fody) by Simon Cropp and Cameron MacFarland &ndash; [MIT License](https://github.com/Fody/Fody/blob/master/License.txt)
-* [YamlDotNet](https://github.com/aaubry/YamlDotNet) by Antoine Aubry &ndash; [MIT License](https://github.com/aaubry/YamlDotNet/blob/master/LICENSE)
+* [Accord.NET Framework](http://accord-framework.net/) &ndash; [GNU LGPL License](https://github.com/accord-net/framework/blob/development/LICENSE)
+* [AutoIt](https://www.autoitscript.com) &ndash; [AutoIt License](https://www.autoitscript.com/autoit3/docs/license.htm)
+* [Fody](https://github.com/Fody/Fody) &ndash; [MIT License](https://github.com/Fody/Fody/blob/master/License.txt)
+* [YamlDotNet](https://github.com/aaubry/YamlDotNet) &ndash; [MIT License](https://github.com/aaubry/YamlDotNet/blob/master/LICENSE)
