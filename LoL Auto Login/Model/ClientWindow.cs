@@ -64,7 +64,7 @@ namespace LoLAutoLogin
                 }
 
                 // check if rectangle is on sidebar
-                if (rect1.X >= 1320 * 1600 / capture.Width)
+                if (rect1.X >= 1320 * capture.Width / 1600)
                 {
                     // check if rectangle pair is username and password boxes
                     for (int j = i + 1; j < rectangles.Count; j++)
