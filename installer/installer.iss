@@ -43,8 +43,8 @@ Source: "..\LoL Auto Login\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreve
 Source: "..\LoL Auto Login\bin\Release\Config\LoLAutoLoginSettings.yaml"; DestDir: "{app}\Config"; Flags: ignoreversion
 
 [Dirs]
-Name: "{app}\Config"
-Name: "{app}\Logs\LoL Auto Login Logs"
+Name: "{app}\Config"; Permissions: users-modify
+Name: "{app}\Logs\LoL Auto Login Logs"; Permissions: users-modify
 
 [Icons]
 Name: "{commonprograms}\{#Name}"; Filename: "{app}\{#ExeName}"
