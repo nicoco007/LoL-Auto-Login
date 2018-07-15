@@ -113,10 +113,12 @@ namespace LoLAutoLogin
 
         private static void LoadNotifyIcon()
         {
-            notifyIcon = new NotifyIcon();
-            notifyIcon.Icon = Properties.Resources.Icon;
-            notifyIcon.Visible = true;
-            notifyIcon.Text = "LoL Auto Login";
+            notifyIcon = new NotifyIcon
+            {
+                Icon = Properties.Resources.Icon,
+                Visible = true,
+                Text = "LoL Auto Login"
+            };
 
             var menu = new ContextMenu();
 
@@ -174,10 +176,9 @@ namespace LoLAutoLogin
         {
             Config.Load();
 
-            LogLevel logLevel;
             string strLevel = Config.GetStringValue("log-level", "info");
 
-            if (Enum.TryParse(strLevel, true, out logLevel))
+            if (Enum.TryParse(strLevel, true, out LogLevel logLevel))
                 Logger.Level = logLevel;
             else
                 Logger.Info($"Invalid log level \"{strLevel}\", defaulting to INFO");

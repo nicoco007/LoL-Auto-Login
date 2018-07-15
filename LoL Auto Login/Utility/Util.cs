@@ -195,11 +195,12 @@ namespace LoLAutoLogin
             if (Config.GetBooleanValue("login-detection.debug", false))
                 SaveDebugImage(canny, "canny.png");
 
-            BlobCounter blobCounter = new BlobCounter();
-
-            blobCounter.FilterBlobs = true;
-            blobCounter.MinWidth = 10;
-            blobCounter.MinHeight = 10;
+            BlobCounter blobCounter = new BlobCounter
+            {
+                FilterBlobs = true,
+                MinWidth = 10,
+                MinHeight = 10
+            };
 
             blobCounter.ProcessImage(canny);
             Blob[] blobs = blobCounter.GetObjectsInformation();
@@ -210,9 +211,8 @@ namespace LoLAutoLogin
             for (int i = 0; i < blobs.Length; i++)
             {
                 List<IntPoint> edgePoints = blobCounter.GetBlobsEdgePoints(blobs[i]);
-                List<IntPoint> corners;
 
-                if (shapeChecker.IsConvexPolygon(edgePoints, out corners))
+                if (shapeChecker.IsConvexPolygon(edgePoints, out List<IntPoint> corners))
                     rectangles.Add(blobs[i].Rectangle);
             }
             
