@@ -16,6 +16,8 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Windows.Forms;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
 namespace LoLAutoLogin
@@ -27,31 +29,13 @@ namespace LoLAutoLogin
         internal static void Load()
         {
             // get config directory & settings file
-            var settingsFile = Path.Combine(Folders.Configuration.FullName, "LoLAutoLoginSettings.yaml");
+            var settingsFile = Path.Combine(Folders.Configuration, "LoLAutoLoginSettings.yaml");
 
             // make sure the config directory exists
-            if (!Folders.Configuration.Exists)
-                Folders.Configuration.Create();
+            if (!Directory.Exists(Folders.Configuration))
+                Directory.CreateDirectory(Folders.Configuration); // TODO: try/catch
             
             Logger.Info($"Loading settings from \"{settingsFile}\"");
-
-            // define default settings
-            var defaultSettings = new YamlMappingNode(
-                new YamlScalarNode("login-detection"),
-                new YamlMappingNode(
-                    new YamlScalarNode("always-click"),
-                    new YamlScalarNode("true"),
-                    new YamlScalarNode("debug"),
-                    new YamlScalarNode("false")
-                ),
-                new YamlScalarNode("client-load-timeout"),
-                new YamlScalarNode("30"),
-                new YamlScalarNode("log-level"),
-                new YamlScalarNode("info")
-            );
-
-            // create settings variable
-            YamlMappingNode settings;
 
             // check if settings exist
             if (File.Exists(settingsFile))
@@ -59,39 +43,25 @@ namespace LoLAutoLogin
                 try
                 {
                     // load settings from yaml
-                    var loadedSettings = Util.ReadYaml<YamlMappingNode>(settingsFile);
-
-                    root = loadedSettings;
-
-                    // merge settings if not empty, use default if it is
-                    if (loadedSettings != null)
-                    {
-                        settings = MergeMappingNodes(defaultSettings, loadedSettings, false);
-                    }
-                    else
-                    {
-                        Logger.Info("Settings file is empty, using default settings.");
-                        
-                        settings = defaultSettings;
-                    }
+                    root = Util.ReadYaml<YamlMappingNode>(settingsFile);
+                }
+                catch (SyntaxErrorException ex)
+                {
+                    Logger.Warn("Failed to read settings YAML.");
+                    Logger.PrintException(ex);
+                    MessageBox.Show($"Failed to load settings from \"{settingsFile}\". Please check your syntax and try again.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn("Failed to parse YAML, reverting to default settings.");
+                    Logger.Warn("Failed to read settings YAML.");
                     Logger.PrintException(ex);
-                    
-                    settings = defaultSettings;
+                    MessageBox.Show($"Failed to load settings from \"{settingsFile}\".", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                Logger.Info("Settings file does not exist, using default settings.");
-                
-                settings = defaultSettings;
+                Logger.Info("Settings file does not exist.");
             }
-
-            // write yaml
-            Util.WriteYaml(settingsFile, settings);
         }
 
         internal static string GetStringValue(string key, string defaultValue)
@@ -184,48 +154,9 @@ namespace LoLAutoLogin
             }
 
             if (currentNode == null)
-                Logger.Warn("Failed to find node with path " + key);
+                Logger.Trace("Failed to find node with path " + key);
 
             return currentNode;
-        }
-
-        private static YamlMappingNode MergeMappingNodes(YamlMappingNode a, YamlMappingNode b, bool mergeNonSharedValues = true)
-        {
-            // create merged values node
-            YamlMappingNode merged = new YamlMappingNode();
-
-            // iterate through a's items
-            foreach (var item in a.Children)
-            {
-                // check if b contains this item
-                if (b.Children.ContainsKey(item.Key))
-                {
-                    // if both values are mapping nodes, add merged mapped nodes; if not, add b's value
-                    if (item.Value is YamlMappingNode && b[item.Key] is YamlMappingNode)
-                        merged.Children.Add(item.Key, MergeMappingNodes((YamlMappingNode)item.Value, (YamlMappingNode)b[item.Key], mergeNonSharedValues));
-                    else
-                        merged.Children.Add(item.Key, b[item.Key]);
-                }
-                else
-                {
-                    // add item to merged
-                    merged.Children.Add(item);
-                }
-            }
-
-            // if we want to merged non-shared values, add all of b's children that aren't already in merged
-            if (mergeNonSharedValues)
-                foreach (var item in b.Children)
-                    if (!merged.Children.ContainsKey(item.Key))
-                        merged.Children.Add(item);
-
-            // log loaded values to trace
-            foreach (var item in merged)
-                if (item.Key is YamlScalarNode && item.Value is YamlScalarNode)
-                    Logger.Trace("{0} = {1}", ((YamlScalarNode)item.Key).Value, ((YamlScalarNode)item.Value).Value);
-
-            // return merged values
-            return merged;
         }
     }
 }

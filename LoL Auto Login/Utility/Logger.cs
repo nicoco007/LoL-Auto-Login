@@ -32,14 +32,25 @@ namespace LoLAutoLogin
 
     internal static class Logger
     {
-        internal static LogLevel Level = LogLevel.Info;
-        
-        internal static string LogFile { get { return Path.Combine(Folders.Logs.FullName, LogFileName); } }
-
-        internal static readonly string LogFileName = $@"{DateTime.Now:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log";
+        internal static bool WriteToFile { get; set; }
+        internal static LogLevel Level { get; private set; }
+        internal static string LogFile { get; private set; }
 
         private static readonly DateTime StartTime = DateTime.Now;
-        private static bool writeToFile = true;
+
+        internal static void Setup()
+        {
+            Level = LogLevel.Info;
+            LogFile = Path.Combine(Folders.Logs, $@"{DateTime.Now:yyyy-MM-dd\THH-mm-ss}_LoLAutoLogin.log");
+        }
+
+        internal static void SetLogLevel(string level)
+        {
+            if (Enum.TryParse(level, true, out LogLevel logLevel))
+                Level = logLevel;
+            else
+                Info($"Invalid log level \"{level}\", defaulting to INFO");
+        }
 
         internal static void Trace(string message, params object[] arg)
         {
@@ -91,60 +102,13 @@ namespace LoLAutoLogin
                 Error(msg);
                 Error(ex.StackTrace);
             }
-
-        }
-
-        private static void Write(string tag, string text, params object[] arg)
-        {
-            if (arg.Length > 0)
-                text = string.Format(text, arg);
-
-            var st = new System.Diagnostics.StackTrace(true);
-            var frame = st.GetFrame(2);
-            var fileName = Path.GetFileNameWithoutExtension(frame.GetFileName());
-            var line = frame.GetFileLineNumber();
-            var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-            
-            try
-            {
-                var dir = Folders.Logs;
-                var file = LogFile;
-                var now = (DateTime.Now - StartTime).ToString("G");
-
-                if (dir != null && !dir.Exists)
-                    dir.Create();
-
-                StreamWriter writer = null;
-
-                if (writeToFile)
-                    writer = new StreamWriter(file, true);
-                
-                foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
-                    var msg = $"{now} [{tag}] <{fileName}:{line} (Thread {threadId})> {filteredStr}";
-
-                    Console.WriteLine(msg);
-                        
-                    if (writer != null)
-                        writer.WriteLine(msg);
-                }
-
-                if (writer != null)
-                    writer.Dispose();
-            }
-            catch(IOException ex)
-            {
-                writeToFile = false; // disable writing to file to avoid spam message boxes
-                MessageBox.Show("Failed to write to log file: " + ex.StackTrace);
-            }
         }
 
         internal static void CleanFiles()
         {
-            if (Folders.Logs.Exists)
+            if (Directory.Exists(Folders.Logs))
             {
-                FileInfo[] logFiles = Folders.Logs.GetFiles().OrderByDescending(f => f.LastWriteTime).ToArray();
+                FileInfo[] logFiles = new DirectoryInfo(Folders.Logs).GetFiles().OrderByDescending(f => f.LastWriteTime).ToArray();
 
                 if (logFiles.Length > 50)
                 {
@@ -163,6 +127,58 @@ namespace LoLAutoLogin
                         }
                     }
                 }
+            }
+        }
+
+        private static void Write(string tag, string text, params object[] arg)
+        {
+            if (arg.Length > 0)
+                text = string.Format(text, arg);
+
+            var st = new System.Diagnostics.StackTrace(true);
+            var frame = st.GetFrame(2);
+            var fileName = Path.GetFileNameWithoutExtension(frame.GetFileName());
+            var line = frame.GetFileLineNumber();
+            var now = (DateTime.Now - StartTime).ToString("G");
+
+            StreamWriter writer = null;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(LogFile);
+
+                if (WriteToFile)
+                {
+                    if (!Directory.Exists(directory))
+                        Directory.CreateDirectory(directory);
+
+                    writer = new StreamWriter(LogFile);
+                }
+
+                foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
+                    var msg = $"{now} | {tag,5} | <{fileName}:{line}> {filteredStr}";
+
+                    System.Diagnostics.Debug.WriteLine(msg);
+
+                    if (writer != null)
+                        writer.WriteLine(msg);
+                }
+
+                if (writer != null)
+                    writer.Flush();
+            }
+            catch (Exception ex)
+            {
+                WriteToFile = false; // disable writing to file to avoid spam message boxes
+                PrintException(ex);
+                MessageBox.Show($"Logging to file has been disabled due to an error. Please check permissions on the \"{Folders.Logs}\" folder or disable logging through the settings file.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (writer != null)
+                    writer.Close();
             }
         }
     }

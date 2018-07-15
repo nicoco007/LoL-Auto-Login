@@ -171,7 +171,7 @@ namespace LoLAutoLogin
 
             return read;
         }
-
+        
         public static void WriteYaml<T>(string file, T yaml) where T : YamlNode
         {
             using (var writer = new StreamWriter(file))
@@ -288,7 +288,7 @@ namespace LoLAutoLogin
         {
             var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");
 
-            image.Save(Path.Combine(Folders.Debug.FullName, now + "_" + name));
+            image.Save(Path.Combine(Folders.Debug, now + "_" + name));
         }
     }
 }

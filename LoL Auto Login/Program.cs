@@ -52,17 +52,17 @@ namespace LoLAutoLogin
         {
             if (Config.GetBooleanValue("login-detection.debug", false))
             {
-                if (!Folders.Debug.Exists)
-                    Folders.Debug.Create();
+                if (!Directory.Exists(Folders.Debug))
+                    Directory.CreateDirectory(Folders.Debug);
 
                 Logger.Info("Cleaning debug directory");
 
-                foreach (FileInfo file in Folders.Debug.EnumerateFiles())
-                    file.Delete();
+                foreach (string file in Directory.EnumerateFiles(Folders.Debug))
+                    File.Delete(file); // TODO: try/catch
             }
-            else if (Folders.Debug.Exists)
+            else if (Directory.Exists(Folders.Debug))
             {
-                Folders.Debug.Delete(true);
+                Directory.Delete(Folders.Debug, true);
             }
 
             LoadNotifyIcon();
@@ -146,7 +146,7 @@ namespace LoLAutoLogin
             foreach (Screen screen in Screen.AllScreens)
                 Logger.Info(string.Format("Screen {0}: {1}", screen.DeviceName, screen.Bounds));
 
-            string fileName = Path.Combine(Folders.Configuration.FullName, "LeagueClientSettings.yaml");
+            string fileName = Path.Combine(Folders.Configuration, "LeagueClientSettings.yaml");
             ClientSettings info;
 
             if (File.Exists(fileName))
@@ -174,14 +174,12 @@ namespace LoLAutoLogin
 
         private static void LoadSettings()
         {
+            Logger.Setup();
             Config.Load();
 
-            string strLevel = Config.GetStringValue("log-level", "info");
+            Logger.WriteToFile = Config.GetBooleanValue("log-to-file", true);
 
-            if (Enum.TryParse(strLevel, true, out LogLevel logLevel))
-                Logger.Level = logLevel;
-            else
-                Logger.Info($"Invalid log level \"{strLevel}\", defaulting to INFO");
+            Logger.SetLogLevel(Config.GetStringValue("log-level", "info"));
         }
 
         private static void NotifyIcon_BalloonTipClicked(object sender, EventArgs e)

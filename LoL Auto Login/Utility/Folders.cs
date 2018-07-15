@@ -19,28 +19,8 @@ namespace LoLAutoLogin
 {
     internal static class Folders
     {
-        public static DirectoryInfo Configuration
-        {
-            get
-            {
-                return new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Config"));
-            }
-        }
-
-        public static DirectoryInfo Logs
-        {
-            get
-            {
-                return new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs"));
-            }
-        }
-
-        public static DirectoryInfo Debug
-        {
-            get
-            {
-                return new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Debug"));
-            }
-        }
+        public static string Configuration = Path.Combine(Directory.GetCurrentDirectory(), "Config");
+        public static string Logs = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "LoL Auto Login Logs");
+        public static string Debug = Path.Combine(Directory.GetCurrentDirectory(), "Debug");
     }
 }

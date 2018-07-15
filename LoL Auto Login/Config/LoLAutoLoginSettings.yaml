@@ -1,0 +1,6 @@
+login-detection:
+  always-click: true
+  debug: false
+client-load-timeout: 30
+log-level: info
+log-to-file: false
