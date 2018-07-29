@@ -27,6 +27,7 @@ OutputDir=..\publish
 SetupIconFile=icon.ico
 UninstallDisplayIcon={app}\{#ExeName}
 WizardSmallImageFile="WizardSmallImageFile\*.bmp"
+PrivilegesRequired=lowest
 
 [Messages]
 BeveledLabel=  {#Name} v{#Version}
@@ -40,7 +41,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\LoL Auto Login\bin\Release\*.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LoL Auto Login\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\Release\Config\LoLAutoLoginSettings.yaml"; DestDir: "{app}\Config"; Flags: ignoreversion
+Source: "..\LoL Auto Login\bin\Release\Config\LoLAutoLoginSettings.yaml"; DestDir: "{app}\Config"; Flags: ignoreversion onlyifdoesntexist
 
 [Dirs]
 Name: "{app}\Config"; Permissions: users-modify
