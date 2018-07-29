@@ -108,11 +108,13 @@ namespace LoLAutoLogin
                         else
                         {
                             Logger.Info("Client window lost");
+                            Program.Shutdown();
                         }
                     }
                     else
                     {
                         Logger.Info($"Client not found after {clientTimeout} ms");
+                        Program.Shutdown();
                     }
                 }
             });
@@ -153,11 +155,20 @@ namespace LoLAutoLogin
             // loop while not found and while client handle is something
             do
             {
-                clientWindow.RefreshStatus();
-                found = clientWindow.PasswordBox;
+                try
+                {
+                    clientWindow.RefreshStatus();
+                    found = clientWindow.PasswordBox;
+                }
+                catch (Exception ex)
+                {
+                    Logger.PrintException(ex);
+                    break;
+                }
+
                 Thread.Sleep(500);
             }
-            while (clientWindow.Status != ClientStatus.OnLoginScreen);
+            while (clientWindow.Exists() && clientWindow.Status != ClientStatus.OnLoginScreen);
 
             // return whether client was found or not
             return found;

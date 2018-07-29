@@ -113,7 +113,14 @@ namespace LoLAutoLogin
         {
             var result = new ClientWindow(window.Handle, window.ClassName, window.Name);
 
-            result.RefreshStatus();
+            try
+            {
+                result.RefreshStatus();
+            }
+            catch (Exception ex)
+            {
+                Logger.PrintException(ex);
+            }
 
             return result;
         }
