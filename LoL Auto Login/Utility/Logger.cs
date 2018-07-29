@@ -152,7 +152,7 @@ namespace LoLAutoLogin
                     if (!Directory.Exists(directory))
                         Directory.CreateDirectory(directory);
 
-                    writer = new StreamWriter(LogFile);
+                    writer = new StreamWriter(LogFile, true);
                 }
 
                 foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
