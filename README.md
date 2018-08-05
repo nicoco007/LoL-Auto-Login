@@ -19,8 +19,8 @@ You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in
   * **high-threshold** (*default: 20*) High threshold for the Canny edge detector.
 * **client-load-timeout** (*default: 30*) How long to wait (in seconds) before giving up on searching for the client.
 * **log-level** (*default: "info"*) How much stuff to log. Valid options are, in decreasing order of spamminess: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
-* **log-to-file**: (*default: true*) Whether to log to file or not.
-* **check-for-updates**: (*default: true*) Whether to automatically check for updates on startup or not.
+* **log-to-file** (*default: true*) Whether to log to file or not.
+* **check-for-updates** (*default: true*) Whether to automatically check for updates on startup or not.
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
