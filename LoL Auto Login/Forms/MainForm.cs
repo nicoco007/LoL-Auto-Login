@@ -21,6 +21,7 @@ namespace LoLAutoLogin
     public partial class MainForm : Form
     {
         public bool Success { get; private set; }
+        public bool CheckForUpdates { get; private set; }
 
         public MainForm()
         {
@@ -30,7 +31,7 @@ namespace LoLAutoLogin
             AcceptButton = saveButton;
         }
 
-        private void saveButton_Click(object sender, EventArgs e)
+        private void SaveButton_Click(object sender, EventArgs e)
         {
             // check if a password was inputted
             if (string.IsNullOrEmpty(passTextBox.Text))
@@ -42,8 +43,14 @@ namespace LoLAutoLogin
             PasswordManager.Save(passTextBox.Text);
 
             Success = true;
+            CheckForUpdates = checkBox1.Checked;
 
             Close();
+        }
+
+        private void infoLabel_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

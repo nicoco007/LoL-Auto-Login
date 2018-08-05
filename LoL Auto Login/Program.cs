@@ -13,9 +13,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +30,8 @@ namespace LoLAutoLogin
 {
     internal static class Program
     {
+        public static Version Version;
+        
         private static ManualResetEvent resetEvent = new ManualResetEvent(false);
         private static NotifyIcon notifyIcon;
         private static ShowBalloonTipEventArgs latestBalloonTip;
@@ -32,20 +39,95 @@ namespace LoLAutoLogin
         /// <summary>
         /// Point d'entrée principal de l'application.
         /// </summary>
+        /// </summary>
+        #pragma warning disable 4014
         [STAThread]
-        private static void Main()
+        private static int Main()
         {
-            LoadSettings();
-
-            // start logging
-            Logger.Info("Started LoL Auto Login v" + Assembly.GetExecutingAssembly().GetName().Version);
-
             NativeMethods.SetProcessDPIAware();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Run().Wait();
+            LoadSettings();
+
+            // start logging
+            Logger.Info("Started LoL Auto Login v" + Version);
+
+            // run on our own thread since the async functions of WebClient kill threads when program exits
+            if (Config.GetBooleanValue("check-for-updates", true))
+                new Thread(CheckLatestVersion).Start();
+
+            Run();
+
+            Thread.Sleep(1000);
+
+            resetEvent.WaitOne();
+
+            return 0;
+        }
+
+        private static void CheckLatestVersion()
+        {
+            Logger.Info("Checking for updates");
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            
+            try
+            {
+                using (WebClient updateClient = new WebClient())
+                {
+                    updateClient.Headers.Add("User-Agent", "LoL Auto Login");
+                    string result = updateClient.DownloadString(new Uri("https://api.github.com/repos/nicoco007/lol-auto-login/releases/latest"));
+
+                    JObject obj = JsonConvert.DeserializeObject<JObject>(result);
+                    var stringValue = obj["tag_name"].Value<string>();
+
+                    if (stringValue == null)
+                    {
+                        Logger.Error("Failed to get \"tag_name\" value from API response");
+                        return;
+                    }
+
+                    Match match = Regex.Match(stringValue, @"[0-9]+(?:\.[0-9]+){0,3}"); // extract version from tag name
+
+                    if (!match.Success)
+                    {
+                        Logger.Error($"Failed to parse {stringValue} as a valid version");
+                        return;
+                    }
+
+                    var latestVersion = new Version(match.Value);
+
+                    if (latestVersion > Version)
+                    {
+                        DialogResult dialogResult = MessageBox.Show("A new version of LoL Auto Login is available! Would you like to download it?", "New Version Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+                        if (dialogResult == DialogResult.Yes)
+                        {
+                            Process.Start("https://go.nicoco007.com/link/9f45794c-a0b7-49d2-9ae1-85e37c0b42e2");
+                            return;
+                        }
+
+                        dialogResult = MessageBox.Show("Would you like to disable automatic update checking?", "Disable Automatic Updates", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                        if (dialogResult == DialogResult.Yes)
+                        {
+                            Config.SetValue("check-for-updates", false);
+                            MessageBox.Show("Automatic update checking has been disabled. You can re-enable updates by editing the configuration file.", "Updates Disabled", MessageBoxButtons.OK, MessageBoxIcon.Information); // TODO: this should be done through the interface
+                        }
+                    }
+                    else
+                    {
+                        Logger.Info("Already running latest version");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to get latest version");
+                Logger.PrintException(ex);
+            }
         }
 
         private static async Task Run()
@@ -93,10 +175,12 @@ namespace LoLAutoLogin
                 Logger.Info("Password file not found, prompting user to enter password");
 
                 var form = new MainForm();
-                Application.Run(form);
+                form.ShowDialog();
 
                 if (form.Success != true)
                     Shutdown();
+
+                Config.SetValue("check-for-updates", form.CheckForUpdates);
             }
 
             try
@@ -107,8 +191,6 @@ namespace LoLAutoLogin
             {
                 FatalError("Could not start League of Legends!", ex);
             }
-
-            resetEvent.WaitOne();
         }
 
         private static void LoadNotifyIcon()
@@ -175,6 +257,9 @@ namespace LoLAutoLogin
         private static void LoadSettings()
         {
             Logger.Setup();
+
+            Version = Assembly.GetExecutingAssembly().GetName().Version;
+
             Config.Load();
 
             Logger.WriteToFile = Config.GetBooleanValue("log-to-file", true);
@@ -203,10 +288,13 @@ namespace LoLAutoLogin
         {
             Logger.Info("Shutting down");
 
-            // hide & dispose of taskbar icon
-            notifyIcon.Visible = false;
-            notifyIcon.Dispose();
-            notifyIcon = null;
+            if (notifyIcon != null)
+            {
+                // hide & dispose of taskbar icon
+                notifyIcon.Visible = false;
+                notifyIcon.Dispose();
+                notifyIcon = null;
+            }
 
             Logger.CleanFiles();
 

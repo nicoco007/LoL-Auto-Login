@@ -52,40 +52,40 @@ namespace LoLAutoLogin
                 Info($"Invalid log level \"{level}\", defaulting to INFO");
         }
 
-        internal static void Trace(string message, params object[] arg)
+        internal static void Trace(object message, params object[] arg)
         {
             if (Level <= LogLevel.Trace)
-                Write("TRACE", message, arg);
+                Write("TRACE", message.ToString(), arg);
         }
 
-        internal static void Debug(string message, params object[] arg)
+        internal static void Debug(object message, params object[] arg)
         {
             if (Level <= LogLevel.Debug)
-                Write("DEBUG", message, arg);
+                Write("DEBUG", message.ToString(), arg);
         }
 
-        internal static void Info(string message, params object[] arg)
+        internal static void Info(object message, params object[] arg)
         {
             if (Level <= LogLevel.Info)
-                Write("INFO", message, arg);
+                Write("INFO", message.ToString(), arg);
         }
 
-        internal static void Warn(string message, params object[] arg)
+        internal static void Warn(object message, params object[] arg)
         {
             if (Level <= LogLevel.Warning)
-                Write("WARN", message, arg);
+                Write("WARN", message.ToString(), arg);
         }
 
-        internal static void Error(string message, params object[] arg)
+        internal static void Error(object message, params object[] arg)
         {
             if (Level <= LogLevel.Error)
-                Write("ERROR", message, arg);
+                Write("ERROR", message.ToString(), arg);
         }
 
-        internal static void Fatal(string message, params object[] arg)
+        internal static void Fatal(object message, params object[] arg)
         {
             if (Level <= LogLevel.Fatal)
-                Write("FATAL", message, arg);
+                Write("FATAL", message.ToString(), arg);
         }
 
         internal static void PrintException(Exception ex, bool fatal = false)

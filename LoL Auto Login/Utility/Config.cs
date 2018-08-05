@@ -16,6 +16,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
@@ -24,43 +25,56 @@ namespace LoLAutoLogin
 {
     internal static class Config
     {
-        private static YamlNode root;
+        private static YamlMappingNode root;
+        private static string SettingsFile = Path.Combine(Folders.Configuration, "LoLAutoLoginSettings.yaml");
 
         internal static void Load()
         {
-            // get config directory & settings file
-            var settingsFile = Path.Combine(Folders.Configuration, "LoLAutoLoginSettings.yaml");
-
             // make sure the config directory exists
             if (!Directory.Exists(Folders.Configuration))
                 Directory.CreateDirectory(Folders.Configuration); // TODO: try/catch
-            
-            Logger.Info($"Loading settings from \"{settingsFile}\"");
+
+            Logger.Info($"Loading settings from \"{SettingsFile}\"");
 
             // check if settings exist
-            if (File.Exists(settingsFile))
+            if (File.Exists(SettingsFile))
             {
                 try
                 {
                     // load settings from yaml
-                    root = Util.ReadYaml<YamlMappingNode>(settingsFile);
+                    root = Util.ReadYaml<YamlMappingNode>(SettingsFile);
                 }
                 catch (SyntaxErrorException ex)
                 {
-                    Logger.Warn("Failed to read settings YAML.");
+                    Logger.Error("Failed to read settings YAML");
                     Logger.PrintException(ex);
-                    MessageBox.Show($"Failed to load settings from \"{settingsFile}\". Please check your syntax and try again.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Failed to load settings from \"{SettingsFile}\". Please check your syntax and try again.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn("Failed to read settings YAML.");
+                    Logger.Error("Failed to read settings YAML");
                     Logger.PrintException(ex);
-                    MessageBox.Show($"Failed to load settings from \"{settingsFile}\".", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Failed to load settings from \"{SettingsFile}\".", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
                 Logger.Info("Settings file does not exist.");
+            }
+        }
+
+        internal static void Save()
+        {
+            Logger.Info($"Saving settings to \"{SettingsFile}\"");
+
+            try
+            {
+                Util.WriteYaml(SettingsFile, root);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to write settings YAML.");
+                Logger.PrintException(ex);
             }
         }
 
@@ -138,6 +152,12 @@ namespace LoLAutoLogin
             return value;
         }
 
+        internal static void SetValue(string key, object value)
+        {
+            SetNodeByPath(key, value);
+            Save();
+        }
+
         private static YamlNode GetNodeByPath(string key)
         {
             Logger.Trace($"Getting key \"{key}\"");
@@ -157,6 +177,38 @@ namespace LoLAutoLogin
                 Logger.Trace("Failed to find node with path " + key);
 
             return currentNode;
+        }
+
+        private static void SetNodeByPath(string key, object value)
+        {
+            Logger.Trace($"Setting key \"{key}\" to \"{value}\"");
+
+            string[] parts = key.Split('.');
+            YamlNode currentNode = root;
+
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (!(currentNode is YamlMappingNode))
+                {
+                    Logger.Error("{0} is not a YamlMappingNode", string.Join(".", parts.Take(i + 1)));
+                    return;
+                }
+
+                var mappingNode = currentNode as YamlMappingNode;
+
+                if (!mappingNode.Children.ContainsKey(parts[i]))
+                {
+                    if (i == parts.Length - 1)
+                        mappingNode.Children.Add(new YamlScalarNode(parts[i]), new YamlScalarNode());
+                    else
+                        mappingNode.Children.Add(new YamlScalarNode(parts[i]), new YamlMappingNode());
+                }
+
+                if (i == parts.Length - 1)
+                    (currentNode[parts[i]] as YamlScalarNode).Value = value.ToString();
+                else
+                    currentNode = currentNode[parts[i]];
+            }
         }
     }
 }

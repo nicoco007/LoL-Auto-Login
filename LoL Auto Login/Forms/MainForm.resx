@@ -118,7 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="infoLabel.Text" xml:space="preserve">
-    <value>Please enter your password below. It is stored next to this program in a file called "password". If you ever change your password, delete this file and you will be prompted to update your LoL Auto Login password.</value>
+    <value>Please enter your password below. It is stored next to this program in a file called "password". If you ever change your password, delete this file and you will be prompted to update your LoL Auto Login password.
+
+Your data is encrypted locally and never leaves your computer.</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
