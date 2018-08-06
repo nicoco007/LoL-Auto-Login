@@ -58,8 +58,6 @@ namespace LoLAutoLogin
 
             Run().Wait();
 
-            resetEvent.WaitOne();
-
             return 0;
         }
 
@@ -189,6 +187,8 @@ namespace LoLAutoLogin
             {
                 FatalError("Could not start League of Legends!", ex);
             }
+
+            resetEvent.WaitOne();
         }
 
         private static void LoadNotifyIcon()
