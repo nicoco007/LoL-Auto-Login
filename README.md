@@ -4,7 +4,7 @@
 
 Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
 
-Running LoL Auto Login requires the .NET Framework 4.7.1 Runtime. It is already included in the Windows 10 Fall Creators Update. If you do not have it, you can download it [from Microsoft's website](https://www.microsoft.com/net/download/dotnet-framework-runtime).
+Running LoL Auto Login requires the .NET Framework 4.5 Runtime. It is already included in the Windows 10 Fall Creators Update. If you do not have it, you can download it [from Microsoft's website](https://www.microsoft.com/net/download/dotnet-framework-runtime/net452).
 
 # Known issues
 * The client window is sometimes not detected correctly and the program fails to log in. The client tends to spawn multiple windows, and the program sometimes gets confused as to which window is the right one.
@@ -19,11 +19,13 @@ You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in
   * **high-threshold** (*default: 20*) High threshold for the Canny edge detector.
 * **client-load-timeout** (*default: 30*) How long to wait (in seconds) before giving up on searching for the client.
 * **log-level** (*default: "info"*) How much stuff to log. Valid options are, in decreasing order of spamminess: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
-* **log-to-file**: (*default: true*) Whether to log to file or not.
+* **log-to-file** (*default: true*) Whether to log to file or not.
+* **check-for-updates** (*default: true*) Whether to automatically check for updates on startup or not.
 
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
 * [Accord.NET Framework](http://accord-framework.net/) &ndash; [GNU LGPL License](https://github.com/accord-net/framework/blob/development/LICENSE)
 * [AutoIt](https://www.autoitscript.com) &ndash; [AutoIt License](https://www.autoitscript.com/autoit3/docs/license.htm)
+* [Json.NET](https://github.com/JamesNK/Newtonsoft.Json) &ndash; [MIT License](https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md)
 * [Fody](https://github.com/Fody/Fody) &ndash; [MIT License](https://github.com/Fody/Fody/blob/master/License.txt)
 * [YamlDotNet](https://github.com/aaubry/YamlDotNet) &ndash; [MIT License](https://github.com/aaubry/YamlDotNet/blob/master/LICENSE)
