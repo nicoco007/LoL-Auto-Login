@@ -20,6 +20,9 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using WindowsInput;
+using WindowsInput.Native;
 
 namespace LoLAutoLogin
 {
@@ -205,14 +208,19 @@ namespace LoLAutoLogin
             Logger.Info("Entering password");
             Program.SetNotifyIconText("Entering password");
 
+            InputSimulator simulator = new InputSimulator();
+
             Rectangle rect = clientWindow.GetRect();
 
             if (running || Config.GetBooleanValue("login-detection.always-click", true))
             {
                 clientWindow.Focus();
-                AutoItX.MouseClick("primary", rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2, 1, 0);
-                AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "^a", 0);
-                AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{BACKSPACE}", 0);
+                
+                Cursor.Position = new Point(rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2);
+                    
+                simulator.Mouse.LeftButtonClick();
+                simulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
+                simulator.Keyboard.KeyPress(VirtualKeyCode.BACK);
             }
 
             int i = 0;
@@ -230,9 +238,9 @@ namespace LoLAutoLogin
                 if (clientWindow.IsFocused())
                 {
                     if (i < passArray.Length)
-                        AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, string.Format("{{ASC {0:000}}}", (int)passArray[i]), 0);
+                        simulator.Keyboard.TextEntry(passArray[i]);
                     else
-                        AutoItX.ControlSend(clientWindow.Handle, IntPtr.Zero, "{ENTER}", 0);
+                        simulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
 
                     i++;
                 }
