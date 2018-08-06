@@ -41,6 +41,8 @@ namespace LoLAutoLogin
 
         public void RefreshStatus()
         {
+            Logger.Trace($"Refreshing window {Handle} status");
+
             Status = ClientStatus.Unknown;
             UsernameBox = Rectangle.Empty;
             PasswordBox = Rectangle.Empty;
@@ -122,6 +124,8 @@ namespace LoLAutoLogin
             }
 
             capture.Dispose();
+
+            Logger.Trace($"Window {Handle} status refreshed");
         }
 
         public static ClientWindow FromWindow(Window window)

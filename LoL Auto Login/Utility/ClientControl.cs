@@ -129,15 +129,18 @@ namespace LoLAutoLogin
             var sw = new Stopwatch();
             sw.Start();
             
-            ClientWindow clientWindow;
+            ClientWindow clientWindow = GetClientWindow();
 
             // search for window until client timeout is reached or window is found
-            do
+            while (sw.ElapsedMilliseconds < timeout && (clientWindow == null || clientWindow.Status == ClientStatus.Unknown))
             {
-                clientWindow = GetClientWindow();
                 Thread.Sleep(500);
+
+                if (clientWindow != null)
+                    clientWindow.RefreshStatus();
+                else
+                    clientWindow = GetClientWindow();
             }
-            while (sw.ElapsedMilliseconds < timeout && (clientWindow == null || clientWindow.Status == ClientStatus.Unknown));
             
             return clientWindow;
         }
@@ -148,19 +151,14 @@ namespace LoLAutoLogin
         /// <returns>Whether the password box was found or not.</returns>
         private static Rectangle WaitForPasswordBox(ClientWindow clientWindow)
         {
-            // create found & handle varables
-            Rectangle found = Rectangle.Empty;
-
             // loop while not found and while client handle is something
             try
             {
-                do
+                while (clientWindow.Exists() && clientWindow.Status != ClientStatus.OnLoginScreen)
                 {
-                    clientWindow.RefreshStatus();
-                    found = clientWindow.PasswordBox;
                     Thread.Sleep(500);
+                    clientWindow.RefreshStatus();
                 }
-                while (clientWindow.Exists() && clientWindow.Status != ClientStatus.OnLoginScreen);
             }
             catch (Exception ex)
             {
@@ -168,7 +166,7 @@ namespace LoLAutoLogin
             }
 
             // return whether client was found or not
-            return found;
+            return clientWindow.PasswordBox;
         }
 
         private static Rectangle GetPasswordRect(ClientWindow clientWindow)
