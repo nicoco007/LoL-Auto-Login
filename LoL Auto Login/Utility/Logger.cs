@@ -37,6 +37,7 @@ namespace LoLAutoLogin
         internal static string LogFile { get; private set; }
 
         private static readonly DateTime StartTime = DateTime.Now;
+        private static object writeLock = new object();
 
         internal static void Setup()
         {
@@ -143,42 +144,45 @@ namespace LoLAutoLogin
 
             StreamWriter writer = null;
 
-            try
+            lock (writeLock)
             {
-                string directory = Path.GetDirectoryName(LogFile);
-
-                if (WriteToFile)
+                try
                 {
-                    if (!Directory.Exists(directory))
-                        Directory.CreateDirectory(directory);
+                    string directory = Path.GetDirectoryName(LogFile);
 
-                    writer = new StreamWriter(LogFile, true);
-                }
+                    if (WriteToFile)
+                    {
+                        if (!Directory.Exists(directory))
+                            Directory.CreateDirectory(directory);
+                        
+                        writer = new StreamWriter(LogFile, true);
+                    }
 
-                foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
-                {
-                    var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
-                    var msg = $"{now} | {tag,5} | <{fileName}:{line}> {filteredStr}";
+                    foreach (var str in text.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var filteredStr = str.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
+                        var msg = $"{now} | {tag,5} | <{fileName}:{line}> {filteredStr}";
 
-                    System.Diagnostics.Debug.WriteLine(msg);
+                        System.Diagnostics.Debug.WriteLine(msg);
+
+                        if (writer != null)
+                            writer.WriteLine(msg);
+                    }
 
                     if (writer != null)
-                        writer.WriteLine(msg);
+                        writer.Flush();
                 }
-
-                if (writer != null)
-                    writer.Flush();
-            }
-            catch (Exception ex)
-            {
-                WriteToFile = false; // disable writing to file to avoid spam message boxes
-                PrintException(ex);
-                MessageBox.Show($"Logging to file has been disabled due to an error. Please check permissions on the \"{Folders.Logs}\" folder or disable logging through the settings file.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                if (writer != null)
-                    writer.Close();
+                catch (Exception ex)
+                {
+                    WriteToFile = false; // disable writing to file to avoid spam message boxes
+                    PrintException(ex);
+                    MessageBox.Show($"Logging to file has been disabled due to an error. Please check permissions on the \"{Folders.Logs}\" folder or disable logging through the settings file.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    if (writer != null)
+                        writer.Close();
+                }
             }
         }
     }
