@@ -33,8 +33,10 @@ namespace LoLAutoLogin
 
             List<Rectangle> rectangles = Util.FindRectangles(capture);
 
-            // distance between username and password boxes
-            int ydist = (int)(70f * capture.Width / 1600);
+            // all measurements are based on 1600×900 window
+            double scale = capture.Width / 1600f;
+            int boxSeparation = (int)Math.Round(70 * scale);    // distance between username and password boxes
+            int sidebarLeft = (int)Math.Round(1320 * scale);    // start location of sidebar
 
             var windowCenter = new Point(capture.Width / 2, capture.Height / 2);
             var windowRectangle = new Rectangle(0, 0, capture.Width, capture.Height);
@@ -64,14 +66,14 @@ namespace LoLAutoLogin
                 }
 
                 // check if rectangle is on sidebar
-                if (rect1.X >= 1320 * capture.Width / 1600)
+                if (rect1.X >= sidebarLeft)
                 {
                     // check if rectangle pair is username and password boxes
                     for (int j = i + 1; j < rectangles.Count; j++)
                     {
                         var rect2 = rectangles[j];
 
-                        if (Util.SimilarSize(rect1.Size, rect2.Size, 2) && Util.SimilarValue(rect1.X, rect2.X, 2) && Util.SimilarValue(rect1.Y, rect2.Y, 15, ydist))
+                        if (Util.SimilarSize(rect1.Size, rect2.Size, 2) && Util.SimilarValue(rect1.X, rect2.X, 2) && Util.SimilarValue(rect1.Y, rect2.Y, 15, boxSeparation))
                         {
                             Status = ClientStatus.OnLoginScreen;
 
