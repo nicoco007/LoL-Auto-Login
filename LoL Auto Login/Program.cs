@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +39,6 @@ namespace LoLAutoLogin
         /// Point d'entrée principal de l'application.
         /// </summary>
         /// </summary>
-        #pragma warning disable 4014
         [STAThread]
         private static int Main()
         {
@@ -58,9 +56,7 @@ namespace LoLAutoLogin
             if (Config.GetBooleanValue("check-for-updates", true))
                 new Thread(CheckLatestVersion).Start();
 
-            Run();
-
-            Thread.Sleep(1000);
+            Run().Wait();
 
             resetEvent.WaitOne();
 
@@ -77,9 +73,9 @@ namespace LoLAutoLogin
             {
                 using (WebClient updateClient = new WebClient())
                 {
-                    updateClient.Headers.Add("User-Agent", "LoL Auto Login");
+                    updateClient.Headers.Add("User-Agent", "LoL Auto Login v" + Version);
                     string result = updateClient.DownloadString(new Uri("https://api.github.com/repos/nicoco007/lol-auto-login/releases/latest"));
-
+                    
                     JObject obj = JsonConvert.DeserializeObject<JObject>(result);
                     var stringValue = obj["tag_name"].Value<string>();
 
@@ -101,6 +97,8 @@ namespace LoLAutoLogin
 
                     if (latestVersion > Version)
                     {
+                        Logger.Info("New version available: " + latestVersion);
+
                         DialogResult dialogResult = MessageBox.Show("A new version of LoL Auto Login is available! Would you like to download it?", "New Version Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
                         if (dialogResult == DialogResult.Yes)
@@ -119,7 +117,7 @@ namespace LoLAutoLogin
                     }
                     else
                     {
-                        Logger.Info("Already running latest version");
+                        Logger.Info($"Newer version not found (latest is {latestVersion})");
                     }
                 }
             }
