@@ -71,8 +71,6 @@ namespace LoLAutoLogin
 
                         // client is logged in, show window
                         FocusClient();
-
-                        Program.Shutdown();
                     }
                 }
                 else
@@ -111,13 +109,11 @@ namespace LoLAutoLogin
                         else
                         {
                             Logger.Info("Client window lost");
-                            Program.Shutdown();
                         }
                     }
                     else
                     {
                         Logger.Info($"Client not found after {clientTimeout} ms");
-                        Program.Shutdown();
                     }
                 }
             });
@@ -247,8 +243,6 @@ namespace LoLAutoLogin
             }
             
             Logger.Info("Successfully entered password (well, hopefully)!");
-
-            Program.Shutdown();
         }
 
         private static ClientWindow GetClientWindow()

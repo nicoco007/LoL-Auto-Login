@@ -31,7 +31,7 @@ namespace LoLAutoLogin
     {
         public static Version Version;
         
-        private static ManualResetEvent resetEvent = new ManualResetEvent(false);
+        private static ManualResetEvent resetEvent = new ManualResetEvent(true);
         private static NotifyIcon notifyIcon;
         private static ShowBalloonTipEventArgs latestBalloonTip;
 
@@ -49,6 +49,8 @@ namespace LoLAutoLogin
 
             LoadSettings();
 
+            new Thread(() => LoadNotifyIcon()).Start();
+
             // start logging
             Logger.Info("Started LoL Auto Login v" + Version);
 
@@ -57,6 +59,10 @@ namespace LoLAutoLogin
                 new Thread(CheckLatestVersion).Start();
 
             Run().Wait();
+
+            resetEvent.WaitOne();
+
+            Shutdown();
 
             return 0;
         }
@@ -143,9 +149,10 @@ namespace LoLAutoLogin
                 Directory.Delete(Folders.Debug, true);
             }
 
-            LoadNotifyIcon();
             ShowSystemInfo();
-            CheckLocation();
+
+            if (!IsCorrectLocation())
+                return;
 
             // check if a Shift key is being pressed
             if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
@@ -156,7 +163,6 @@ namespace LoLAutoLogin
                 try
                 {
                     ClientControl.Start();
-                    Shutdown();
                 }
                 catch (Exception ex)
                 {
@@ -174,7 +180,7 @@ namespace LoLAutoLogin
                 form.ShowDialog();
 
                 if (form.Success != true)
-                    Shutdown();
+                    return;
 
                 Config.SetValue("check-for-updates", form.CheckForUpdates);
             }
@@ -187,10 +193,9 @@ namespace LoLAutoLogin
             {
                 FatalError("Could not start League of Legends!", ex);
             }
-
-            resetEvent.WaitOne();
         }
 
+        [STAThread]
         private static void LoadNotifyIcon()
         {
             notifyIcon = new NotifyIcon
@@ -202,13 +207,15 @@ namespace LoLAutoLogin
 
             var menu = new ContextMenu();
 
-            var item = new MenuItem("&Exit", (sender, e) => Shutdown());
+            var item = new MenuItem("&Exit", (sender, e) => ForceShutdown());
             menu.MenuItems.Add(item);
 
             notifyIcon.ContextMenu = menu;
 
             notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
             notifyIcon.BalloonTipClosed += NotifyIcon_BalloonTipClosed;
+
+            Application.Run(); // start message pump
         }
 
         internal static void SetNotifyIconText(string status)
@@ -272,14 +279,14 @@ namespace LoLAutoLogin
                 latestBalloonTip.OnClick(e);
 
                 if (latestBalloonTip.ExitOnClose)
-                    Shutdown();
+                    resetEvent.Set();
             }
         }
 
         private static void NotifyIcon_BalloonTipClosed(object sender, EventArgs e)
         {
             if (latestBalloonTip != null && latestBalloonTip.ExitOnClose)
-                Shutdown();
+                resetEvent.Set();
         }
 
         internal static void Shutdown()
@@ -296,10 +303,16 @@ namespace LoLAutoLogin
 
             Logger.CleanFiles();
 
-            resetEvent.Set();
+            Application.Exit();
         }
 
-        private static void CheckLocation()
+        internal static void ForceShutdown()
+        {
+            Shutdown();
+            Environment.Exit(0); // kill everything
+        }
+
+        private static bool IsCorrectLocation()
         {
             // check if program is in same directory as league of legends
             if (!File.Exists("LeagueClient.exe"))
@@ -308,8 +321,10 @@ namespace LoLAutoLogin
 
                 MessageBox.Show("Please place LoL Auto Login in your League of Legends directory (beside the \"LeagueClient.exe\" file).", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                Shutdown();
+                return false;
             }
+
+            return true;
         }
 
         private static bool PasswordExists()
@@ -331,6 +346,7 @@ namespace LoLAutoLogin
 
         internal static void ShowBalloonTip(ShowBalloonTipEventArgs e)
         {
+            resetEvent.Reset();
             latestBalloonTip = e;
             notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
         }

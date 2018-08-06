@@ -20,6 +20,7 @@ using Accord.Math.Geometry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -45,6 +46,8 @@ namespace LoLAutoLogin
             IntPtr pidl = NativeMethods.ILCreateFromPathW(filePath);
             NativeMethods.SHOpenFolderAndSelectItems(pidl, 0, IntPtr.Zero, 0);
             NativeMethods.ILFree(pidl);
+
+            Process.Start(Path.GetDirectoryName(filePath));
         }
 
         /// <summary>
