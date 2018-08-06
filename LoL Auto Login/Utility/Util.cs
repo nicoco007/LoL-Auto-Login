@@ -246,44 +246,6 @@ namespace LoLAutoLogin
             return rectangles;
         }
 
-        private static System.Drawing.Point[] ToPointsArray(List<IntPoint> points)
-        {
-            System.Drawing.Point[] array = new System.Drawing.Point[points.Count];
-
-            for (int i = 0; i < points.Count; i++)
-                array[i] = new System.Drawing.Point(points[i].X, points[i].Y);
-
-            return array;
-        }
-
-
-        public static bool SimilarSize(Size s1, Size s2, int threshold = 5)
-        {
-            return Math.Abs(s1.Width - s2.Width) < threshold && Math.Abs(s1.Height - s2.Height) < threshold;
-        }
-
-        public static bool SimilarPoint(System.Drawing.Point p1, System.Drawing.Point p2, int threshold = 5)
-        {
-            return Math.Abs(p1.X - p2.X) < threshold && Math.Abs(p1.Y - p2.Y) < threshold;
-        }
-
-        public static bool SimilarValue(int val1, int val2, int threshold = 5, int offset = 0)
-        {
-            return Math.Abs(Math.Abs(val1 - val2) - offset) < threshold;
-        }
-
-        public static bool SimilarRectangle(Rectangle rect1, Rectangle rect2, int threshold = 5)
-        {
-            return SimilarSize(rect1.Size, rect2.Size, threshold) && SimilarPoint(rect1.Location, rect2.Location, threshold);
-        }
-
-        public static bool ApproxContains(Rectangle container, Rectangle rect, int threshold = 5)
-        {
-            Rectangle big = new Rectangle(container.X - threshold, container.Y - threshold, container.Width + threshold, container.Height + threshold);
-
-            return big.Contains(rect);
-        }
-
         public static void SaveDebugImage(System.Drawing.Image image, string name)
         {
             var now = DateTime.Now.ToString(@"yyyy-MM-dd\THH-mm-ss.fffffff");

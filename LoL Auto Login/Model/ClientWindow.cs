@@ -1,6 +1,8 @@
-﻿using System;
+﻿using LoLAutoLogin.Utility;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace LoLAutoLogin
 {
@@ -38,8 +40,8 @@ namespace LoLAutoLogin
             int boxSeparation = (int)Math.Round(70 * scale);    // distance between username and password boxes
             int sidebarLeft = (int)Math.Round(1320 * scale);    // start location of sidebar
 
-            var windowCenter = new Point(capture.Width / 2, capture.Height / 2);
             var windowRectangle = new Rectangle(0, 0, capture.Width, capture.Height);
+            var windowCenter = new Point(windowRectangle.Width / 2, windowRectangle.Height / 2);
 
             // iterate in pairs through all found rectangles and try to find two that look like they're the login boxes
             for (int i = 0; i < rectangles.Count; i++)
@@ -49,13 +51,9 @@ namespace LoLAutoLogin
                 var rectCenter = new Point(rect1.X + rect1.Width / 2, rect1.Y + rect1.Height / 2);
 
                 // check if this rectangle is a dialog
-                if (Util.SimilarPoint(windowCenter, rectCenter) && !Util.SimilarRectangle(windowRectangle, rect1, 30))
+                if (windowCenter.SimilarTo(rectCenter) && !windowRectangle.SimilarTo(rect1, 30))
                 {
-                    int count = 0;
-
-                    foreach (var rect in rectangles)
-                        if (Util.ApproxContains(rect1, rect) && Util.SimilarValue(rect1.Bottom, rect.Bottom))
-                            count++;
+                    int count = rectangles.Count((otherRect) => rect1.ApproxContains(otherRect) && rect1.Bottom.SimilarTo(otherRect.Bottom));
 
                     if (count > 0)
                     {
@@ -73,7 +71,7 @@ namespace LoLAutoLogin
                     {
                         var rect2 = rectangles[j];
 
-                        if (Util.SimilarSize(rect1.Size, rect2.Size, 2) && Util.SimilarValue(rect1.X, rect2.X, 2) && Util.SimilarValue(rect1.Y, rect2.Y, 15, boxSeparation))
+                        if (rect1.Size.SimilarTo(rect2.Size, 2) && rect1.X.SimilarTo(rect2.X, 2) && rect1.Y.SimilarTo(rect2.Y, 15, boxSeparation))
                         {
                             Status = ClientStatus.OnLoginScreen;
 
@@ -105,7 +103,7 @@ namespace LoLAutoLogin
                     graphics.DrawRectangle(new Pen(Color.Yellow, 1), DialogBox);
                 }
 
-                Util.SaveDebugImage(output, "password-box.png");
+                Util.SaveDebugImage(output, "matches.png");
             }
 
             capture.Dispose();

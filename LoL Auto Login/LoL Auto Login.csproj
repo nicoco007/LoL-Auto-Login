@@ -136,6 +136,7 @@
   <ItemGroup>
     <Compile Include="Utility\ClientSettings.cs" />
     <Compile Include="Model\ClientWindow.cs" />
+    <Compile Include="Utility\ExtensionMethods.cs" />
     <Compile Include="Utility\Folders.cs" />
     <Compile Include="Utility\ClientControl.cs" />
     <Compile Include="Utility\PasswordManager.cs" />
