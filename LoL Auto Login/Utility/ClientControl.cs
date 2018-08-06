@@ -152,22 +152,20 @@ namespace LoLAutoLogin
             Rectangle found = Rectangle.Empty;
 
             // loop while not found and while client handle is something
-            do
+            try
             {
-                try
+                do
                 {
                     clientWindow.RefreshStatus();
                     found = clientWindow.PasswordBox;
+                    Thread.Sleep(500);
                 }
-                catch (Exception ex)
-                {
-                    Logger.PrintException(ex);
-                    break;
-                }
-
-                Thread.Sleep(500);
+                while (clientWindow.Exists() && clientWindow.Status != ClientStatus.OnLoginScreen);
             }
-            while (clientWindow.Exists() && clientWindow.Status != ClientStatus.OnLoginScreen);
+            catch (Exception ex)
+            {
+                Logger.PrintException(ex);
+            }
 
             // return whether client was found or not
             return found;
