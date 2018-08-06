@@ -40,7 +40,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\LoL Auto Login\bin\Release\*.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LoL Auto Login\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LoL Auto Login\bin\Release\Config\LoLAutoLoginSettings.yaml"; DestDir: "{app}\Config"; Flags: ignoreversion onlyifdoesntexist
 
 [Dirs]
