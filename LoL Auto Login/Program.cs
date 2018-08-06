@@ -39,17 +39,11 @@ namespace LoLAutoLogin
         /// Point d'entrée principal de l'application.
         /// </summary>
         /// </summary>
-        [STAThread]
         private static int Main()
         {
-            NativeMethods.SetProcessDPIAware();
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
             LoadSettings();
 
-            new Thread(() => LoadNotifyIcon()).Start();
+            new Thread(() => UIThread()).Start();
 
             // start logging
             Logger.Info("Started LoL Auto Login v" + Version);
@@ -196,6 +190,18 @@ namespace LoLAutoLogin
         }
 
         [STAThread]
+        private static void UIThread()
+        {
+            NativeMethods.SetProcessDPIAware();
+
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            LoadNotifyIcon();
+
+            Application.Run(); // start message pump
+        }
+
         private static void LoadNotifyIcon()
         {
             notifyIcon = new NotifyIcon
@@ -214,8 +220,6 @@ namespace LoLAutoLogin
 
             notifyIcon.BalloonTipClicked += NotifyIcon_BalloonTipClicked;
             notifyIcon.BalloonTipClosed += NotifyIcon_BalloonTipClosed;
-
-            Application.Run(); // start message pump
         }
 
         internal static void SetNotifyIconText(string status)
