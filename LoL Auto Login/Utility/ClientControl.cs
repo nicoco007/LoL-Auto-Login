@@ -63,7 +63,7 @@ namespace LoLAutoLogin
                         Logger.Info("Client is open on login page, entering password");
 
                         // client is on login page, enter password
-                        EnterPassword(clientWindow, passwordRect, true);
+                        EnterPassword(clientWindow, true);
                     }
                     else
                     {
@@ -97,14 +97,14 @@ namespace LoLAutoLogin
                         Logger.Info($"Client found after {sw.ElapsedMilliseconds} ms");
 
                         // get password box
-                        var found = WaitForPasswordBox(clientWindow);
+                        var passwordBox = WaitForPasswordBox(clientWindow);
 
                         // check if the password box was found
-                        if (found != Rectangle.Empty)
+                        if (passwordBox != Rectangle.Empty)
                         {
                             Logger.Info($"Password box found after {sw.ElapsedMilliseconds} ms");
 
-                            EnterPassword(clientWindow, found, false);
+                            EnterPassword(clientWindow, false);
                         }
                         else
                         {
@@ -190,7 +190,7 @@ namespace LoLAutoLogin
         /// </summary>
         /// <param name="clientHandle">Handle of the client window</param>
         /// <param name="progress">Progress interface used to pass messages</param>
-        private static void EnterPassword(Window clientWindow, Rectangle passwordRect, bool running)
+        private static void EnterPassword(ClientWindow clientWindow, bool running)
         {
             string password = PasswordManager.Load();
 
@@ -207,8 +207,9 @@ namespace LoLAutoLogin
             if (running || Config.GetBooleanValue("login-detection.always-click", true))
             {
                 clientWindow.Focus();
-                
-                Cursor.Position = new Point(rect.Left + passwordRect.Left + passwordRect.Width / 2, rect.Top + passwordRect.Top + passwordRect.Height / 2);
+
+                Rectangle passwordBox = clientWindow.PasswordBox;
+                Cursor.Position = new Point(rect.Left + passwordBox.Left + passwordBox.Width / 2, rect.Top + passwordBox.Top + passwordBox.Height / 2);
                     
                 simulator.Mouse.LeftButtonClick();
                 simulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
@@ -230,9 +231,14 @@ namespace LoLAutoLogin
                 if (clientWindow.IsFocused())
                 {
                     if (i < passArray.Length)
+                    {
                         simulator.Keyboard.TextEntry(passArray[i]);
+                    }
                     else
+                    {
+                        Thread.Sleep(100);
                         simulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+                    }
 
                     i++;
                 }
