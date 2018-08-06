@@ -116,7 +116,7 @@ namespace LoLAutoLogin
                         Logger.Info($"Client not found after {clientTimeout} ms");
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
         }
 
         /// <summary>
