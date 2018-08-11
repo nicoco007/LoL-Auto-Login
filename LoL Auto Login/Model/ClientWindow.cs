@@ -138,7 +138,7 @@ namespace LoLAutoLogin
             }
             catch (Exception ex)
             {
-                Logger.PrintException(ex);
+                Logger.PrintException("Failed to refresh client window status", ex);
             }
 
             return result;

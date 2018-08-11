@@ -58,9 +58,8 @@ namespace LoLAutoLogin
             catch (Exception ex)
             {
                 MessageBox.Show("Something went wrong when trying to save your password:" + Environment.NewLine + Environment.NewLine + ex.StackTrace, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                Logger.Error("Could not save password to file");
-                Logger.PrintException(ex, false);
+                
+                Logger.PrintException("Could not save password to file", ex);
 
                 return;
             }

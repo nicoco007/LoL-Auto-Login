@@ -38,15 +38,14 @@ namespace LoLAutoLogin
         /// <summary>
         /// Point d'entrée principal de l'application.
         /// </summary>
-        /// </summary>
         private static int Main()
         {
             LoadSettings();
 
-            new Thread(() => UIThread()).Start();
-
             // start logging
             Logger.Info("Started LoL Auto Login v" + Version);
+
+            new Thread(() => UIThread()).Start();
 
             // run on our own thread since the async functions of WebClient kill threads when program exits
             if (Config.GetBooleanValue("check-for-updates", true))
@@ -121,8 +120,7 @@ namespace LoLAutoLogin
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to get latest version");
-                Logger.PrintException(ex);
+                Logger.PrintException("Failed to get latest version", ex);
             }
         }
 
@@ -133,14 +131,28 @@ namespace LoLAutoLogin
                 if (!Directory.Exists(Folders.Debug))
                     Directory.CreateDirectory(Folders.Debug);
 
-                Logger.Info("Cleaning debug directory");
+                Logger.Debug("Cleaning debug directory");
 
-                foreach (string file in Directory.EnumerateFiles(Folders.Debug))
-                    File.Delete(file); // TODO: try/catch
+                try
+                {
+                    foreach (string file in Directory.EnumerateFiles(Folders.Debug))
+                        File.Delete(file);
+                }
+                catch (Exception ex)
+                {
+                    Logger.PrintException("Failed to clean debug directory", ex);
+                }
             }
             else if (Directory.Exists(Folders.Debug))
             {
-                Directory.Delete(Folders.Debug, true);
+                try
+                {
+                    Directory.Delete(Folders.Debug, true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.PrintException("Failed to delete debug directory", ex);
+                }
             }
 
             ShowSystemInfo();
@@ -156,7 +168,7 @@ namespace LoLAutoLogin
                 // try launching league of legends
                 try
                 {
-                    ClientControl.Start();
+                    ClientControl.StartClient();
                 }
                 catch (Exception ex)
                 {
@@ -192,6 +204,8 @@ namespace LoLAutoLogin
         [STAThread]
         private static void UIThread()
         {
+            Logger.Debug("Created UI thread");
+
             NativeMethods.SetProcessDPIAware();
 
             Application.EnableVisualStyles();
@@ -253,8 +267,7 @@ namespace LoLAutoLogin
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn("Failed to load client settings");
-                    Logger.PrintException(ex);
+                    Logger.PrintException("Failed to load client settings", ex);
                 }
             }
             else
@@ -265,6 +278,8 @@ namespace LoLAutoLogin
 
         private static void LoadSettings()
         {
+            Logger.Debug("Loading settings");
+
             Logger.Setup();
 
             Version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -272,7 +287,6 @@ namespace LoLAutoLogin
             Config.Load();
 
             Logger.WriteToFile = Config.GetBooleanValue("log-to-file", true);
-
             Logger.SetLogLevel(Config.GetStringValue("log-level", "info"));
         }
 
@@ -357,8 +371,7 @@ namespace LoLAutoLogin
 
         internal static void FatalError(string message, Exception ex)
         {
-            Logger.Fatal(message);
-            Logger.PrintException(ex, true);
+            Logger.PrintException(message, ex, true);
 
             ShowBalloonTip(new ShowBalloonTipEventArgs(
                 "LoL Auto Login has encountered a fatal error",

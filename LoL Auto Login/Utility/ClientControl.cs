@@ -33,7 +33,7 @@ namespace LoLAutoLogin
         /// <summary>
         /// Starts the League Client executable
         /// </summary>
-        internal static void Start()
+        internal static void StartClient()
         {
             Process.Start("LeagueClient.exe");
         }
@@ -81,7 +81,7 @@ namespace LoLAutoLogin
 
                     Program.SetNotifyIconText("Waiting for client");
 
-                    Start();
+                    StartClient();
 
                     // create & start stopwatch
                     var sw = new Stopwatch();
@@ -161,7 +161,7 @@ namespace LoLAutoLogin
             }
             catch (Exception ex)
             {
-                Logger.PrintException(ex);
+                Logger.PrintException("Failed to refresh the client window's state", ex);
             }
 
             // return whether client was found or not
@@ -209,7 +209,7 @@ namespace LoLAutoLogin
 
                 Rectangle passwordBox = clientWindow.PasswordBox;
                 Cursor.Position = new Point(rect.Left + passwordBox.Left + passwordBox.Width / 2, rect.Top + passwordBox.Top + passwordBox.Height / 2);
-                    
+                
                 simulator.Mouse.LeftButtonClick();
                 simulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
                 simulator.Keyboard.KeyPress(VirtualKeyCode.BACK);
@@ -243,7 +243,7 @@ namespace LoLAutoLogin
                 }
             }
             
-            Logger.Info("Successfully entered password (well, hopefully)!");
+            Logger.Info("Successfully entered password (well, hopefully)");
         }
 
         private static ClientWindow GetClientWindow()

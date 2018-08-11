@@ -26,7 +26,7 @@ namespace LoLAutoLogin
     internal static class Config
     {
         private static YamlMappingNode root;
-        private static string SettingsFile = Path.Combine(Folders.Configuration, "LoLAutoLoginSettings.yaml");
+        private static readonly string SettingsFile = Path.Combine(Folders.Configuration, "LoLAutoLoginSettings.yaml");
 
         internal static void Load()
         {
@@ -46,14 +46,12 @@ namespace LoLAutoLogin
                 }
                 catch (SyntaxErrorException ex)
                 {
-                    Logger.Error("Failed to read settings YAML");
-                    Logger.PrintException(ex);
+                    Logger.PrintException("Syntax error occured while reading settings YAML", ex);
                     MessageBox.Show($"Failed to load settings from \"{SettingsFile}\". Please check your syntax and try again.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error("Failed to read settings YAML");
-                    Logger.PrintException(ex);
+                    Logger.PrintException("Failed to read settings YAML", ex);
                     MessageBox.Show($"Failed to load settings from \"{SettingsFile}\".", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -73,8 +71,7 @@ namespace LoLAutoLogin
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to write settings YAML.");
-                Logger.PrintException(ex);
+                Logger.PrintException("Failed to write settings YAML.", ex);
             }
         }
 

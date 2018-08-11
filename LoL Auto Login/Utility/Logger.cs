@@ -37,7 +37,7 @@ namespace LoLAutoLogin
         internal static string LogFile { get; private set; }
 
         private static readonly DateTime StartTime = DateTime.Now;
-        private static object writeLock = new object();
+        private static readonly object writeLock = new object();
 
         internal static void Setup()
         {
@@ -89,18 +89,20 @@ namespace LoLAutoLogin
                 Write("FATAL", message.ToString(), arg);
         }
 
-        internal static void PrintException(Exception ex, bool fatal = false)
+        internal static void PrintException(string message, Exception ex, bool fatal = false)
         {
-            string msg = $"An error of type {ex.GetType()} occured: {ex.Message}";
+            string errorType = $"An error of type {ex.GetType()} occured: {ex.Message}";
 
             if (fatal)
             {
-                Fatal(msg);
+                Fatal(message);
+                Fatal(errorType);
                 Fatal(ex.StackTrace);
             }
             else
             {
-                Error(msg);
+                Error(message);
+                Error(errorType);
                 Error(ex.StackTrace);
             }
         }
@@ -175,7 +177,7 @@ namespace LoLAutoLogin
                 catch (Exception ex)
                 {
                     WriteToFile = false; // disable writing to file to avoid spam message boxes
-                    PrintException(ex);
+                    PrintException("Failed to write to log", ex);
                     MessageBox.Show($"Logging to file has been disabled due to an error. Please check permissions on the \"{Folders.Logs}\" folder or disable logging through the settings file.", "LoL Auto Login", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
