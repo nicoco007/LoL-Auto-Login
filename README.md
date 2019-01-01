@@ -2,7 +2,7 @@
 
 [![Jenkins](https://img.shields.io/jenkins/s/https/ci.gnyra.com/job/LoL-Auto-Login/job/develop.svg?style=flat-square)](https://ci.gnyra.com/blue/organizations/jenkins/LoL-Auto-Login) ![license](https://img.shields.io/github/license/nicoco007/lol-auto-login.svg?style=flat-square) [![GitHub release](https://img.shields.io/github/release/nicoco007/LoL-Auto-Login.svg?style=flat-square)](https://github.com/nicoco007/LoL-Auto-Login/releases/latest)
 
-Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/other-stuff/lol-auto-login/) for more information.
+Automatic login for League of Legends. See the [official website page](https://www.nicoco007.com/lol-auto-login/) for more information.
 
 Running LoL Auto Login requires the .NET Framework 4.5 Runtime. It is installed by default as of Windows 8. If you do not have it, you can download it [from Microsoft's website](https://www.microsoft.com/net/download/dotnet-framework-runtime/net452).
 
