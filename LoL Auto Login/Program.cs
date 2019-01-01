@@ -76,7 +76,7 @@ namespace LoLAutoLogin
                     JObject obj = JsonConvert.DeserializeObject<JObject>(result);
                     var stringValue = obj["tag_name"].Value<string>();
 
-                    if (stringValue == null)
+                    if (string.IsNullOrEmpty(stringValue))
                     {
                         Logger.Error("Failed to get \"tag_name\" value from API response");
                         return;
