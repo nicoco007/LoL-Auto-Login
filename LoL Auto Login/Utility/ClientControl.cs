@@ -93,7 +93,7 @@ namespace LoLAutoLogin
                     // check if we got a valid handle
                     if (clientWindow != null)
                     {
-                        Logger.Info($"Client found after {sw.ElapsedMilliseconds} ms");
+                        Logger.Info($"Client found after {sw.ElapsedMilliseconds} ms at {clientWindow.GetRect()}");
 
                         // get password box
                         var passwordBox = WaitForPasswordBox(clientWindow);
@@ -101,7 +101,7 @@ namespace LoLAutoLogin
                         // check if the password box was found
                         if (passwordBox != Rectangle.Empty)
                         {
-                            Logger.Info($"Password box found after {sw.ElapsedMilliseconds} ms");
+                            Logger.Info($"Password box found after {sw.ElapsedMilliseconds} ms at {passwordBox}");
 
                             EnterPassword(clientWindow, false);
                         }
