@@ -6,9 +6,6 @@ Automatic login for League of Legends. See the [official website page](https://w
 
 Running LoL Auto Login requires the .NET Framework 4.5 Runtime. It is installed by default as of Windows 8. If you do not have it, you can download it [from Microsoft's website](https://www.microsoft.com/net/download/dotnet-framework-runtime/net452).
 
-# Known issues
-* The client window is sometimes not detected correctly and the program fails to log in. The client tends to spawn multiple windows, and the program sometimes gets confused as to which window is the right one.
-
 # Configuration
 You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in the Config directory.
 
@@ -25,7 +22,7 @@ You can configure LoL Auto Login through the `LoLAutoLoginSettings.yaml` file in
 # Acknowledgements
 LoL Auto Login uses the following 3<sup>rd</sup> party libraries:
 * [Accord.NET Framework](http://accord-framework.net/) &ndash; [GNU LGPL License](https://github.com/accord-net/framework/blob/development/LICENSE)
-* [AutoIt](https://www.autoitscript.com) &ndash; [AutoIt License](https://www.autoitscript.com/autoit3/docs/license.htm)
+* [InputSimulatorPlus](https://github.com/TChatzigiannakis/InputSimulatorPlus) &ndash; [Microsoft Public License](https://github.com/TChatzigiannakis/InputSimulatorPlus/blob/master/LICENSE.md)
 * [Json.NET](https://github.com/JamesNK/Newtonsoft.Json) &ndash; [MIT License](https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md)
 * [Fody](https://github.com/Fody/Fody) &ndash; [MIT License](https://github.com/Fody/Fody/blob/master/License.txt)
 * [YamlDotNet](https://github.com/aaubry/YamlDotNet) &ndash; [MIT License](https://github.com/aaubry/YamlDotNet/blob/master/LICENSE)
