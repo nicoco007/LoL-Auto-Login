@@ -3,6 +3,7 @@ login-detection:
   debug: false
   low-threshold: 0
   high-threshold: 20
+  delay: 500
 client-load-timeout: 30
 log-level: info
 log-to-file: true
