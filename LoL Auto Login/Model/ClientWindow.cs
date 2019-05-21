@@ -30,7 +30,7 @@ namespace LoLAutoLogin
 
     public class ClientWindow : Window
     {
-        public bool IsMatch { get { return Status != ClientStatus.Unknown; } }
+        public bool IsMatch => Status != ClientStatus.Unknown;
 
         public ClientStatus Status { get; private set; }
         public Rectangle UsernameBox { get; private set; }

@@ -29,9 +29,11 @@ namespace LoLAutoLogin
 {
     internal static class Program
     {
-        public static Version Version;
+        public static Version Version { get; private set; }
         
-        private static ManualResetEvent resetEvent = new ManualResetEvent(true);
+        private static readonly ManualResetEventSlim balloonTipResetEvent = new ManualResetEventSlim(true);
+        private static readonly ManualResetEventSlim uiThreadReadyResetEvent = new ManualResetEventSlim();
+
         private static NotifyIcon notifyIcon;
         private static ShowBalloonTipEventArgs latestBalloonTip;
 
@@ -47,13 +49,16 @@ namespace LoLAutoLogin
 
             new Thread(() => UIThread()).Start();
 
+            // TODO this is kind of dumb
+            uiThreadReadyResetEvent.Wait();
+
             // run on our own thread since the async functions of WebClient kill threads when program exits
             if (Config.GetBooleanValue("check-for-updates", true))
                 new Thread(CheckLatestVersion).Start();
 
             Run().Wait();
 
-            resetEvent.WaitOne();
+            balloonTipResetEvent.Wait();
 
             Shutdown();
 
@@ -213,6 +218,8 @@ namespace LoLAutoLogin
 
             LoadNotifyIcon();
 
+            uiThreadReadyResetEvent.Set();
+
             Application.Run(); // start message pump
         }
 
@@ -297,14 +304,14 @@ namespace LoLAutoLogin
                 latestBalloonTip.OnClick(e);
 
                 if (latestBalloonTip.ExitOnClose)
-                    resetEvent.Set();
+                    balloonTipResetEvent.Set();
             }
         }
 
         private static void NotifyIcon_BalloonTipClosed(object sender, EventArgs e)
         {
             if (latestBalloonTip != null && latestBalloonTip.ExitOnClose)
-                resetEvent.Set();
+                balloonTipResetEvent.Set();
         }
 
         internal static void Shutdown()
@@ -364,7 +371,7 @@ namespace LoLAutoLogin
 
         internal static void ShowBalloonTip(ShowBalloonTipEventArgs e)
         {
-            resetEvent.Reset();
+            balloonTipResetEvent.Reset();
             latestBalloonTip = e;
             notifyIcon.ShowBalloonTip(2500, e.Title, e.Message, e.Icon);
         }
