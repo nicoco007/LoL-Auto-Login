@@ -15,7 +15,7 @@
 
 using System.IO;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     internal static class Folders
     {

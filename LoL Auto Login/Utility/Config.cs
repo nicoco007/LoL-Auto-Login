@@ -21,7 +21,7 @@ using System.Windows.Forms;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     internal static class Config
     {

@@ -13,6 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Model;
+using LoLAutoLogin.Native;
+using LoLAutoLogin.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;

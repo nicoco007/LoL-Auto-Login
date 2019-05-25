@@ -16,7 +16,7 @@
 using System.IO;
 using YamlDotNet.RepresentationModel;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     public class ClientSettings
     {

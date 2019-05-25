@@ -13,22 +13,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Model;
+using LoLAutoLogin.Native;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using WindowsInput;
-using WindowsInput.Native;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     internal static class ClientControl
     {
-        private const string CLIENT_CLASS = "RCLIENT";
-        private const string CLIENT_NAME = null;
+        private const string ROOT_CLIENT_CLASS = "RCLIENT";
+        private const string ROOT_CLIENT_NAME = null;
+        private const string CHILD_CLIENT_CLASS = null;
+        private const string CHILD_CLIENT_NAME = "Chrome Legacy Window";
 
         /// <summary>
         /// Starts the League Client executable
@@ -69,7 +70,7 @@ namespace LoLAutoLogin
                         Logger.Info("Client doesn't seem to be on login page; focusing client");
 
                         // client is logged in, show window
-                        FocusClient();
+                        FocusClientWindows();
                     }
                 }
                 else
@@ -199,69 +200,42 @@ namespace LoLAutoLogin
 
             string password = PasswordManager.Load();
 
-            // create character array from password
-            var passArray = password.ToCharArray();
-
             Logger.Info("Entering password");
             Program.SetNotifyIconText("Entering password");
 
-            InputSimulator simulator = new InputSimulator();
+            Rectangle passwordBox = clientWindow.PasswordBox;
 
-            Rectangle rect = clientWindow.GetRect();
+            // erase whatever is in the password box (double-click selects everything)
+            clientWindow.InnerWindow.SendMouseClick(passwordBox.Left + passwordBox.Width / 2, passwordBox.Top + passwordBox.Height / 2);
+            clientWindow.InnerWindow.SendMouseClick(passwordBox.Left + passwordBox.Width / 2, passwordBox.Top + passwordBox.Height / 2);
+            clientWindow.InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
 
-            if (running || Config.GetBooleanValue("login-detection.always-click", true))
-            {
-                clientWindow.Focus();
+            clientWindow.InnerWindow.Parent.SendText(password);
 
-                Rectangle passwordBox = clientWindow.PasswordBox;
-                Cursor.Position = new Point(rect.Left + passwordBox.Left + passwordBox.Width / 2, rect.Top + passwordBox.Top + passwordBox.Height / 2);
-                
-                simulator.Mouse.LeftButtonClick();
-                simulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
-                simulator.Keyboard.KeyPress(VirtualKeyCode.BACK);
-            }
+            clientWindow.InnerWindow.Parent.SendKey(VirtualKeyCode.RETURN);
 
-            int i = 0;
-
-            // enter password one character at a time
-            while (i <= passArray.Length && clientWindow.Exists())
-            {
-                // get window rectangle, in case it is resized or moved
-                rect = clientWindow.GetRect();
-
-                // focus window & click on password box
-                clientWindow.Focus();
-
-                // check if client is foreground window
-                if (clientWindow.IsFocused())
-                {
-                    if (i < passArray.Length)
-                    {
-                        simulator.Keyboard.TextEntry(passArray[i]);
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                        simulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-                    }
-
-                    i++;
-                }
-            }
-            
             Logger.Info("Successfully entered password (well, hopefully)");
         }
 
         private static ClientWindow GetClientWindow()
         {
-            List<Window> windows = Util.GetWindows(CLIENT_CLASS, CLIENT_NAME);
+            List<Window> windows = Util.GetWindows(ROOT_CLIENT_CLASS, ROOT_CLIENT_NAME);
 
             foreach (var window in windows)
             {
-                var match = ClientWindow.FromWindow(window);
+                Window child = window.FindChildRecursively(CHILD_CLIENT_CLASS, CHILD_CLIENT_NAME);
 
-                if (match.IsMatch)
-                    return match;
+                if (child == null)
+                {
+                    continue;
+                }
+
+                ClientWindow clientWindow = ClientWindow.FromWindow(window, child);
+
+                if (clientWindow.IsMatch)
+                {
+                    return clientWindow;
+                }
             }
 
             return null;
@@ -270,6 +244,6 @@ namespace LoLAutoLogin
         /// <summary>
         /// Focuses all League Client windows
         /// </summary>
-        private static void FocusClient() => Util.FocusWindows(CLIENT_CLASS, CLIENT_NAME);
+        private static void FocusClientWindows() => Util.FocusWindows(ROOT_CLIENT_CLASS, ROOT_CLIENT_NAME);
     }
 }

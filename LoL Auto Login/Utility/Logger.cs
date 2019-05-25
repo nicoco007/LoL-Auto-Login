@@ -18,7 +18,7 @@ using System.Linq;
 using System.IO;
 using System.Windows.Forms;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     internal enum LogLevel
     {
