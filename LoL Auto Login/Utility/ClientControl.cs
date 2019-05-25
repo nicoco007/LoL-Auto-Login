@@ -191,6 +191,12 @@ namespace LoLAutoLogin
         /// <param name="progress">Progress interface used to pass messages</param>
         private static void EnterPassword(ClientWindow clientWindow, bool running)
         {
+            int delay = Config.GetIntegerValue("login-detection.delay", 750);
+
+            Logger.Info($"Waiting {delay} ms before entering password");
+
+            Thread.Sleep(delay);
+
             string password = PasswordManager.Load();
 
             // create character array from password
