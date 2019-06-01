@@ -17,6 +17,8 @@ using Accord;
 using Accord.Imaging;
 using Accord.Imaging.Filters;
 using Accord.Math.Geometry;
+using LoLAutoLogin.Model;
+using LoLAutoLogin.Native;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -28,7 +30,7 @@ using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     public static class Util
     {
@@ -111,14 +113,14 @@ namespace LoLAutoLogin
 
         public static List<Window> GetWindows(string className, string windowName)
         {
-            Logger.Debug($"Trying to find window handles for {{ClassName={(className ?? "null")},WindowName={(windowName ?? "null")}}}");
+            Logger.Debug($"Trying to find window handles for {{ClassName={className ?? "null"},WindowName={windowName ?? "null"}}}");
 
             var hwnd = IntPtr.Zero;
             var windows = new List<Window>();
 
             while ((hwnd = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, className, windowName)) != IntPtr.Zero)
             {
-                Window window = new Window(hwnd, className, windowName);
+                Window window = new Window(hwnd, IntPtr.Zero, className, windowName);
                 windows.Add(window);
 
                 Logger.Trace("Found window " + window);

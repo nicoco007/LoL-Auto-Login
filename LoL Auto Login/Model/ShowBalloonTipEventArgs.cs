@@ -16,7 +16,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Model
 {
     public class ShowBalloonTipEventArgs
     {

@@ -17,87 +17,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Native
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct RECT
-    {
-        public int Left, Top, Right, Bottom;
-
-        public RECT(int left, int top, int right, int bottom)
-        {
-            Left = left;
-            Top = top;
-            Right = right;
-            Bottom = bottom;
-        }
-
-        public RECT(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
-
-        public int X
-        {
-            get { return Left; }
-            set { Right -= (Left - value); Left = value; }
-        }
-
-        public int Y
-        {
-            get { return Top; }
-            set { Bottom -= (Top - value); Top = value; }
-        }
-
-        public int Height
-        {
-            get { return Bottom - Top; }
-            set { Bottom = value + Top; }
-        }
-
-        public int Width
-        {
-            get { return Right - Left; }
-            set { Right = value + Left; }
-        }
-
-        public System.Drawing.Point Location
-        {
-            get { return new System.Drawing.Point(Left, Top); }
-            set { X = value.X; Y = value.Y; }
-        }
-
-        public System.Drawing.Size Size
-        {
-            get { return new System.Drawing.Size(Width, Height); }
-            set { Width = value.Width; Height = value.Height; }
-        }
-
-        public static implicit operator System.Drawing.Rectangle(RECT r) => new System.Drawing.Rectangle(r.Left, r.Top, r.Width, r.Height);
-
-        public static implicit operator RECT(System.Drawing.Rectangle r) => new RECT(r);
-
-        public static bool operator ==(RECT r1, RECT r2) => r1.Equals(r2);
-
-        public static bool operator !=(RECT r1, RECT r2) => !r1.Equals(r2);
-
-        public bool Equals(RECT r) => r.Left == Left && r.Top == Top && r.Right == Right && r.Bottom == Bottom;
-
-        public override bool Equals(object obj)
-        {
-            if (!(obj is RECT))
-            {
-                if (obj is System.Drawing.Rectangle)
-                    return Equals(new RECT((System.Drawing.Rectangle)obj));
-            }
-            else
-                return Equals((RECT)obj);
-
-            return false;
-        }
-
-        public override int GetHashCode() => ((System.Drawing.Rectangle)this).GetHashCode();
-
-        public override string ToString() => string.Format(System.Globalization.CultureInfo.CurrentCulture, "{{Left={0},Top={1},Width={2},Height={3}}}", Left, Top, Width, Height);
-    }
-
     internal class NativeMethods
     {
         internal const int SRCCOPY = 0x00CC0020;
@@ -113,6 +34,9 @@ namespace LoLAutoLogin
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", ExactSpelling = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr GetParent(IntPtr hWnd);
 
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
@@ -181,5 +105,14 @@ namespace LoLAutoLogin
 
         [DllImport("shell32.dll")]
         internal static extern void ILFree(IntPtr pidl);
+
+        [DllImport("user32.dll")]
+        internal static extern int SendMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+
+        [DllImport("user32.dll")]
+        internal static extern int MapVirtualKey(uint uCode, uint uMapType);
+
+        [DllImport("user32.dll")]
+        internal static extern uint WaitForInputIdle(IntPtr hProcess, uint dwMilliseconds);
     }
 }

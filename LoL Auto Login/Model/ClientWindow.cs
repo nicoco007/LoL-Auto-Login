@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Model
 {
     public enum ClientStatus
     {
@@ -36,8 +36,12 @@ namespace LoLAutoLogin
         public Rectangle UsernameBox { get; private set; }
         public Rectangle PasswordBox { get; private set; }
         public Rectangle DialogBox { get; private set; }
+        public Window InnerWindow { get; }
 
-        private ClientWindow(IntPtr handle, string className, string windowName) : base(handle, className, windowName) { }
+        private ClientWindow(IntPtr handle, Window parent, string className, string windowName, Window innerWindow) : base(handle, parent, className, windowName)
+        {
+            InnerWindow = innerWindow;
+        }
 
         public void RefreshStatus()
         {
@@ -128,9 +132,9 @@ namespace LoLAutoLogin
             Logger.Trace($"Window {Handle} status refreshed");
         }
 
-        public static ClientWindow FromWindow(Window window)
+        public static ClientWindow FromWindow(Window window, Window innerWindow)
         {
-            var result = new ClientWindow(window.Handle, window.ClassName, window.Name);
+            var result = new ClientWindow(window.Handle, window.Parent, window.ClassName, window.Name, innerWindow);
 
             try
             {

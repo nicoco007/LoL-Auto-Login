@@ -19,7 +19,7 @@ using System.IO;
 using System;
 using System.Windows.Forms;
 
-namespace LoLAutoLogin
+namespace LoLAutoLogin.Utility
 {
     /// <summary>
     /// Uses the DPAPI to encrypt and decrypt strings.
