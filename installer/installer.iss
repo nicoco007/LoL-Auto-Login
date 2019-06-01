@@ -1,6 +1,5 @@
 #define Name "LoL Auto Login"
-#define BuildNumber GetEnv("BUILD_NUMBER")
-#define Version "2.1.0." + BuildNumber
+#define Version GetFileVersion('..\LoL Auto Login\bin\Release\LoLAutoLogin.exe')
 #define Publisher "nicoco007"
 #define URL "https://www.nicoco007.com/lol-auto-login/"
 #define ExeName "LoLAutoLogin.exe"
