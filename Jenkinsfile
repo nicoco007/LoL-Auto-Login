@@ -9,7 +9,6 @@ pipeline {
     stage('Prepare') {
       steps {
         bat 'nuget restore'
-        bat 'python update_build_number.py'
         bat 'mkdir publish'
       }
     }
