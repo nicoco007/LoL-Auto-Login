@@ -6,13 +6,6 @@ pipeline {
   }
 
   stages {
-    stage('Prepare') {
-      steps {
-        bat 'nuget restore'
-        bat 'python update_build_number.py'
-        bat 'mkdir publish'
-      }
-    }
     stage('Build') {
       steps {
         bat 'msbuild /p:Configuration=Release /p:Platform="Any CPU"'
