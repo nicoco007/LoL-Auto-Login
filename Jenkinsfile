@@ -3,8 +3,8 @@ pipeline {
     node {
       label 'windows && vs-15'
     }
-  }
 
+  }
   stages {
     stage('Prepare') {
       steps {
@@ -24,6 +24,11 @@ pipeline {
         bat 'iscc installer/installer.iss'
         bat '7z a publish/LoLAutoLogin-setup.zip "./publish/*.exe"'
         archiveArtifacts 'publish/LoLAutoLogin-setup.zip'
+      }
+    }
+    stage('Cleanup') {
+      steps {
+        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, cleanWhenUnstable: true, deleteDirs: true)
       }
     }
   }
