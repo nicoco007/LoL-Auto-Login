@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Native;
 using LoLAutoLogin.Utility;
 using System;
 using System.Collections.Generic;
@@ -41,6 +42,22 @@ namespace LoLAutoLogin.Model
         private ClientWindow(IntPtr handle, Window parent, string className, string windowName, Window innerWindow) : base(handle, parent, className, windowName)
         {
             InnerWindow = innerWindow;
+        }
+
+        public static ClientWindow FromWindow(Window window, Window innerWindow)
+        {
+            var result = new ClientWindow(window.Handle, window.Parent, window.ClassName, window.Name, innerWindow);
+
+            try
+            {
+                result.RefreshStatus();
+            }
+            catch (Exception ex)
+            {
+                Logger.PrintException("Failed to refresh client window status", ex);
+            }
+
+            return result;
         }
 
         public void RefreshStatus()
@@ -132,20 +149,15 @@ namespace LoLAutoLogin.Model
             Logger.Trace($"Window {Handle} status refreshed");
         }
 
-        public static ClientWindow FromWindow(Window window, Window innerWindow)
+        public void EnterPassword(string password)
         {
-            var result = new ClientWindow(window.Handle, window.Parent, window.ClassName, window.Name, innerWindow);
+            InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
+            InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
+            InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
 
-            try
-            {
-                result.RefreshStatus();
-            }
-            catch (Exception ex)
-            {
-                Logger.PrintException("Failed to refresh client window status", ex);
-            }
+            InnerWindow.Parent.SendText(password);
 
-            return result;
+            InnerWindow.Parent.SendKey(VirtualKeyCode.RETURN);
         }
     }
 }
