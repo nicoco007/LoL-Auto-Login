@@ -45,9 +45,9 @@ namespace LoLAutoLogin.Utility
             await Task.Factory.StartNew(() =>
             {
                 int timeout = Config.GetIntegerValue("client-load-timeout", 30) * 1000;
-                bool clientIsAlreadyRunning = IsClientRunning();
+                bool clientIsAlreadyRunning = IsClientProcessRunning();
 
-                Logger.Info($"Waiting for login screen for {timeout} ms");
+                Logger.Info($"Waiting for client process for {timeout} ms");
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -60,45 +60,60 @@ namespace LoLAutoLogin.Utility
 
                 Logger.Info("Waiting for client window");
 
-                ClientWindow clientWindow = AwaitClientWindow(stopwatch, timeout);
-
-                if (clientWindow == null)
+                while (IsClientProcessRunning())
                 {
-                    Logger.Error($"Client window not found after {timeout} ms");
-                    return;
+                    ClientWindow clientWindow = GetClientWindow();
+
+                    while (clientWindow != null && clientWindow.Exists())
+                    {
+                        clientWindow.RefreshStatus();
+
+                        if (clientWindow.Status != ClientStatus.OnLoginScreen)
+                        {
+                            if (clientIsAlreadyRunning)
+                            {
+                                Logger.Info("Client was already running and is not on login screen; assuming user is already logged in");
+                                clientWindow.Focus();
+                                return;
+                            }
+
+                            continue;
+                        }
+
+                        int delay = Config.GetIntegerValue("login-detection.delay", 500);
+                        Logger.Info($"Waiting {delay} ms before entering password");
+                        Thread.Sleep(delay);
+
+                        Logger.Info("Entering password");
+                        Program.SetNotifyIconText("Entering password");
+
+                        string password = PasswordManager.Load();
+
+                        clientWindow.EnterPassword(password);
+
+                        Logger.Info("Waiting for client state to change");
+
+                        while (clientWindow.Exists() && !clientWindow.HasStatusChanged())
+                        {
+                            Thread.Sleep(100);
+                        }
+
+                        if (clientWindow.Status == ClientStatus.DialogVisible)
+                        {
+                            continue;
+                        }
+
+                        Logger.Info("Successfully entered password (well, hopefully)");
+
+                        clientWindow.Focus();
+
+                        return;
+                    }
                 }
-
-                clientWindow.RefreshStatus();
-
-                if (clientIsAlreadyRunning && clientWindow.Status != ClientStatus.OnLoginScreen)
-                {
-                    Logger.Info("Client was already running and is not on login screen; assuming user is already logged in");
-                    clientWindow.Focus();
-                    return;
-                }
-                else if (!AwaitLoginScreen(clientWindow))
-                {
-                    Logger.Info($"Client window lost");
-                    return;
-                }
-
-                int delay = Config.GetIntegerValue("login-detection.delay", 500);
-                Logger.Info($"Waiting {delay} ms before entering password");
-                Thread.Sleep(delay);
-
-                Logger.Info("Entering password");
-                Program.SetNotifyIconText("Entering password");
-
-                string password = PasswordManager.Load();
-
-                clientWindow.EnterPassword(password);
-                clientWindow.Focus();
-
-                Logger.Info("Successfully entered password (well, hopefully)");
             }, TaskCreationOptions.LongRunning);
         }
 
-        private static bool IsClientRunning()
+        private static bool IsClientProcessRunning()
         {
             return Process.GetProcessesByName("LeagueClient").Length > 0;
         }
@@ -108,7 +123,7 @@ namespace LoLAutoLogin.Utility
             if (!stopwatch.IsRunning)
                 throw new InvalidOperationException("Stopwatch must be running");
 
-            bool processExists = IsClientRunning();
+            bool processExists = IsClientProcessRunning();
 
             if (!processExists)
             {
@@ -119,7 +134,7 @@ namespace LoLAutoLogin.Utility
             while (stopwatch.ElapsedMilliseconds < timeout && processExists == false)
             {
                 Thread.Sleep(100);
-                processExists = IsClientRunning();
+                processExists = IsClientProcessRunning();
             }
 
             return processExists;
@@ -137,7 +152,7 @@ namespace LoLAutoLogin.Utility
 
             ClientWindow clientWindow = GetClientWindow();
 
-            while (IsClientRunning() && stopwatch.ElapsedMilliseconds < timeout && clientWindow == null)
+            while (IsClientProcessRunning() && stopwatch.ElapsedMilliseconds < timeout && clientWindow == null)
             {
                 Thread.Sleep(100);
                 clientWindow = GetClientWindow();

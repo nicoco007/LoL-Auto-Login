@@ -149,6 +149,13 @@ namespace LoLAutoLogin.Model
             Logger.Trace($"Window {Handle} status refreshed");
         }
 
+        public bool HasStatusChanged()
+        {
+            var previousStatus = Status;
+            RefreshStatus();
+            return Status != previousStatus;
+        }
+
         public void EnterPassword(string password)
         {
             InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
