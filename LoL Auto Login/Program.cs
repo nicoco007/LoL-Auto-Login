@@ -169,7 +169,7 @@ namespace LoLAutoLogin
                 return;
 
             // check if a Shift key is being pressed
-            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
+            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0)
             {
                 Logger.Info("Shift key is being pressed - starting client without running LoL Auto Login");
 
