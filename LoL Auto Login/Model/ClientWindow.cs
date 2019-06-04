@@ -142,11 +142,15 @@ namespace LoLAutoLogin.Model
                 }
 
                 Util.SaveDebugImage(output, "matches.png");
+
+                output.Dispose();
             }
 
             capture.Dispose();
 
             Logger.Trace($"Window {Handle} status refreshed");
+
+            GC.Collect();
         }
 
         public bool HasStatusChanged()
