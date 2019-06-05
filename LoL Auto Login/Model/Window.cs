@@ -113,13 +113,10 @@ namespace LoLAutoLogin.Model
             }
         }
 
-        private int GetDigitAtPosition(int input, int position)
-        {
-            return (int)Math.Floor((input - Math.Floor(input / Math.Pow(10, position + 1)) * Math.Pow(10, position + 1)) / Math.Pow(10, position));
-        }
-
         public Window FindChildRecursively(string className, string windowName)
         {
+            Logger.Debug($"Looking for {{windowName={windowName}, className={className}}} in {Handle} ({{windowName={Name}, className={ClassName}}})");
+
             return FindChildRecursively(Handle, className, windowName);
         }
 
@@ -127,13 +124,8 @@ namespace LoLAutoLogin.Model
         {
             IntPtr child = NativeMethods.FindWindowEx(parent, IntPtr.Zero, null, null);
 
-            Console.WriteLine(className + " " + windowName);
-
-            Console.WriteLine("FindChildRecursively -> parent: " + parent.ToString("X"));
-
             while (child != IntPtr.Zero)
             {
-                Console.WriteLine("FindChildRecursively -> child: " + child.ToString("X"));
                 Window found;
 
                 if ((found = FindChildRecursively(child, className, windowName)) != null)
