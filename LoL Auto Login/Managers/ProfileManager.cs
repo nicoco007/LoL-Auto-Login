@@ -41,8 +41,7 @@ namespace LoLAutoLogin.Managers
                     {
                         profiles.Add(new Profile(
                             reader.ReadString(),
-                            reader.ReadBytes(reader.ReadInt32()),
-                            new DateTime(reader.ReadInt64())
+                            reader.ReadBytes(reader.ReadInt32())
                         ));
                     }
                 }
@@ -74,7 +73,6 @@ namespace LoLAutoLogin.Managers
                         writer.Write(profile.Username);
                         writer.Write(profile.EncryptedPassword.Length);
                         writer.Write(profile.EncryptedPassword);
-                        writer.Write(profile.LastUsed.Ticks);
                     }
                 }
             }
@@ -93,6 +91,16 @@ namespace LoLAutoLogin.Managers
         public static Profile GetDefaultProfile()
         {
             return profiles[0];
+        }
+
+        public static void AddProfile(Profile profile)
+        {
+            profiles.Add(profile);
+        }
+
+        public static void DeleteProfile(int profileIndex)
+        {
+            profiles.RemoveAt(profileIndex);
         }
     }
 }

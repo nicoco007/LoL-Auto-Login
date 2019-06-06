@@ -1,27 +1,27 @@
 ﻿using LoLAutoLogin.Utility;
 using System;
+using System.ComponentModel;
 
 namespace LoLAutoLogin
 {
     public class Profile
     {
         public string Username { get; private set; }
-        public byte[] EncryptedPassword { get; private set; }
-        public DateTime LastUsed { get; private set; }
 
-        public Profile(string username, string password, DateTime lastUsed)
+        [Browsable(false)]
+        public byte[] EncryptedPassword { get; private set; }
+
+        public Profile(string username, string password)
         {
             Username = username;
-            LastUsed = lastUsed;
 
             EncryptPassword(password);
         }
 
-        public Profile(string username, byte[] encryptedPassword, DateTime lastUsed)
+        public Profile(string username, byte[] encryptedPassword)
         {
             Username = username;
             EncryptedPassword = encryptedPassword;
-            LastUsed = lastUsed;
         }
 
         public void EncryptPassword(string password)

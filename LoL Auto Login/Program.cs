@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Forms;
 using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using LoLAutoLogin.Native;
@@ -170,20 +171,21 @@ namespace LoLAutoLogin
                 return;
 
             ProfileManager.LoadProfiles();
+            Profile profile = ProfileManager.GetDefaultProfile();
 
             // check if a Shift key is being pressed
             if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0 || !ProfileManager.HasProfiles())
             {
                 Logger.Info("Shift key is being pressed; showing Profiles window");
 
-                ShowProfilesWindow();
+                profile = ShowProfilesWindow();
             }
 
-            if (!ProfileManager.HasProfiles()) return;
+            if (profile == null) return;
 
             try
             {
-                await ClientControl.RunLogin();
+                await ClientControl.RunLogin(profile);
             }
             catch (Exception ex)
             {
@@ -191,11 +193,10 @@ namespace LoLAutoLogin
             }
         }
 
-        private static MainForm ShowProfilesWindow()
+        private static Profile ShowProfilesWindow()
         {
             var form = new MainForm();
-            form.ShowDialog();
-            return form;
+            return form.ShowDialog();
         }
 
         [STAThread]
@@ -317,6 +318,8 @@ namespace LoLAutoLogin
                 notifyIcon.Dispose();
                 notifyIcon = null;
             }
+
+            ProfileManager.SaveProfiles();
 
             Logger.CleanFiles();
 
