@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using LoLAutoLogin.Native;
 using LoLAutoLogin.Utility;
@@ -168,36 +169,17 @@ namespace LoLAutoLogin
             if (!IsCorrectLocation())
                 return;
 
+            ProfileManager.LoadProfiles();
+
             // check if a Shift key is being pressed
-            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0)
+            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0 || !ProfileManager.HasProfiles())
             {
-                Logger.Info("Shift key is being pressed - starting client without running LoL Auto Login");
+                Logger.Info("Shift key is being pressed; showing Profiles window");
 
-                // try launching league of legends
-                try
-                {
-                    ClientControl.StartClient();
-                }
-                catch (Exception ex)
-                {
-                    FatalError("Could not start League of Legends!", ex);
-                }
-
-                return;
+                ShowProfilesWindow();
             }
 
-            if (!PasswordExists())
-            {
-                Logger.Info("Password file not found, prompting user to enter password");
-
-                var form = new MainForm();
-                form.ShowDialog();
-
-                if (form.Success != true)
-                    return;
-
-                Config.SetValue("check-for-updates", form.CheckForUpdates);
-            }
+            if (!ProfileManager.HasProfiles()) return;
 
             try
             {
@@ -207,6 +189,13 @@ namespace LoLAutoLogin
             {
                 FatalError("Could not start League of Legends!", ex);
             }
+        }
+
+        private static MainForm ShowProfilesWindow()
+        {
+            var form = new MainForm();
+            form.ShowDialog();
+            return form;
         }
 
         [STAThread]
@@ -355,7 +344,7 @@ namespace LoLAutoLogin
             return true;
         }
 
-        private static bool PasswordExists()
+        private static bool AtLeastOneProfileExists()
         {
             if (!File.Exists("password"))
                 return false;

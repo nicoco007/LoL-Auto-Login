@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using LoLAutoLogin.Native;
 using System;
@@ -198,8 +199,6 @@ namespace LoLAutoLogin.Utility
 
             Thread.Sleep(delay);
 
-            string password = PasswordManager.Load();
-
             Logger.Info("Entering password");
             Program.SetNotifyIconText("Entering password");
 
@@ -210,7 +209,7 @@ namespace LoLAutoLogin.Utility
             clientWindow.InnerWindow.SendMouseClick(passwordBox.Left + passwordBox.Width / 2, passwordBox.Top + passwordBox.Height / 2);
             clientWindow.InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
 
-            clientWindow.InnerWindow.Parent.SendText(password);
+            clientWindow.InnerWindow.Parent.SendText(ProfileManager.GetDefaultProfile().DecryptPassword());
 
             clientWindow.InnerWindow.Parent.SendKey(VirtualKeyCode.RETURN);
 
