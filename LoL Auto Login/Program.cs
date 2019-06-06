@@ -172,7 +172,7 @@ namespace LoLAutoLogin
             ProfileManager.LoadProfiles();
 
             // check if a Shift key is being pressed
-            if (NativeMethods.GetAsyncKeyState(Keys.RShiftKey) != 0 || NativeMethods.GetAsyncKeyState(Keys.LShiftKey) != 0 || !ProfileManager.HasProfiles())
+            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0 || !ProfileManager.HasProfiles())
             {
                 Logger.Info("Shift key is being pressed; showing Profiles window");
 
