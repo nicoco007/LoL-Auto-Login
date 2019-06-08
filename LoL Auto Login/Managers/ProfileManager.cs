@@ -1,58 +1,106 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace LoLAutoLogin.Managers
 {
     public static class ProfileManager
     {
-        public static List<Profile> Profiles { get; private set; }
+        private static List<Profile> profiles;
 
-        private static readonly string PROFILES_FILE_PATH = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LoL Auto Login", "profiles");
-        private static readonly byte[] MAGIC = new byte[] { 0x10, 0x14 };
+        private static readonly string PROFILES_DIRECTORY = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LoL Auto Login");
+        private static readonly string PROFILES_FILE_PATH = Path.Combine(PROFILES_DIRECTORY, "profiles");
+        private static readonly byte[] MAGIC = new byte[] { 0x15, 0x1b, 0xab, 0x76 };
 
         public static void LoadProfiles()
         {
-            Profiles = new List<Profile>();
+            profiles = new List<Profile>();
 
             if (!File.Exists(PROFILES_FILE_PATH)) return;
 
-            FileStream fileStream = new FileStream(PROFILES_FILE_PATH, FileMode.Open, FileAccess.Read);
-
-            if (fileStream.Length == 0) return;
-
-            BinaryReader reader = new BinaryReader(fileStream);
-
-            if (reader.ReadBytes(2) != MAGIC)
+            using (FileStream fileStream = new FileStream(PROFILES_FILE_PATH, FileMode.Open, FileAccess.Read))
             {
-                throw new IOException("Unknown file format");
-            }
+                if (fileStream.Length == 0) return;
 
-            if (reader.ReadByte() != 0x01)
-            {
-                throw new IOException("Unknown file version");
-            }
-
-            short count = reader.ReadInt16();
-
-            for (int i = 0; i < count; i++)
-            {
-                Profiles.Add(new Profile()
+                using (BinaryReader reader = new BinaryReader(fileStream))
                 {
+                    if (!reader.ReadBytes(MAGIC.Length).SequenceEqual(MAGIC))
+                    {
+                        throw new IOException("Unknown file format");
+                    }
 
-                });
+                    if (reader.ReadByte() != 0x01)
+                    {
+                        throw new IOException("Unknown file version");
+                    }
+
+                    byte count = reader.ReadByte();
+
+                    for (byte i = 0; i < count; i++)
+                    {
+                        profiles.Add(new Profile(
+                            reader.ReadString(),
+                            reader.ReadBytes(reader.ReadInt32())
+                        ));
+                    }
+                }
             }
         }
 
         public static void SaveProfiles()
         {
-            FileStream fileStream = new FileStream(PROFILES_FILE_PATH, FileMode.OpenOrCreate, FileAccess.Write);
-            BinaryWriter writer = new BinaryWriter(fileStream);
+            if (profiles.Count > sbyte.MaxValue)
+            {
+                throw new InvalidOperationException($"Profile count cannot be over {sbyte.MaxValue}!");
+            }
 
-            writer.Write(MAGIC);
+            if (!Directory.Exists(PROFILES_DIRECTORY)) Directory.CreateDirectory(PROFILES_DIRECTORY);
 
-            // file version
-            writer.Write(new byte[] { 0x01 });
+            using (FileStream fileStream = new FileStream(PROFILES_FILE_PATH, FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                using (BinaryWriter writer = new BinaryWriter(fileStream))
+                {
+                    writer.Write(MAGIC);
+                    
+                    // file version
+                    writer.Write(new byte[] { 0x01 });
+
+                    writer.Write((byte)profiles.Count);
+
+                    foreach (Profile profile in profiles)
+                    {
+                        writer.Write(profile.Username);
+                        writer.Write(profile.EncryptedPassword.Length);
+                        writer.Write(profile.EncryptedPassword);
+                    }
+                }
+            }
+        }
+
+        public static bool HasProfiles()
+        {
+            return profiles.Count > 0;
+        }
+
+        public static IReadOnlyList<Profile> GetProfiles()
+        {
+            return profiles.AsReadOnly();
+        }
+
+        public static Profile GetDefaultProfile()
+        {
+            return profiles[0];
+        }
+
+        public static void AddProfile(Profile profile)
+        {
+            profiles.Add(profile);
+        }
+
+        public static void DeleteProfile(int profileIndex)
+        {
+            profiles.RemoveAt(profileIndex);
         }
     }
 }

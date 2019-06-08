@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Forms;
+using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using LoLAutoLogin.Native;
 using LoLAutoLogin.Utility;
@@ -168,45 +170,33 @@ namespace LoLAutoLogin
             if (!IsCorrectLocation())
                 return;
 
+            ProfileManager.LoadProfiles();
+            Profile profile = ProfileManager.GetDefaultProfile();
+
             // check if a Shift key is being pressed
-            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0)
+            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0 || !ProfileManager.HasProfiles())
             {
-                Logger.Info("Shift key is being pressed - starting client without running LoL Auto Login");
+                Logger.Info("Shift key is being pressed; showing Profiles window");
 
-                // try launching league of legends
-                try
-                {
-                    ClientControl.StartClient();
-                }
-                catch (Exception ex)
-                {
-                    FatalError("Could not start League of Legends!", ex);
-                }
-
-                return;
+                profile = ShowProfilesWindow();
             }
 
-            if (!PasswordExists())
-            {
-                Logger.Info("Password file not found, prompting user to enter password");
-
-                var form = new MainForm();
-                form.ShowDialog();
-
-                if (form.Success != true)
-                    return;
-
-                Config.SetValue("check-for-updates", form.CheckForUpdates);
-            }
+            if (profile == null) return;
 
             try
             {
-                await ClientControl.RunLogin();
+                await ClientControl.RunLogin(profile);
             }
             catch (Exception ex)
             {
                 FatalError("Could not start League of Legends!", ex);
             }
+        }
+
+        private static Profile ShowProfilesWindow()
+        {
+            var form = new MainForm();
+            return form.ShowDialog();
         }
 
         [STAThread]
@@ -329,6 +319,8 @@ namespace LoLAutoLogin
                 notifyIcon = null;
             }
 
+            ProfileManager.SaveProfiles();
+
             Logger.CleanFiles();
 
             Application.Exit();
@@ -355,7 +347,7 @@ namespace LoLAutoLogin
             return true;
         }
 
-        private static bool PasswordExists()
+        private static bool AtLeastOneProfileExists()
         {
             if (!File.Exists("password"))
                 return false;

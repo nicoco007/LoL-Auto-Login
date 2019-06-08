@@ -160,15 +160,29 @@ namespace LoLAutoLogin.Model
             return Status != previousStatus;
         }
 
-        public void EnterPassword(string password)
+        public void SignIn(string username, string password)
         {
-            InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
-            InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
-            InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
+            if (!string.IsNullOrEmpty(username)) EnterUsername(username);
 
-            InnerWindow.Parent.SendText(password);
+            EnterPassword(password);
 
             InnerWindow.Parent.SendKey(VirtualKeyCode.RETURN);
+        }
+
+        private void EnterUsername(string username)
+        {
+            for (int i = 0; i < 3; i++) InnerWindow.SendMouseClick(UsernameBox.Left + UsernameBox.Width / 2, UsernameBox.Top + UsernameBox.Height / 2);
+
+            InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
+            InnerWindow.Parent.SendText(username);
+        }
+
+        private void EnterPassword(string password)
+        {
+            for (int i = 0; i < 3; i++) InnerWindow.SendMouseClick(PasswordBox.Left + PasswordBox.Width / 2, PasswordBox.Top + PasswordBox.Height / 2);
+
+            InnerWindow.Parent.SendKey(VirtualKeyCode.BACK);
+            InnerWindow.Parent.SendText(password);
         }
     }
 }

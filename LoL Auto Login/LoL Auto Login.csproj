@@ -130,6 +130,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\AddProfileForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AddProfileForm.Designer.cs">
+      <DependentUpon>AddProfileForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Managers\ProfileManager.cs" />
     <Compile Include="Native\RECT.cs" />
     <Compile Include="Native\VirtualKeyCode.cs" />
@@ -141,7 +147,6 @@
     <Compile Include="Utility\ExtensionMethods.cs" />
     <Compile Include="Utility\Folders.cs" />
     <Compile Include="Utility\ClientControl.cs" />
-    <Compile Include="Utility\PasswordManager.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
@@ -156,6 +161,9 @@
     <Compile Include="Model\ShowBalloonTipEventArgs.cs" />
     <Compile Include="Utility\Util.cs" />
     <Compile Include="Model\Window.cs" />
+    <EmbeddedResource Include="Forms\AddProfileForm.resx">
+      <DependentUpon>AddProfileForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>

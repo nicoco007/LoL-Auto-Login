@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
+using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace LoLAutoLogin.Utility
         /// <summary>
         /// Runs all the logic necessary to enter the password automatically into the League Client
         /// </summary>
-        internal static async Task RunLogin()
+        internal static async Task RunLogin(Profile profile)
         {
             await Task.Factory.StartNew(() =>
             {
@@ -87,15 +88,13 @@ namespace LoLAutoLogin.Utility
                         Logger.Info("Entering password");
                         Program.SetNotifyIconText("Entering password");
 
-                        string password = PasswordManager.Load();
-
-                        clientWindow.EnterPassword(password);
+                        clientWindow.SignIn(profile.Username, profile.DecryptPassword());
 
                         Logger.Info("Waiting for client state to change");
 
                         while (clientWindow.Exists() && !clientWindow.HasStatusChanged())
                         {
-                            Thread.Sleep(100);
+                            Thread.Sleep(10);
                         }
 
                         if (clientWindow.Status == ClientStatus.DialogVisible)
