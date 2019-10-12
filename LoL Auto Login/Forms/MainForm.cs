@@ -15,53 +15,69 @@
 
 using LoLAutoLogin.Managers;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
+using LoLAutoLogin.Model;
+using LoLAutoLogin.Utility;
 
 namespace LoLAutoLogin.Forms
 {
     public partial class MainForm : Form
     {
-        private bool signIn = false;
+        public Profile SelectedProfile { get; private set; }
+
         private readonly BindingSource bindingSource = new BindingSource();
+        private bool isFirstRun;
+
+        private IList<Profile> Profiles => bindingSource.List as IList<Profile>;
 
         public MainForm()
         {
             InitializeComponent();
-        }
-
-        public new Profile ShowDialog()
-        {
-            base.ShowDialog();
-            
-            if (!signIn) return null;
-
-            return bindingSource.List[profilesGridView.SelectedRows[0].Index] as Profile;
+            isFirstRun = !ProfileManager.ProfilesFileExists;
+            ProfilesGridView_SelectionChanged(this, new EventArgs());
+            alwaysShowCheckBox.Checked = Config.GetBooleanValue("always-show-config", false);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            var profiles = ProfileManager.GetProfiles();
-            bindingSource.DataSource = profiles;
+            bindingSource.DataSource = ProfileManager.Profiles;
             profilesGridView.DataSource = bindingSource;
+
+            int defaultProfileIndex = Profiles.IndexOf(Profiles.FirstOrDefault(p => p.IsDefault));
+
+            if (defaultProfileIndex > 0)
+            {
+                profilesGridView.Rows[defaultProfileIndex].Selected = true;
+            }
         }
 
         private void ProfilesGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            signIn = true;
+            DialogResult = DialogResult.Yes;
             Close();
         }
 
-        private void Button1_Click(object sender, EventArgs e)
+        private void AutoLoginButton_Click(object sender, EventArgs e)
         {
-            signIn = true;
+            DialogResult = DialogResult.Yes;
             Close();
         }
 
         private void AddButton_Click(object sender, EventArgs e)
         {
-            AddProfileForm form = new AddProfileForm() { Parent = this };
+            ShowAddFormDialog();
+        }
+
+        private void ShowAddFormDialog()
+        {
+            AddProfileForm form = new AddProfileForm { Owner = this };
 
             Profile profile = form.ShowDialog();
+
+            if (profile == null) return;
+
             ProfileManager.AddProfile(profile);
             bindingSource.ResetBindings(false);
         }
@@ -75,6 +91,61 @@ namespace LoLAutoLogin.Forms
         private void QuitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void LaunchButton_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.No;
+            Close();
+        }
+
+        private void ProfilesGridView_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (profilesGridView.Columns[e.ColumnIndex].CellType == typeof(DataGridViewCheckBoxCell))
+            {
+                profilesGridView.EndEdit();
+            }
+        }
+
+        private void ProfilesGridView_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            foreach (Profile profile in Profiles)
+            {
+                profile.IsDefault = profile == Profiles[e.RowIndex];
+            }
+
+            bindingSource.ResetBindings(false);
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            if (bindingSource.List.Count == 0)
+            {
+                ShowAddFormDialog();
+            }
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (isFirstRun)
+            {
+                MessageBox.Show("You can press the SHIFT key while running LoL Auto Login to show the configuration window again.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            Config.SetValue("always-show-config", alwaysShowCheckBox.Checked);
+
+            if (DialogResult == DialogResult.Yes && profilesGridView.SelectedRows.Count > 0)
+            {
+                SelectedProfile = profilesGridView.SelectedRows[0].DataBoundItem as Profile;
+            }
+
+            ProfileManager.SaveProfiles();
+        }
+
+        private void ProfilesGridView_SelectionChanged(object sender, EventArgs e)
+        {
+            deleteButton.Enabled = profilesGridView.SelectedRows.Count > 0;
+            autoLoginButton.Enabled = profilesGridView.SelectedRows.Count == 1;
         }
     }
 }

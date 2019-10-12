@@ -174,14 +174,18 @@ namespace LoLAutoLogin
             Profile profile = ProfileManager.GetDefaultProfile();
 
             // check if a Shift key is being pressed
-            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0 || !ProfileManager.HasProfiles())
+            if ((NativeMethods.GetAsyncKeyState(Keys.ShiftKey) & 0x8000) != 0 || !ProfileManager.HasProfiles() || Config.GetBooleanValue("always-show-config", false))
             {
                 Logger.Info("Shift key is being pressed; showing Profiles window");
+                MainForm form = ShowProfilesWindow();
 
-                profile = ShowProfilesWindow();
+                if (form.DialogResult == DialogResult.Cancel)
+                {
+                    return;
+                }
+
+                profile = form.SelectedProfile;
             }
-
-            if (profile == null) return;
 
             try
             {
@@ -193,10 +197,11 @@ namespace LoLAutoLogin
             }
         }
 
-        private static Profile ShowProfilesWindow()
+        private static MainForm ShowProfilesWindow()
         {
             var form = new MainForm();
-            return form.ShowDialog();
+            form.ShowDialog();
+            return form;
         }
 
         [STAThread]
@@ -318,8 +323,6 @@ namespace LoLAutoLogin
                 notifyIcon.Dispose();
                 notifyIcon = null;
             }
-
-            ProfileManager.SaveProfiles();
 
             Logger.CleanFiles();
 

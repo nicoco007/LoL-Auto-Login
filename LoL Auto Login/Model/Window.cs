@@ -101,7 +101,7 @@ namespace LoLAutoLogin.Model
         public void SendKey(VirtualKeyCode keyCode)
         {
             NativeMethods.SendMessage(Handle, (uint)WindowMessage.KEYDOWN, (int)keyCode, 0);
-            NativeMethods.SendMessage(Handle, (uint)WindowMessage.CHAR, 0x01, 0);
+            NativeMethods.SendMessage(Handle, (uint)WindowMessage.CHAR, (int)keyCode, 0);
             NativeMethods.SendMessage(Handle, (uint)WindowMessage.KEYUP, (int)keyCode, 0);
         }
 

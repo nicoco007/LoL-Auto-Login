@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 
-using LoLAutoLogin.Managers;
 using LoLAutoLogin.Model;
 using System;
 using System.Collections.Generic;
@@ -27,8 +26,8 @@ namespace LoLAutoLogin.Utility
     {
         private const string ROOT_CLIENT_CLASS = "RCLIENT";
         private const string ROOT_CLIENT_NAME = null;
-        private const string CHILD_CLIENT_CLASS = null;
-        private const string CHILD_CLIENT_NAME = "Chrome Legacy Window";
+        private const string CHILD_CLIENT_CLASS = "Chrome_RenderWidgetHostHWND";
+        private const string CHILD_CLIENT_NAME = null;
 
         /// <summary>
         /// Starts the League Client executable
@@ -45,6 +44,13 @@ namespace LoLAutoLogin.Utility
         {
             await Task.Factory.StartNew(() =>
             {
+                if (profile == null)
+                {
+                    Logger.Info("Profile is null, running launcher normally");
+                    StartClient();
+                    return;
+                }
+
                 int timeout = Config.GetIntegerValue("client-load-timeout", 30) * 1000;
                 bool clientIsAlreadyRunning = IsClientProcessRunning();
 
@@ -88,7 +94,7 @@ namespace LoLAutoLogin.Utility
                         Logger.Info("Entering password");
                         Program.SetNotifyIconText("Entering password");
 
-                        clientWindow.SignIn(profile.Username, profile.DecryptPassword());
+                        clientWindow.SignIn(profile.Username, profile.Password);
 
                         Logger.Info("Waiting for client state to change");
 

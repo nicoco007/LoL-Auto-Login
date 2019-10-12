@@ -43,25 +43,34 @@ namespace LoLAutoLogin.Forms
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.addButton = new System.Windows.Forms.Button();
+            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.deleteButton = new System.Windows.Forms.Button();
+            this.addButton = new System.Windows.Forms.Button();
+            this.profilesGroupBox = new System.Windows.Forms.GroupBox();
             this.profilesGridView = new System.Windows.Forms.DataGridView();
-            this.button1 = new System.Windows.Forms.Button();
+            this.autoLoginButton = new System.Windows.Forms.Button();
+            this.launchButton = new System.Windows.Forms.Button();
+            this.alwaysShowCheckBox = new System.Windows.Forms.CheckBox();
             this.menuStrip.SuspendLayout();
+            this.profilesGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.profilesGridView)).BeginInit();
             this.SuspendLayout();
             // 
             // menuStrip
             // 
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem});
+            this.fileToolStripMenuItem,
+            this.toolsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(380, 24);
+            this.menuStrip.Size = new System.Drawing.Size(432, 24);
             this.menuStrip.TabIndex = 1;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -80,34 +89,61 @@ namespace LoLAutoLogin.Forms
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.QuitToolStripMenuItem_Click);
             // 
-            // addButton
+            // toolsToolStripMenuItem
             // 
-            this.addButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.addButton.Location = new System.Drawing.Point(12, 266);
-            this.addButton.Name = "addButton";
-            this.addButton.Size = new System.Drawing.Size(75, 23);
-            this.addButton.TabIndex = 2;
-            this.addButton.Text = "Add";
-            this.addButton.UseVisualStyleBackColor = true;
-            this.addButton.Click += new System.EventHandler(this.AddButton_Click);
+            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.optionsToolStripMenuItem});
+            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
+            this.toolsToolStripMenuItem.Text = "Tools";
+            // 
+            // optionsToolStripMenuItem
+            // 
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.optionsToolStripMenuItem.Text = "Options";
             // 
             // deleteButton
             // 
             this.deleteButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.deleteButton.Location = new System.Drawing.Point(93, 266);
+            this.deleteButton.Location = new System.Drawing.Point(87, 124);
             this.deleteButton.Name = "deleteButton";
             this.deleteButton.Size = new System.Drawing.Size(75, 23);
-            this.deleteButton.TabIndex = 4;
+            this.deleteButton.TabIndex = 8;
             this.deleteButton.Text = "Delete";
+            this.toolTip.SetToolTip(this.deleteButton, "Delete the selected profile");
             this.deleteButton.UseVisualStyleBackColor = true;
             this.deleteButton.Click += new System.EventHandler(this.DeleteButton_Click);
             // 
+            // addButton
+            // 
+            this.addButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.addButton.Location = new System.Drawing.Point(6, 124);
+            this.addButton.Name = "addButton";
+            this.addButton.Size = new System.Drawing.Size(75, 23);
+            this.addButton.TabIndex = 7;
+            this.addButton.Text = "Add";
+            this.toolTip.SetToolTip(this.addButton, "Add a profile (username and password)");
+            this.addButton.UseVisualStyleBackColor = true;
+            this.addButton.Click += new System.EventHandler(this.AddButton_Click);
+            // 
+            // profilesGroupBox
+            // 
+            this.profilesGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.profilesGroupBox.Controls.Add(this.profilesGridView);
+            this.profilesGroupBox.Controls.Add(this.deleteButton);
+            this.profilesGroupBox.Controls.Add(this.addButton);
+            this.profilesGroupBox.Location = new System.Drawing.Point(12, 27);
+            this.profilesGroupBox.Name = "profilesGroupBox";
+            this.profilesGroupBox.Size = new System.Drawing.Size(408, 153);
+            this.profilesGroupBox.TabIndex = 7;
+            this.profilesGroupBox.TabStop = false;
+            this.profilesGroupBox.Text = "Profiles";
+            // 
             // profilesGridView
             // 
-            this.profilesGridView.AllowUserToAddRows = false;
-            this.profilesGridView.AllowUserToDeleteRows = false;
-            this.profilesGridView.AllowUserToResizeColumns = false;
-            this.profilesGridView.AllowUserToResizeRows = false;
             this.profilesGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -116,36 +152,63 @@ namespace LoLAutoLogin.Forms
             this.profilesGridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
             this.profilesGridView.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
             this.profilesGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.profilesGridView.Location = new System.Drawing.Point(12, 27);
+            this.profilesGridView.Location = new System.Drawing.Point(6, 19);
             this.profilesGridView.MultiSelect = false;
             this.profilesGridView.Name = "profilesGridView";
-            this.profilesGridView.ReadOnly = true;
+            this.profilesGridView.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Sunken;
             this.profilesGridView.RowHeadersVisible = false;
             this.profilesGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.profilesGridView.Size = new System.Drawing.Size(356, 233);
-            this.profilesGridView.TabIndex = 5;
+            this.profilesGridView.Size = new System.Drawing.Size(396, 99);
+            this.profilesGridView.TabIndex = 9;
             this.profilesGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.ProfilesGridView_CellDoubleClick);
+            this.profilesGridView.CellMouseUp += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.ProfilesGridView_CellMouseUp);
+            this.profilesGridView.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.ProfilesGridView_CellValueChanged);
+            this.profilesGridView.SelectionChanged += new System.EventHandler(this.ProfilesGridView_SelectionChanged);
             // 
-            // button1
+            // autoLoginButton
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(293, 266);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 6;
-            this.button1.Text = "Sign In";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.Button1_Click);
+            this.autoLoginButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.autoLoginButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.autoLoginButton.Location = new System.Drawing.Point(31, 228);
+            this.autoLoginButton.Name = "autoLoginButton";
+            this.autoLoginButton.Size = new System.Drawing.Size(371, 29);
+            this.autoLoginButton.TabIndex = 11;
+            this.autoLoginButton.Text = "Launch League of Legends with Auto Login";
+            this.autoLoginButton.UseVisualStyleBackColor = true;
+            this.autoLoginButton.Click += new System.EventHandler(this.AutoLoginButton_Click);
+            // 
+            // launchButton
+            // 
+            this.launchButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.launchButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.launchButton.Location = new System.Drawing.Point(31, 263);
+            this.launchButton.Name = "launchButton";
+            this.launchButton.Size = new System.Drawing.Size(371, 23);
+            this.launchButton.TabIndex = 12;
+            this.launchButton.Text = "Launch League of Legends Normally";
+            this.launchButton.UseVisualStyleBackColor = true;
+            this.launchButton.Click += new System.EventHandler(this.LaunchButton_Click);
+            // 
+            // alwaysShowCheckBox
+            // 
+            this.alwaysShowCheckBox.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.alwaysShowCheckBox.AutoSize = true;
+            this.alwaysShowCheckBox.Location = new System.Drawing.Point(79, 195);
+            this.alwaysShowCheckBox.Name = "alwaysShowCheckBox";
+            this.alwaysShowCheckBox.Size = new System.Drawing.Size(272, 17);
+            this.alwaysShowCheckBox.TabIndex = 13;
+            this.alwaysShowCheckBox.Text = "Always show this before running League of Legends";
+            this.alwaysShowCheckBox.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(380, 301);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.profilesGridView);
-            this.Controls.Add(this.deleteButton);
-            this.Controls.Add(this.addButton);
+            this.ClientSize = new System.Drawing.Size(432, 298);
+            this.Controls.Add(this.alwaysShowCheckBox);
+            this.Controls.Add(this.launchButton);
+            this.Controls.Add(this.autoLoginButton);
+            this.Controls.Add(this.profilesGroupBox);
             this.Controls.Add(this.menuStrip);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -153,9 +216,12 @@ namespace LoLAutoLogin.Forms
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LoL Auto Login";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
+            this.Shown += new System.EventHandler(this.MainForm_Shown);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
+            this.profilesGroupBox.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.profilesGridView)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -166,10 +232,16 @@ namespace LoLAutoLogin.Forms
         private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem quitToolStripMenuItem;
-        private System.Windows.Forms.Button addButton;
+        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
+        private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.GroupBox profilesGroupBox;
         private System.Windows.Forms.Button deleteButton;
+        private System.Windows.Forms.Button addButton;
+        private System.Windows.Forms.Button autoLoginButton;
+        private System.Windows.Forms.Button launchButton;
+        private System.Windows.Forms.CheckBox alwaysShowCheckBox;
         private System.Windows.Forms.DataGridView profilesGridView;
-        private System.Windows.Forms.Button button1;
     }
 }
 

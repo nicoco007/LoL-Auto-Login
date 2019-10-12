@@ -31,8 +31,6 @@ namespace LoLAutoLogin.Model
 
     public class ClientWindow : Window
     {
-        public bool IsMatch => Status != ClientStatus.Unknown;
-
         public ClientStatus Status { get; private set; }
         public Rectangle UsernameBox { get; private set; }
         public Rectangle PasswordBox { get; private set; }
@@ -73,10 +71,11 @@ namespace LoLAutoLogin.Model
 
             List<Rectangle> rectangles = Util.FindRectangles(capture);
 
-            // all measurements are based on 1600×900 window
-            double scale = capture.Width / 1600f;
-            int boxSeparation = (int)Math.Round(70 * scale);    // distance between username and password boxes
-            int sidebarLeft = (int)Math.Round(1320 * scale);    // start location of sidebar
+            // all measurements are based on 1280×720 window
+            double scale = capture.Width / 1280f;
+            int boxSeparation = (int)Math.Round(65 * scale);    // distance between username and password boxes
+            int sidebarRight = (int)Math.Round(396 * scale);    // start location of sidebar
+            Size wantedSize = new Size((int)Math.Round(267 * scale), (int)Math.Round(51 * scale)); // wanted size of username/password inputs
 
             var windowRectangle = new Rectangle(0, 0, capture.Width, capture.Height);
             var windowCenter = new Point(windowRectangle.Width / 2, windowRectangle.Height / 2);
@@ -102,14 +101,14 @@ namespace LoLAutoLogin.Model
                 }
 
                 // check if rectangle is on sidebar
-                if (rect1.X >= sidebarLeft)
+                if (rect1.X <= sidebarRight)
                 {
                     // check if rectangle pair is username and password boxes
                     for (int j = i + 1; j < rectangles.Count; j++)
                     {
                         var rect2 = rectangles[j];
 
-                        if (rect1.Size.SimilarTo(rect2.Size, 2) && rect1.X.SimilarTo(rect2.X, 2) && rect1.Y.SimilarTo(rect2.Y, 15, boxSeparation))
+                        if (rect1.Size.SimilarTo(wantedSize) && rect1.Size.SimilarTo(rect2.Size, 2) && rect1.X.SimilarTo(rect2.X, 2) && rect1.Y.SimilarTo(rect2.Y, 15, boxSeparation))
                         {
                             Status = ClientStatus.OnLoginScreen;
 
