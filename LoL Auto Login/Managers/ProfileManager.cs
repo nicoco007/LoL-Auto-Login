@@ -44,11 +44,11 @@ namespace LoLAutoLogin.Managers
 
                     for (byte i = 0; i < count; i++)
                     {
-                        profiles.Add(new Profile(
-                            reader.ReadString(),
-                            reader.ReadBytes(reader.ReadInt32()),
-                            i == defaultIndex
-                        ));
+                        profiles.Add(new Profile {
+                            Username = reader.ReadString(),
+                            EncryptedPassword = reader.ReadBytes(reader.ReadInt32()),
+                            IsDefault = i == defaultIndex
+                        });
                     }
 
                     if (profiles.Count > 0 && !profiles.Exists(p => p.IsDefault))
@@ -108,6 +108,12 @@ namespace LoLAutoLogin.Managers
         public static void DeleteProfile(int profileIndex)
         {
             profiles.RemoveAt(profileIndex);
+        }
+
+        public static void ReplaceProfile(Profile oldProfile, Profile newProfile)
+        {
+            int index = profiles.IndexOf(oldProfile);
+            profiles[index] = newProfile;
         }
     }
 }

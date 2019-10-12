@@ -58,6 +58,7 @@ namespace LoLAutoLogin.Forms
             this.autoLoginButton = new System.Windows.Forms.Button();
             this.launchButton = new System.Windows.Forms.Button();
             this.alwaysShowCheckBox = new System.Windows.Forms.CheckBox();
+            this.editButton = new System.Windows.Forms.Button();
             this.menuStrip.SuspendLayout();
             this.profilesGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.profilesGridView)).BeginInit();
@@ -106,7 +107,7 @@ namespace LoLAutoLogin.Forms
             // deleteButton
             // 
             this.deleteButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.deleteButton.Location = new System.Drawing.Point(87, 124);
+            this.deleteButton.Location = new System.Drawing.Point(168, 124);
             this.deleteButton.Name = "deleteButton";
             this.deleteButton.Size = new System.Drawing.Size(75, 23);
             this.deleteButton.TabIndex = 8;
@@ -132,6 +133,7 @@ namespace LoLAutoLogin.Forms
             this.profilesGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.profilesGroupBox.Controls.Add(this.editButton);
             this.profilesGroupBox.Controls.Add(this.profilesGridView);
             this.profilesGroupBox.Controls.Add(this.deleteButton);
             this.profilesGroupBox.Controls.Add(this.addButton);
@@ -200,6 +202,18 @@ namespace LoLAutoLogin.Forms
             this.alwaysShowCheckBox.Text = "Always show this before running League of Legends";
             this.alwaysShowCheckBox.UseVisualStyleBackColor = true;
             // 
+            // editButton
+            // 
+            this.editButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.editButton.Location = new System.Drawing.Point(87, 124);
+            this.editButton.Name = "editButton";
+            this.editButton.Size = new System.Drawing.Size(75, 23);
+            this.editButton.TabIndex = 10;
+            this.editButton.Text = "Edit";
+            this.toolTip.SetToolTip(this.editButton, "Delete the selected profile");
+            this.editButton.UseVisualStyleBackColor = true;
+            this.editButton.Click += new System.EventHandler(this.EditButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -242,6 +256,7 @@ namespace LoLAutoLogin.Forms
         private System.Windows.Forms.Button launchButton;
         private System.Windows.Forms.CheckBox alwaysShowCheckBox;
         private System.Windows.Forms.DataGridView profilesGridView;
+        private System.Windows.Forms.Button editButton;
     }
 }
 

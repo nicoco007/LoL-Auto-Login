@@ -5,6 +5,8 @@ namespace LoLAutoLogin.Forms
 {
     public partial class AddProfileForm : Form
     {
+        public Profile Profile { get; set; }
+
         private bool save;
 
         public AddProfileForm()
@@ -14,11 +16,29 @@ namespace LoLAutoLogin.Forms
 
         public new Profile ShowDialog()
         {
+            if (Profile != null)
+            {
+                Name = "Edit Profile";
+                usernameTextBox.Text = Profile.Username;
+            }
+
             base.ShowDialog();
 
             if (!save) return null;
 
-            return new Profile(usernameTextBox.Text.Trim(), passwordTextBox.Text.Trim());
+            if (Profile == null)
+            {
+                Profile = new Profile();
+            }
+
+            Profile.Username = usernameTextBox.Text;
+
+            if (!string.IsNullOrEmpty(passwordTextBox.Text))
+            {
+                Profile.Password = passwordTextBox.Text;
+            }
+
+            return Profile;
         }
 
         private void SaveButton_Click(object sender, System.EventArgs e)
@@ -31,7 +51,7 @@ namespace LoLAutoLogin.Forms
                 invalid = true;
             }
 
-            if (string.IsNullOrEmpty(passwordTextBox.Text))
+            if (string.IsNullOrEmpty(Profile.Password) && string.IsNullOrEmpty(passwordTextBox.Text))
             {
                 errorProvider.SetError(passwordTextBox, "Password cannot be empty");
                 invalid = true;
@@ -58,7 +78,7 @@ namespace LoLAutoLogin.Forms
 
         private void PasswordTextBox_TextChanged(object sender, System.EventArgs e)
         {
-            if (!string.IsNullOrEmpty(passwordTextBox.Text))
+            if (string.IsNullOrEmpty(Profile.Password) || !string.IsNullOrEmpty(passwordTextBox.Text))
             {
                 errorProvider.SetError(passwordTextBox, null);
             }
@@ -74,7 +94,7 @@ namespace LoLAutoLogin.Forms
 
         private void PasswordTextBox_Leave(object sender, System.EventArgs e)
         {
-            if (string.IsNullOrEmpty(passwordTextBox.Text))
+            if (string.IsNullOrEmpty(Profile.Password) && string.IsNullOrEmpty(passwordTextBox.Text))
             {
                 errorProvider.SetError(passwordTextBox, "Password cannot be empty");
             }

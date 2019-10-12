@@ -70,15 +70,25 @@ namespace LoLAutoLogin.Forms
             ShowAddFormDialog();
         }
 
-        private void ShowAddFormDialog()
+        private void ShowAddFormDialog(Profile initialProfile = null)
         {
-            AddProfileForm form = new AddProfileForm { Owner = this };
+            AddProfileForm form = new AddProfileForm { Owner = this, Profile = initialProfile };
 
-            Profile profile = form.ShowDialog();
+            form.ShowDialog();
 
-            if (profile == null) return;
+            Profile newProfile = form.Profile;
 
-            ProfileManager.AddProfile(profile);
+            if (newProfile == null) return;
+
+            if (initialProfile != null)
+            {
+                ProfileManager.ReplaceProfile(initialProfile, newProfile);
+            }
+            else
+            {
+                ProfileManager.AddProfile(newProfile);
+            }
+
             bindingSource.ResetBindings(false);
         }
 
@@ -146,6 +156,11 @@ namespace LoLAutoLogin.Forms
         {
             deleteButton.Enabled = profilesGridView.SelectedRows.Count > 0;
             autoLoginButton.Enabled = profilesGridView.SelectedRows.Count == 1;
+        }
+
+        private void EditButton_Click(object sender, EventArgs e)
+        {
+            ShowAddFormDialog(profilesGridView.SelectedRows[0].DataBoundItem as Profile);
         }
     }
 }

@@ -5,7 +5,8 @@ namespace LoLAutoLogin.Model
 {
     public class Profile
     {
-        public string Username { get; }
+        [ReadOnly(true)]
+        public string Username { get; set; }
 
         [DisplayName("Default")]
         public bool IsDefault { get; set; }
@@ -19,18 +20,5 @@ namespace LoLAutoLogin.Model
         
         [Browsable(false)]
         public byte[] EncryptedPassword { get; set; }
-
-        public Profile(string username, string password)
-        {
-            Username = username;
-            Password = password;
-        }
-
-        public Profile(string username, byte[] encryptedPassword, bool isDefault)
-        {
-            Username = username;
-            EncryptedPassword = encryptedPassword;
-            IsDefault = isDefault;
-        }
     }
 }
